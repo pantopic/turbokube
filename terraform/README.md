@@ -13,4 +13,4 @@ author presently has the highest service limits.
 and `kubectl`.
 
 The shell scripts here are expected to be altered and run manually in this order:
-- 01-kubernetes.sh
+- [01-kubernetes.sh](01-kubernetes.sh)
