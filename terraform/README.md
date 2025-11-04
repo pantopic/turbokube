@@ -6,6 +6,9 @@ These environments are only designed to automate the provisioning of infrastruct
 process. After the infrastructure is provisioned, there is still a bit of manual legwork required to get the cluster
 up and running. This is expected.
 
+Digitalocean is the only cloud provider presently supported. That's only because it's the cloud provider where the
+author presently has the highest service limits.
+
 [setup.sh](digitalocean/setup.sh) runs automatically on each kube node on creation to install `kubelet`, `kubeadm` 
 and `kubectl`.
 
