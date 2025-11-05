@@ -1,6 +1,10 @@
 dev:
 	@go build -ldflags="-s -w" -o _dist/turbokube ./cmd/turbokube && cd cmd/turbokube && docker compose up --build
 
+build:
+	@go build -ldflags="-s -w" -o bin/virtual-kubelet ./cmd/virtual-kubelet
+	@zip bin/virtual-kubelet.zip bin/virtual-kubelet
+
 test:
 	@go test ./...
 

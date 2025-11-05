@@ -1,3 +1,4 @@
 _dist
 .terraform*
 *.tfstate*
+virtual-kubelet

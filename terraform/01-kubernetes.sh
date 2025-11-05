@@ -49,5 +49,4 @@ kubeadm join 10.0.0.5:6443 --token pzmlwc.w9ttie0zxq7jhplk \
 
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
+# kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml

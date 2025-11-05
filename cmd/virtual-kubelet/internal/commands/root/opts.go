@@ -106,7 +106,7 @@ func SetDefaultOpts(c *Opts) error {
 	}
 
 	if c.NodeName == "" {
-		c.NodeName = getEnv("DEFAULT_NODE_NAME", DefaultNodeName)
+		c.NodeName = getEnv("NODE_NAME", DefaultNodeName)
 	}
 
 	if c.InformerResyncPeriod == 0 {

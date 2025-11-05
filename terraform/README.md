@@ -12,5 +12,6 @@ author presently has the highest service limits.
 [setup.sh](digitalocean/setup.sh) runs automatically on each kube node on creation to install `kubelet`, `kubeadm` 
 and `kubectl`.
 
-The shell scripts here are expected to be altered and run manually in this order:
-- [01-kubernetes.sh](01-kubernetes.sh)
+The shell scripts here are expected to be altered based on output from terraform and kubeadm. They should be run
+manually in this order:
+- [01-kube.sh](01-kube.sh) should be run on the control nodes to start the kubernetes cluster
