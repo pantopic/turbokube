@@ -8,7 +8,7 @@ terraform {
 }
 
 provider "digitalocean" {
-  # expects env var DIGITALOCEAN_ACCESS_TOKEN
+  # set DIGITALOCEAN_ACCESS_TOKEN
 }
 
 variable "region" {
@@ -29,6 +29,9 @@ variable "vpc_uuid" {
 variable "control_node_class" {
   default = "s-2vcpu-4gb"
 }
-variable "worker_class" {
+variable "worker_node_class" {
+  default = "s-2vcpu-4gb"
+}
+variable "turbo_node_class" {
   default = "s-2vcpu-4gb"
 }

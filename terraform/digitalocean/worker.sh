@@ -1,48 +1,6 @@
 #!/bin/bash
 set -e
 
-sudo apt-get install -y zip
+kubeadm join 10.0.0.23:6443 --token 4sz2ss.pm7y2x9dis08gjm6 \
+        --discovery-token-ca-cert-hash sha256:1d6df86b31ebb214478d2225b0e295374306f078dbb53bcc61f6180da1750f78
 
-# Download binary
-wget https://raw.githubusercontent.com/pantopic/turbokube/main/bin/virtual-kubelet.zip
-unzip virtual-kubelet.zip
-chmod 755 virtual-kubelet
-sudo ln -s virtual-kubelet /bin/virtual-kubelet
-
-sudo mkdir -p /etc/turbokube
-sudo chmod 644 /etc/turbokube
-
-# Environment variables for virtual kubelet
-cat <<EOF | sudo tee /etc/turbokube/env
-NODE_NAME=$hostname
-KUBECONFIG=/etc/turbokube/config.yaml
-EOF
-
-# Create systemd service
-cat <<EOF | sudo tee /etc/systemd/system/turbokube.service
-[Unit]
-Description=Tha whistles go WOOO!
-After=network.target
-
-[Service]
-Type=simple
-ExecStart=/bin/virtual-kubelet
-EnvironmentFile=-/etc/turbokube/env
-RemainAfterExit=no
-Restart=on-failure
-RestartSec=5s
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-# Configure kubelet
-cat <<EOF | sudo tee /etc/turbokube/config.yaml
-###################
-##  [ REPLACE ]  ##
-###################
-EOF
-
-# Start systemd service
-sudo systemctl enable turbokube
-sudo systemctl start turbokube
