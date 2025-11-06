@@ -35,3 +35,6 @@ variable "worker_node_class" {
 variable "turbo_node_class" {
   default = "s-2vcpu-4gb"
 }
+variable "metrics_node_class" {
+  default = "s-2vcpu-4gb"
+}

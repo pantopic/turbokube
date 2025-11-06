@@ -32,14 +32,26 @@ resource "digitalocean_loadbalancer" "kube" {
   droplet_ids = digitalocean_droplet.kube.*.id
 }
 
+resource "digitalocean_droplet" "metrics" {
+  name     = "metrics"
+  region   = var.region
+  vpc_uuid = var.vpc_uuid
+
+  image     = "ubuntu-22-04-x64"
+  size      = var.turbo_node_class
+  ssh_keys  = [var.ssh_key]
+  user_data = file("setup.sh")
+}
+
 output "ext" {
   value = zipmap(digitalocean_droplet.kube.*.name, digitalocean_droplet.kube.*.ipv4_address)
 }
-
 output "int" {
   value = zipmap(digitalocean_droplet.kube.*.name, digitalocean_droplet.kube.*.ipv4_address_private)
 }
-
 output "lb" {
   value = zipmap([digitalocean_loadbalancer.kube.name], [digitalocean_loadbalancer.kube.ip])
+}
+output "metrics" {
+  value = zipmap(["ext", "int"], [digitalocean_droplet.metrics.ipv4_address, digitalocean_droplet.metrics.ipv4_address_private])
 }

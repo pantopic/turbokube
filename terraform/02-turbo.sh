@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.23
+export IP_TURBO=10.0.0.27
 
 # leader
 kubeadm init \
@@ -13,13 +13,21 @@ kubeadm init \
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
-# worker
-kubeadm join $IP_TURBO:6443 --token pzmlwc.w9ttie0zxq7jhplk \
-    --discovery-token-ca-cert-hash sha256:82a196d09a3400dbdd0478096a71016115738c9db360a4214da99569bb4b60ca
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 
-# May need metrics server later
-#
-#   kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# Prometheus + Grafana
+# https://spacelift.io/blog/prometheus-kubernetes
+curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install -y helm
+
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus-stack \
+  --create-namespace \
+  --namespace kube-prometheus-stack \
+  prometheus-community/kube-prometheus-stack
 
 # Useful commands
 #

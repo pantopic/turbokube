@@ -38,6 +38,7 @@ sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/' /etc/sysctl.conf
 sysctl -p
 
 cat <<EOF | sudo tee -a ~/.bashrc
+export KUBE_EDITOR='nano'
 export KUBECONFIG=/etc/kubernetes/admin.conf
 alias k='kubectl'
 alias l='ls -la'
