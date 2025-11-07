@@ -25,8 +25,6 @@ burnt on every stroke, increasing horsepower.
 *TurboKube* is like a turbo charger because it amplifies load on a Kubernetes control plane by enabling one node in
 *Cluster A* to present itself as a hundred nodes to *Cluster B* (the cluster under load).
 
-## Kube
-
 *Kube* is short for Kubernetes.
 
 ## Architecture
