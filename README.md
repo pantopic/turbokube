@@ -2,9 +2,9 @@
 
 A Kubernetes load testing framework
 
-<img alt="$15 logo" title="$15 logo" src="junk/turbokube.png"/>
+<img alt="$15 logo" title="$15 logo" src="junk/turbokube.png" />
 
-<img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="right" width="300"/>
+<img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="left" width="300"/>
 
 A long time ago in a galaxy far, far away... someone complained about Kubernetes on LinkedIn.
 
