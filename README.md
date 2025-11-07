@@ -12,9 +12,8 @@ Someone complained about Kubernetes on LinkedIn.
 
 This project was created to explore the performance characteristics of the Kubernetes control plane.
 
-Account limits in every available cloud provider would prevent us from spinning up 5,000 nodes to reach
-[the published Kubernetes performance conditions](https://kubernetes.io/docs/setup/best-practices/cluster-large/)
-necessary to stress test its outer limits.
+Account limits in every available cloud provider would prevent us from spinning up the 5,000 nodes required to reach
+the published [Kubernetes performance limits](https://kubernetes.io/docs/setup/best-practices/cluster-large/).
 
 We will need to compress the load if we want to reach the upper echelons of Kubernetes scalability.
 
