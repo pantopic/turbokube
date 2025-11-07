@@ -2,7 +2,7 @@
 
 <img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="left" width="300"/>
 
-Someone complained about Kubernetes on LinkedIn.
+Someone complained about Kubernetes.
 
 This project was created to explore the performance characteristics of the Kubernetes control plane.
 
