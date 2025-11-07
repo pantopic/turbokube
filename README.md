@@ -15,13 +15,19 @@ We will need to compress the load if we want to reach the upper echelons of Kube
 
 Hence...
 
-## So what's with the name?
+<br/><br/><br/><br/><br/><br/><br/><br/>
+
+## Turbo
 
 A *turbo charger* works by compressing air before it enters the engine cylinder of a car so that more fuel can be
 burnt on every stroke, increasing horsepower.
 
-*TurboKube* is like a turbo charger because it amplifies load on a Kubernetes control cluster by enabling one node in
+*TurboKube* is like a turbo charger because it amplifies load on a Kubernetes control plane by enabling one node in
 *Cluster A* to present itself as a hundred nodes to *Cluster B* (the cluster under load).
+
+## Kube
+
+*Kube* is short for Kubernetes.
 
 ## Architecture
 
