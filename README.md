@@ -1,10 +1,4 @@
-# TurboKube
-
-A Kubernetes load testing framework
-
-[<img alt="$10 logo from horriblelogos.com" title="$10 logo from horriblelogos.com" src="junk/turbokube.png" />](https://www.horriblelogos.com/turbokube/)
-
-## A long time ago in a galaxy far, far away…
+# A long time ago in a galaxy far, far away…
 
 <img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="left" width="300"/>
 
@@ -17,4 +11,6 @@ the published [Kubernetes performance limits](https://kubernetes.io/docs/setup/b
 
 We will need to compress the load if we want to reach the upper echelons of Kubernetes scalability.
 
-Hence TurboKube.
+[<img alt="$10 logo from horriblelogos.com" title="$10 logo from horriblelogos.com" src="junk/turbokube.png" align="right" width="400" />](https://www.horriblelogos.com/turbokube/)
+
+Hence...
