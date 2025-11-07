@@ -11,6 +11,6 @@ the published [Kubernetes performance limits](https://kubernetes.io/docs/setup/b
 
 We will need to compress the load if we want to reach the upper echelons of Kubernetes scalability.
 
-[<img alt="$10 logo from horriblelogos.com" title="$10 logo from horriblelogos.com" src="junk/turbokube.png" align="right" width="400" />](https://www.horriblelogos.com/turbokube/)
+[<img alt="$10 logo from horriblelogos.com" title="$10 logo from horriblelogos.com" src="junk/turbokube.png" align="right" width="360" />](https://www.horriblelogos.com/turbokube/)
 
 Hence...
