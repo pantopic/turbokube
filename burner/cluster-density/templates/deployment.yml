@@ -16,7 +16,8 @@ spec:
         app: {{.name}}-{{.Replica}}
     spec:
       nodeSelector:
-        node-role.kubernetes.io/worker: ""
+        kubernetes.io/role: agent
+        type: virtual-kubelet
       containers:
       - image: registry.k8s.io/pause:3.10
         volumeMounts:
@@ -59,4 +60,5 @@ spec:
         operator: "Exists"
         effect: "NoExecute"
         tolerationSeconds: 900
-
+      - key: virtual-kubelet.io/provider
+        operator: Exists

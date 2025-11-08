@@ -33,7 +33,7 @@ variable "control_node_class" {
   default = "g-4vcpu-16gb-intel"
 }
 variable "worker_node_class" {
-  default = "s-4vcpu-16gb"
+  default = "s-4vcpu-16gb-amd"
 }
 variable "turbo_node_class" {
   default = "s-2vcpu-4gb"
