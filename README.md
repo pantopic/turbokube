@@ -31,7 +31,7 @@ burnt on every stroke, increasing horsepower.
 
 ## Architecture
 
-[<img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.draw.io.png"/>](https://app.diagrams.net/#Uhttps%3A%2F%2Fgithub.com%2Fpantopic%2Fturbokube%2Fblob%2Fmain%2Fjunk%2Fturbokube.draw.io.png)
+[<img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.draw.io.png"/>](https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.draw.io.png)
 
 *Control Plane A* schedules [Virtual Kubelet](https://virtual-kubelet.io/) containers as pods in an autoscaling pool of worker nodes.
 
