@@ -25,7 +25,7 @@ Hence...
 
 ## Why Turbo?
 
-A *turbo charger* works by compressing air before it enters an engine's combustion chamber so that more fuel can be
+A *turbocharger* works by compressing air before it enters an engine's combustion chamber so that more fuel can be
 burnt on every stroke, increasing horsepower without adding more cylinders. More power, less weight.
 
 *TurboKube* is like a turbo charger. It is designed to amplify the load on a Kubernetes control plane by several orders
