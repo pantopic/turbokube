@@ -6,7 +6,7 @@ A fork of the [Virtual Kubelet](https://virtual-kubelet.io/) [Mock Provider](htt
 
 <img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="left" width="300"/>
 
-Someone complained about Kubernetes.
+Someone on LinkedIn complained about Kubernetes.
 
 This project was created to explore the performance characteristics of the Kubernetes control plane.
 
@@ -24,32 +24,28 @@ Hence...
 ## Why Turbo?
 
 A *turbo charger* works by compressing air before it enters the engine cylinder of a car so that more fuel can be
-burnt on every stroke, increasing horsepower.
+burnt on every stroke, increasing horsepower without the weight increase associated with adding more cylinders.
 
-*TurboKube* is like a turbo charger because it amplifies load on a Kubernetes control plane by enabling one node in
-*Cluster A* to present itself as a hundred nodes to *Cluster B* (the cluster under load).
+*TurboKube* is like a turbo charger because it amplifies the load on a Kubernetes control plane by enabling one node in
+*Cluster A* to present itself as one hundred nodes in *Cluster B* (the cluster under load).
 
 ## Architecture
 
 [<img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.draw.io.png"/>](https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.draw.io.png)
 
-*Control Plane A* schedules [Virtual Kubelet](https://virtual-kubelet.io/) containers as pods in an autoscaling pool of worker nodes.
+*Control Plane A* schedules [Virtual Kubelet](https://virtual-kubelet.io/) containers as pods in an autoscaling pool of
+worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those Virtual Kubelets connect to
+*Control Plane B*, joining the cluster as available nodes.
 
-Those Virtual Kubelets connect to *Control Plane B*, joining the cluster as available nodes.
+*Control Plane B* schedules Pods to the Virtual Kubelets. The pods scheduled to the Virtual Kubelets are real to
+*Cluster B* but "fake" to *Cluster A* because the pods don't exececute anything in any real sense. The Virtual Kubelet
+doesn't have a container runtime in which to run the containers in the pod spec. Instead, the provider simulates the
+behavior of a running container including healthchecks, metrics, etc.
 
-*Control Plane B* schedules Pods to the Virtual Kubelets.
+This allows us to simulate a 10,000 node cluster using only a handful virtual machines.
 
-Each Virtual Kubelet operates a mock provider (TurboKube).
-
-The pods scheduled to the Virtual Kubelets are "fake" because they don't exececute in any real sense since the Virtual
-Kubelet doesn't have a container runtime. The Virtual Kubelet provider simulates the behavior of a running container
-including healthchecks, metrics, etc.
-
-This allows us to simulate a 10,000 node cluster using only a handful nodes.
-
-*Control Plane B* is the system under test.
-
-All of this is orchestrated with Terraform and a bunch of manually applied shell scripts.
+*Control Plane B* is the system under test. All of this is orchestrated with Terraform and a bunch of manually applied
+shell scripts.
 
 After the system is provisioned, performance tests are run using [kube-burner](https://github.com/kube-burner/kube-burner) (wip).
 
@@ -61,7 +57,7 @@ After the system is provisioned, performance tests are run using [kube-burner](h
 
 ## Experiment Goals
 
-1. Learn a lot about operating kubernetes and etcd
+1. Learn a lot about operating kubernetes control planes
 2. Identify soft and hard failure points
 3. Publish a control plane instance size recommendation calculator
 4. Test performance of alternate etcd implementations
