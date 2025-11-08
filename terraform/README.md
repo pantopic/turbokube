@@ -14,4 +14,5 @@ and `kubectl`.
 
 The shell scripts here are expected to be altered based on output from terraform and kubeadm. They should be run
 manually in this order:
-- [01-kube.sh](01-kube.sh) should be run on the control nodes to start the kubernetes cluster
+- [01-kube.sh](01-kube.sh) should be run on control nodes in cluster B to start the kubernetes cluster
+- [02-turbo.sh](02-turbo.sh) should be run on the cluster A control node to start the other kubernetes cluster

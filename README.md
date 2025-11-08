@@ -1,10 +1,8 @@
 # TurboKube
 
 A fork of Virtual Kubelet's [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go)
-customized for load testing the Kubernetes Control Plane.
-
-TurboKube can be used to simulate the load of a 10,000 node
-cluster with a million pods using only a handful of virtual machines.
+customized for load testing the Kubernetes Control Plane. Simulate the load of a 10,000 node cluster using a handful of
+small virtual machines.
 
 ## Once upon a time on LinkedIn…
 
@@ -43,9 +41,9 @@ worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those V
 *Control Plane B*, joining the cluster pretending to be real virtual machines.
 
 *Control Plane B* schedules Pods to these Virtual Kubelets. The pods scheduled to the Virtual Kubelets are real to
-*Cluster B* but "fake" to *Cluster A* because the pods don't exececute anything in any real sense. The Virtual Kubelet
-doesn't have a container runtime in which to run the containers in the pod spec. Instead, the provider simulates the
-behavior of a running container including healthchecks, metrics, etc.
+*Cluster B* but "fake" to *Cluster A* because it knows that the pods don't exececute anything in any real sense. The
+Virtual Kubelet doesn't have a container runtime in which to run the containers in the pod spec. Instead, the provider
+simulates the behavior of a running container including healthchecks, metrics, etc.
 
 All of this is orchestrated with Terraform and a bunch of manually applied shell scripts. After the system is
 provisioned, performance tests are run using [kube-burner](https://github.com/kube-burner/kube-burner) (wip).
