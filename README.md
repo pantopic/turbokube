@@ -57,9 +57,9 @@ provisioned, performance tests are run using [kube-burner](https://github.com/ku
 
 - Size of control plane instances (vertical scale, cores and ram)
 - Number of control plane instances (horizontal scale)
-- Load types (few large deployments vs many small deployments)
-- Control plane topology (colocated vs offloaded: etcd, scheduler, etc)
-- Control plane configuration (api server cache size, etcd knobs, etc)
+- Types of load (few large deployments vs many small deployments)
+- Topology of control plane (colocated vs offloaded: etcd, scheduler, etc)
+- Configuration of control plane (api server cache size, etcd knobs, etc)
 
 ## Experiment Goals
 
