@@ -2,3 +2,4 @@ _dist
 .terraform*
 *.tfstate*
 *.bkp
+kube-burner*
