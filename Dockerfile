@@ -1,5 +1,5 @@
 FROM debian:stable-slim as turbokube
 
-COPY bin/turbokube .
+COPY _dist/turbokube .
 
 CMD ["./turbokube"]
