@@ -8,7 +8,7 @@ small virtual machines.
 
 <img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="left" width="300"/>
 
-Someone complained about Kubernetes.
+…someone complained about Kubernetes.
 
 This project was created to map the performance characteristics of the Kubernetes control plane.
 
