@@ -3,11 +3,11 @@
 A fork of Virtual Kubelet's [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go)
 customized for load testing the Kubernetes Control Plane.
 
-## A long time ago in a galaxy far, far away…
+## Once upon a time on LinkedIn…
 
 <img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="left" width="300"/>
 
-Someone on LinkedIn complained about Kubernetes.
+Someone complained about Kubernetes.
 
 This project was created to explore the performance characteristics of the Kubernetes control plane.
 
