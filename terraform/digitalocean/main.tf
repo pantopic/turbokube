@@ -26,11 +26,14 @@ variable "vpc_uuid" {
 }
 
 # https://slugs.do-api.dev/
+variable "etcd_node_class" {
+  default = "g-4vcpu-16gb-intel"
+}
 variable "control_node_class" {
-  default = "s-2vcpu-4gb"
+  default = "g-4vcpu-16gb-intel"
 }
 variable "worker_node_class" {
-  default = "s-2vcpu-4gb"
+  default = "s-4vcpu-16gb"
 }
 variable "turbo_node_class" {
   default = "s-2vcpu-4gb"

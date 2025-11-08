@@ -1,3 +1,17 @@
+/*
+resource "digitalocean_droplet" "etcd" {
+  count = 3
+
+  name     = "etcd-${count.index}"
+  region   = var.region
+  vpc_uuid = var.vpc_uuid
+
+  image     = "ubuntu-22-04-x64"
+  size      = var.etcd_node_class
+  ssh_keys  = [var.ssh_key]
+  user_data = file("setup.sh")
+}
+*/
 resource "digitalocean_droplet" "kube" {
   count = 3
 
