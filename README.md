@@ -1,6 +1,7 @@
 # TurboKube
 
-A fork of the Virtual Kubelet [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go) customized for load testing the Kubernetes Control Plane.
+A fork of Virtual Kubelet's [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go)
+customized for load testing the Kubernetes Control Plane.
 
 ## A long time ago in a galaxy far, far away…
 
