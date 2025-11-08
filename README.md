@@ -25,7 +25,7 @@ Hence...
 ## Why Turbo?
 
 A *turbo charger* works by compressing air before it enters a car's engine cylinder so that more fuel can be
-burnt on every stroke, increasing horsepower without the weight increase associated with adding more cylinders.
+burnt on every stroke, increasing horsepower without adding more cylinders. More power, less weight.
 
 *TurboKube* is like a turbo charger because it amplifies the load on a Kubernetes control plane by enabling one node in
 *Cluster A* to present itself as one hundred nodes in *Cluster B* (the cluster under load).
