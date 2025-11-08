@@ -1,7 +1,7 @@
 # TurboKube
 
 A fork of Virtual Kubelet's [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go)
-designed specifically to load test the Kubernetes Control Plane. Simulate the load of a 10,000 node cluster using a
+designed specifically to load test the Kubernetes control plane. Simulate the load of a 10,000 node cluster using a
 handful of small virtual machines.
 
 ## Once upon a time on LinkedIn…
@@ -12,8 +12,9 @@ handful of small virtual machines.
 
 This project was created to map the performance characteristics of the Kubernetes control plane.
 
-Account limits in every available cloud provider would prevent us from spinning up the 5,000 nodes required to reach
-the published [Kubernetes performance limits](https://kubernetes.io/docs/setup/best-practices/cluster-large/).
+Account limits in every available cloud provider prevent us from spinning up the 5,000 virtual machines required to
+reach the published [Kubernetes performance limits](https://kubernetes.io/docs/setup/best-practices/cluster-large/)
+organically.
 
 We will need to compress the load if we want to reach the upper echelons of Kubernetes scalability.
 
