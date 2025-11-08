@@ -24,7 +24,7 @@ Hence...
 
 ## Why Turbo?
 
-A *turbo charger* works by compressing air before it enters the engine cylinder of a car so that more fuel can be
+A *turbo charger* works by compressing air before it enters a car's engine cylinder so that more fuel can be
 burnt on every stroke, increasing horsepower without the weight increase associated with adding more cylinders.
 
 *TurboKube* is like a turbo charger because it amplifies the load on a Kubernetes control plane by enabling one node in
@@ -36,9 +36,9 @@ burnt on every stroke, increasing horsepower without the weight increase associa
 
 *Control Plane A* schedules [Virtual Kubelet](https://virtual-kubelet.io/) containers as pods in an autoscaling pool of
 worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those Virtual Kubelets connect to
-*Control Plane B*, joining the cluster as available nodes.
+*Control Plane B*, joining the cluster pretending to be real virtual machines.
 
-*Control Plane B* schedules Pods to the Virtual Kubelets. The pods scheduled to the Virtual Kubelets are real to
+*Control Plane B* schedules Pods to these Virtual Kubelets. The pods scheduled to the Virtual Kubelets are real to
 *Cluster B* but "fake" to *Cluster A* because the pods don't exececute anything in any real sense. The Virtual Kubelet
 doesn't have a container runtime in which to run the containers in the pod spec. Instead, the provider simulates the
 behavior of a running container including healthchecks, metrics, etc.
