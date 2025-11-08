@@ -3,13 +3,16 @@
 A fork of Virtual Kubelet's [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go)
 customized for load testing the Kubernetes Control Plane.
 
+TurboKube can be used to simulate the load of a 10,000 node
+cluster with a million pods using only a handful of virtual machines.
+
 ## Once upon a time on LinkedIn…
 
 <img alt="screenshot of a conversation on linked in where people are asking why etcd is slow" src="junk/etcd.png" align="left" width="300"/>
 
 Someone complained about Kubernetes.
 
-This project was created to explore the performance characteristics of the Kubernetes control plane.
+This project was created to map the performance characteristics of the Kubernetes control plane.
 
 Account limits in every available cloud provider would prevent us from spinning up the 5,000 nodes required to reach
 the published [Kubernetes performance limits](https://kubernetes.io/docs/setup/best-practices/cluster-large/).
@@ -27,8 +30,9 @@ Hence...
 A *turbo charger* works by compressing air before it enters a car's engine cylinder so that more fuel can be
 burnt on every stroke, increasing horsepower without adding more cylinders. More power, less weight.
 
-*TurboKube* is like a turbo charger because it amplifies the load on a Kubernetes control plane by enabling one node in
-*Cluster A* to present itself as one hundred nodes in *Cluster B* (the cluster under load).
+*TurboKube* is like a turbo charger because it cab amplify the load on a Kubernetes control plane by several orders of
+magnitude. One node in *Cluster A* can present itself as one hundred (or more) nodes in *Cluster B* (the system under
+load).
 
 ## Architecture
 
@@ -43,12 +47,8 @@ worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those V
 doesn't have a container runtime in which to run the containers in the pod spec. Instead, the provider simulates the
 behavior of a running container including healthchecks, metrics, etc.
 
-This allows us to simulate a 10,000 node cluster using only a handful virtual machines.
-
-*Control Plane B* is the system under test. All of this is orchestrated with Terraform and a bunch of manually applied
-shell scripts.
-
-After the system is provisioned, performance tests are run using [kube-burner](https://github.com/kube-burner/kube-burner) (wip).
+All of this is orchestrated with Terraform and a bunch of manually applied shell scripts. After the system is
+provisioned, performance tests are run using [kube-burner](https://github.com/kube-burner/kube-burner) (wip).
 
 ## Experiment Variables
 
