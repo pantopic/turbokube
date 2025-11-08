@@ -28,8 +28,8 @@ Hence...
 A *turbocharger* in a car works by compressing air before it enters an engine's combustion chamber so that more fuel
 can be burnt on every stroke, increasing horsepower without adding more cylinders. More power, less weight.
 
-A *turbopump* in a rocket engine works by preburning fuel and oxidizer to impel a turbine, pumping fuel and oxidizer at
-a faster rate into the main combustion chamber, increasing thrust and TWR (thrust to weight ratio).
+A *turbopump* in a rocket engine works by preburning fuel and oxidizer to impel a turbine, pumping more fuel and
+oxidizer at a faster rate into the main combustion chamber, increasing thrust and TWR (thrust to weight ratio).
 
 *TurboKube* is designed to amplify the load on a Kubernetes control plane by several orders of magnitude. One worker
 node in *Cluster A* can present itself as one hundred (or more) nodes in *Cluster B* (the system under load).
