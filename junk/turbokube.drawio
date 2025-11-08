@@ -49,7 +49,7 @@
         <mxCell id="19ZzHdOvK6Rczo9mMx4z-17" value="Load Balancer" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;opacity=50;fontStyle=1" vertex="1" parent="1">
           <mxGeometry x="40" y="360" width="600" height="40" as="geometry" />
         </mxCell>
-        <mxCell id="19ZzHdOvK6Rczo9mMx4z-19" value="Worker Node" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=center;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="19ZzHdOvK6Rczo9mMx4z-19" value="&amp;nbsp; Worker Node" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=left;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="70" y="110" width="160" height="180" as="geometry" />
         </mxCell>
         <mxCell id="19ZzHdOvK6Rczo9mMx4z-20" value="Virtual Kubelet" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
@@ -73,7 +73,7 @@
         <mxCell id="19ZzHdOvK6Rczo9mMx4z-31" value="✕100" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=middle;fontStyle=0;opacity=50;" vertex="1" parent="1">
           <mxGeometry x="85" y="250" width="130" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="19ZzHdOvK6Rczo9mMx4z-39" value="Worker Node" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=center;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="19ZzHdOvK6Rczo9mMx4z-39" value="&amp;nbsp; Worker Node" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=left;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="260" y="110" width="160" height="180" as="geometry" />
         </mxCell>
         <mxCell id="19ZzHdOvK6Rczo9mMx4z-40" value="Virtual Kubelet" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
@@ -94,7 +94,7 @@
         <mxCell id="19ZzHdOvK6Rczo9mMx4z-45" value="✕100" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=middle;fontStyle=0;opacity=50;" vertex="1" parent="1">
           <mxGeometry x="275" y="250" width="130" height="20" as="geometry" />
         </mxCell>
-        <mxCell id="19ZzHdOvK6Rczo9mMx4z-46" value="Worker Node" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=center;fontStyle=1;" vertex="1" parent="1">
+        <mxCell id="19ZzHdOvK6Rczo9mMx4z-46" value="&amp;nbsp; Worker Node" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=left;fontStyle=1;" vertex="1" parent="1">
           <mxGeometry x="450" y="110" width="160" height="180" as="geometry" />
         </mxCell>
         <mxCell id="19ZzHdOvK6Rczo9mMx4z-47" value="Virtual Kubelet" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1" vertex="1" parent="1">
