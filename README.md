@@ -1,6 +1,6 @@
 # TurboKube
 
-A fork of the [Virtual Kubelet](https://virtual-kubelet.io/) [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go) customized for load testing the Kubernetes Control Plane.
+A fork of the Virtual Kubelet [Mock Provider](https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go) customized for load testing the Kubernetes Control Plane.
 
 ## A long time ago in a galaxy far, far away…
 
@@ -51,13 +51,15 @@ After the system is provisioned, performance tests are run using [kube-burner](h
 
 ## Experiment Variables
 
-- Size of control plane instances (cores and ram)
-- Control plane topology (colocated vs dedicated etcd, offloaded scheduler, etc)
+- Size of control plane instances (vertical scale, cores and ram)
+- Number of control plane instances (horizontal scale)
 - Load types (few large deployments vs many small deployments)
+- Control plane topology (colocated vs offloaded: etcd, scheduler, etc)
+- Control plane configuration (api server cache size, etcd knobs, etc)
 
 ## Experiment Goals
 
-1. Learn a lot about operating kubernetes control planes
+1. Learn a lot about operating the kubernetes control plane
 2. Identify soft and hard failure points
 3. Publish a control plane instance size recommendation calculator
 4. Test performance of alternate etcd implementations
