@@ -71,3 +71,9 @@ provisioned, performance tests are run using [kube-burner](https://github.com/ku
 ## Results
 
 TBD
+
+## Adjacent Work
+
+- [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark)
+- [KWOK](https://kwok.sigs.k8s.io/)
+- [SimKube](https://github.com/acrlabs/simkube)
