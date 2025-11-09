@@ -3,3 +3,4 @@ _dist
 *.tfstate*
 *.bkp
 kube-burner*
+*.tfvars
