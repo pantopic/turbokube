@@ -22,7 +22,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/provider"
+	"github.com/pantopic/turbokube/turbokube/internal/provider"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/virtual-kubelet/virtual-kubelet/errdefs"

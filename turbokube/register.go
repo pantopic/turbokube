@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/provider"
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/provider/mock"
+	"github.com/pantopic/turbokube/turbokube/internal/provider"
+	"github.com/pantopic/turbokube/turbokube/internal/provider/mock"
 )
 
 func registerMock(s *provider.Store) {

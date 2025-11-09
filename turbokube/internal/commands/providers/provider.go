@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/provider"
+	"github.com/pantopic/turbokube/turbokube/internal/provider"
 	"github.com/spf13/cobra"
 )
 

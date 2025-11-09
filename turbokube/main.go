@@ -22,10 +22,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/commands/providers"
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/commands/root"
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/commands/version"
-	"github.com/pantopic/turbokube/cmd/turbokube/internal/provider"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -33,6 +29,11 @@ import (
 	logruslogger "github.com/virtual-kubelet/virtual-kubelet/log/logrus"
 	"github.com/virtual-kubelet/virtual-kubelet/trace"
 	"github.com/virtual-kubelet/virtual-kubelet/trace/opencensus"
+
+	"github.com/pantopic/turbokube/turbokube/internal/commands/providers"
+	"github.com/pantopic/turbokube/turbokube/internal/commands/root"
+	"github.com/pantopic/turbokube/turbokube/internal/commands/version"
+	"github.com/pantopic/turbokube/turbokube/internal/provider"
 )
 
 var (
