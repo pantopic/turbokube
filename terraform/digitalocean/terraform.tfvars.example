@@ -1,3 +1,5 @@
+# cp terraform.tfvars.example terraform.tfvars
+
 region = "sfo3"
 
 # https://cloud.digitalocean.com/account/security
