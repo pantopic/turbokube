@@ -28,16 +28,23 @@ Hence...
 
 ## Why Turbo?
 
-A *turbocharger* in a car works by compressing air before it enters the engine so that more fuel can be burnt on every
-stroke, increasing horsepower without adding more cylinders. More power, less weight.
+A *turbocharger* in a car works by compressing air entering the engine's cylinders so that more fuel can be burnt on
+every stroke to increase horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
 
 A *turbopump* in a rocket engine works by preburning fuel and oxidizer to impel a turbine, pumping more fuel and
-oxidizer at a faster rate into the main combustion chamber, increasing thrust and TWR (thrust to weight ratio).
+oxidizer at a faster rate into the main combustion chamber, maximizing TWR (thrust to weight ratio).
 
-*TurboKube* is designed to amplify the load on a Kubernetes control plane by several orders of magnitude. One worker
-node in *Cluster A* can present itself as one hundred (or more) nodes in *Cluster B* (the system under load).
+*TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in *Cluster A*
+can present itself as one hundred (or more) nodes in *Cluster B* (the system under load).
 
-*TurboKube* makes Kubernetes control plane load testing faster, cheaper and easier.
+*TurboKube* makes Kubernetes control plane load testing faster, cheaper and simpler.
+
+## Adjacent Work
+
+- [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark)
+- [KWOK](https://kwok.sigs.k8s.io/)
+- [SimKube](https://github.com/acrlabs/simkube)
+- [kube-burner](https://github.com/kube-burner/kube-burner)
 
 ## Architecture
 
@@ -74,9 +81,22 @@ provisioned, load tests can be run using turbokube-cli (wip) on the admin node.
 
 TBD
 
-## Adjacent Work
+## Why not use something that already exists?
 
-- [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark)
-- [KWOK](https://kwok.sigs.k8s.io/)
-- [SimKube](https://github.com/acrlabs/simkube)
-- [KubeBurner](https://github.com/kube-burner/kube-burner)
+1. **Focus** - Some of these tools (like [kube-burner](https://github.com/kube-burner/kube-burner)) might be a good fit
+except that it can be hard to know precisely what is going on under the hood. I could read all 8,600 lines of code to
+understand it completely and hope that its behavior matches my use case but I'd rather just build something simpler for
+myself that's tailored specifically to my project's goals (rather than OpenShift's).
+
+2. **Simplicity** - Some options like [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark) are
+packaged as plugins to complex projects like Cluster API. They include cloud provider integrations to provision
+infrastructure as part of the load test. This might be valuable to organizations running automated load tests
+continuously but that's not what we're doing here. The goals of this project do not require or warrant the operational
+complexity of a cluster provisioning solution.
+
+3. **Rigor** - When testing the performance and correctness of a critical component, it can be valuable to have multiple
+independent assessment frameworks to bring as many perspectives to the problem as possible. So in the grand scheme of
+things, having multiple redundant testing frameworks with slightly different approaches in the industry can be a good
+thing. [SimKube](https://github.com/acrlabs/simkube) has a number of interesting features that might be valuable in
+proving correctness, but we don't have any large scale production traces to replay. Better to let those experts run
+their own indepent tools to validate the results of our tests for corroboration.

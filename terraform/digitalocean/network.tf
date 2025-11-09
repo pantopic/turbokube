@@ -4,6 +4,8 @@ resource "digitalocean_vpc" "turbokube" {
   ip_range = "10.0.0.0/16"
 }
 
+# The only publicly exposed port in the VPC is IP whitelisted port 22
+# All nodes can talk to each other and call out to the internet freely
 resource "digitalocean_firewall" "turbokube" {
   name = "turbokube"
   inbound_rule {

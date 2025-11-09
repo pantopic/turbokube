@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 # Prometheus + Grafana
 # https://spacelift.io/blog/prometheus-kubernetes
 curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null

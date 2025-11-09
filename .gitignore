@@ -2,5 +2,6 @@ _dist
 .terraform*
 *.tfstate*
 *.bkp
+*.dtmp
 kube-burner*
 *.tfvars
