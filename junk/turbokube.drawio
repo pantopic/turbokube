@@ -103,11 +103,6 @@
         <mxCell id="5fQfOqDfYiIP4k9f61jx-32" value="&amp;nbsp; Worker Node" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;verticalAlign=top;align=left;fontStyle=1;" vertex="1" parent="5fQfOqDfYiIP4k9f61jx-1">
           <mxGeometry x="450" y="110" width="160" height="180" as="geometry" />
         </mxCell>
-        <mxCell id="0JGOz1swURXGDrimf11G-13" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="5fQfOqDfYiIP4k9f61jx-1" source="5fQfOqDfYiIP4k9f61jx-33">
-          <mxGeometry relative="1" as="geometry">
-            <mxPoint x="530" y="100" as="targetPoint" />
-          </mxGeometry>
-        </mxCell>
         <mxCell id="5fQfOqDfYiIP4k9f61jx-33" value="Worker" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;verticalAlign=top;fontStyle=1" vertex="1" parent="5fQfOqDfYiIP4k9f61jx-1">
           <mxGeometry x="465" y="140" width="130" height="110" as="geometry" />
         </mxCell>
