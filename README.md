@@ -1,8 +1,8 @@
-<a href="https://www.digitalocean.com/?refcode=a16ca694958a&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge" target="_blank"><img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%203.svg" alt="DigitalOcean Referral Badge" align="right" /></a>
+<a href="https://www.digitalocean.com/?refcode=a16ca694958a&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge"><img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%203.svg" alt="DigitalOcean Referral Badge" align="right" /></a>
 
 # TurboKube
 
-A fork of Virtual Kubelet's <a href="https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go" target="_blank">Mock Provider</a>
+A fork of Virtual Kubelet's <a href="https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go">Mock Provider</a>
 designed specifically to load test the Kubernetes control plane. Simulate the load of a 10,000 node cluster using a
 handful of small virtual machines.
 
@@ -15,12 +15,12 @@ handful of small virtual machines.
 This project was created to map the performance characteristics of the Kubernetes control plane.
 
 Account limits in every available cloud provider prevent us from spinning up the 5,000 virtual machines required to
-reach the published <a href="https://kubernetes.io/docs/setup/best-practices/cluster-large/" target="_blank">Kubernetes performance limits</a>
+reach the published <a href="https://kubernetes.io/docs/setup/best-practices/cluster-large/">Kubernetes performance limits</a>
 organically.
 
 We will need to compress the load if we want to reach the upper echelons of Kubernetes scalability.
 
-<a href="https://www.horriblelogos.com/turbokube/" target="_blank"><img alt="$10 logo from horriblelogos.com" title="$10 logo from horriblelogos.com" src="junk/turbokube.png" align="right" width="360" /></a>
+<a href="https://www.horriblelogos.com/turbokube/"><img alt="$10 logo from horriblelogos.com" title="$10 logo from horriblelogos.com" src="junk/turbokube.png" align="right" width="360" /></a>
 
 Hence...
 
@@ -43,7 +43,7 @@ node in *Cluster A* can present itself as one hundred (or more) nodes in *Cluste
 
 <a href="https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.draw.io.png"><img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.draw.io.png"/></a>
 
-*Control Plane A* schedules <a href="https://virtual-kubelet.io/" target="_blank">Virtual Kubelet</a> containers as pods in an autoscaling pool of
+*Control Plane A* schedules <a href="https://virtual-kubelet.io/">Virtual Kubelet</a> containers as pods in an autoscaling pool of
 worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those Virtual Kubelets connect to
 *Control Plane B*, joining the cluster pretending to be real virtual machines.
 
@@ -79,4 +79,4 @@ TBD
 - [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark)
 - [KWOK](https://kwok.sigs.k8s.io/)
 - [SimKube](https://github.com/acrlabs/simkube)
-- [kube-burner](https://github.com/kube-burner/kube-burner)
+- [KubeBurner](https://github.com/kube-burner/kube-burner)
