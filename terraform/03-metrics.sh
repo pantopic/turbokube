@@ -19,11 +19,9 @@ chmod +x install.sh
 ./install.sh
 cp /root/.local/bin/kube-burner /usr/local/bin
 
-# turbokube
-apt-get install -y git make
-git clone https://github.com/pantopic/turbokube.git
-cd turbokube/burner
+# turbokube-cli
 
-#   k get secret -n kube-prometheus-stack kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
-#   kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
-#   kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8081:80
+
+k get secret -n kube-prometheus-stack kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
+kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
+kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8081:80

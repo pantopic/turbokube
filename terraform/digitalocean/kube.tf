@@ -1,34 +1,42 @@
-/*
 resource "digitalocean_droplet" "etcd" {
-  count = 3
+  count = var.etcd_replicas
 
   name     = "etcd-${count.index}"
   region   = var.region
-  vpc_uuid = var.vpc_uuid
+  vpc_uuid = digitalocean_vpc.turbokube.id
+
 
   image     = "ubuntu-22-04-x64"
-  size      = var.etcd_node_class
+  size      = var.node_class.etcd
   ssh_keys  = [var.ssh_key]
   user_data = file("setup.sh")
 }
-*/
-resource "digitalocean_droplet" "kube" {
-  count = 3
 
-  name     = "kube-${count.index}"
-  region   = var.region
-  vpc_uuid = var.vpc_uuid
+resource "digitalocean_droplet_autoscale" "apiserver" {
+  name = "apiserver"
 
-  image     = "ubuntu-22-04-x64"
-  size      = var.control_node_class
-  ssh_keys  = [var.ssh_key]
-  user_data = file("setup.sh")
+  config {
+    min_instances             = 3
+    max_instances             = 24
+    target_cpu_utilization    = 0.8
+    target_memory_utilization = 0.8
+    cooldown_minutes          = 5
+  }
+  droplet_template {
+    size               = var.node_class.apiserver
+    region             = var.region
+    image              = "ubuntu-22-04-x64"
+    ssh_keys           = [var.ssh_key]
+    with_droplet_agent = true
+    user_data          = format("%s%s", file("setup.sh"), file("worker.sh"))
+    vpc_uuid           = digitalocean_vpc.turbokube.id
+  }
 }
 
 resource "digitalocean_loadbalancer" "kube" {
   name     = "kube"
   region   = var.region
-  vpc_uuid = var.vpc_uuid
+  vpc_uuid = digitalocean_vpc.turbokube.id
 
   network = "INTERNAL"
   type    = "REGIONAL_NETWORK"
@@ -49,23 +57,35 @@ resource "digitalocean_loadbalancer" "kube" {
 resource "digitalocean_droplet" "metrics" {
   name     = "metrics"
   region   = var.region
-  vpc_uuid = var.vpc_uuid
+  vpc_uuid = digitalocean_vpc.turbokube.id
+  tags     = ["turbokube"]
 
   image     = "ubuntu-22-04-x64"
-  size      = var.turbo_node_class
+  size      = var.node_class.turbo
   ssh_keys  = [var.ssh_key]
   user_data = file("setup.sh")
 }
 
-output "ext" {
-  value = zipmap(digitalocean_droplet.kube.*.name, digitalocean_droplet.kube.*.ipv4_address)
+resource "digitalocean_droplet" "scheduler" {
+  name     = "scheduler"
+  region   = var.region
+  vpc_uuid = digitalocean_vpc.turbokube.id
+  tags     = ["turbokube"]
+
+  image     = "ubuntu-22-04-x64"
+  size      = var.node_class.scheduler
+  ssh_keys  = [var.ssh_key]
+  user_data = file("setup.sh")
 }
-output "int" {
-  value = zipmap(digitalocean_droplet.kube.*.name, digitalocean_droplet.kube.*.ipv4_address_private)
-}
-output "lb" {
-  value = zipmap([digitalocean_loadbalancer.kube.name], [digitalocean_loadbalancer.kube.ip])
-}
-output "metrics" {
-  value = zipmap(["ext", "int"], [digitalocean_droplet.metrics.ipv4_address, digitalocean_droplet.metrics.ipv4_address_private])
+
+resource "digitalocean_droplet" "controller-manager" {
+  name     = "controller-manager"
+  region   = var.region
+  vpc_uuid = digitalocean_vpc.turbokube.id
+  tags     = ["turbokube"]
+
+  image     = "ubuntu-22-04-x64"
+  size      = var.node_class.controller_manager
+  ssh_keys  = [var.ssh_key]
+  user_data = file("setup.sh")
 }

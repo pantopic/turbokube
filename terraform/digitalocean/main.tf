@@ -1,3 +1,9 @@
+# see terraform.tfvars
+variable "region" {}
+variable "ip_address" {}
+variable "ssh_key" {}
+variable "etcd_replicas" {}
+
 terraform {
   required_providers {
     digitalocean = {
@@ -6,38 +12,27 @@ terraform {
     }
   }
 }
-
 provider "digitalocean" {
-  # set DIGITALOCEAN_ACCESS_TOKEN
+  # set env var DIGITALOCEAN_ACCESS_TOKEN
 }
 
-variable "region" {
-  default = "sfo3"
-}
-
-# https://cloud.digitalocean.com/account/security
-variable "ssh_key" {
-  default = "49:83:09:b4:e5:cd:87:ee:fa:2f:59:5d:ac:2f:e9:32"
-}
-
-# https://cloud.digitalocean.com/networking/vpc
-variable "vpc_uuid" {
-  default = "3a37baee-a150-46e2-93e7-758365306e22"
+resource "digitalocean_project" "turbokube" {
+  name        = "turbokube"
+  description = "Tha whistles go WOOO"
+  purpose     = "Education"
+  environment = "Staging"
+  is_default  = true
 }
 
 # https://slugs.do-api.dev/
-variable "etcd_node_class" {
-  default = "g-4vcpu-16gb-intel"
-}
-variable "control_node_class" {
-  default = "g-4vcpu-16gb-intel"
-}
-variable "worker_node_class" {
-  default = "s-4vcpu-16gb-amd"
-}
-variable "turbo_node_class" {
-  default = "s-2vcpu-4gb"
-}
-variable "metrics_node_class" {
-  default = "s-2vcpu-4gb"
+variable "node_class" {
+  default = {
+    apiserver : "g-4vcpu-16gb-intel"
+    etcd : "g-4vcpu-16gb-intel"
+    controller_manager : "s-4vcpu-16gb-amd"
+    scheduler : "s-4vcpu-16gb-amd"
+    metrics : "s-4vcpu-16gb-amd"
+    turbo : "s-2vcpu-4gb"
+    worker : "s-4vcpu-16gb-amd"
+  }
 }

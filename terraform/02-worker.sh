@@ -13,8 +13,12 @@ kubeadm init \
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
-kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-
+wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+# Fix metrics server configuration to not be a giant PITA
+sed -i 's/--metric-resolution=15s/"--metric-resolution=15s --kubelet-preferred-address-types=InternalIP --kubelet-insecure-tls"/' components.yaml
+# Allow metrics server to run on worker control node
+sed -i 's/    spec:/    spec:\n      tolerations:\n      - key: node-role.kubernetes.io\/control-plane\n        operator: Exists/' components.yaml
+kubectl apply -f components.yaml
 
 # Useful commands
 #
@@ -31,4 +35,6 @@ kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/late
 #   kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8081:80
 #
 #   
-#
+  tolerations:
+  - key: node-role.kubernetes.io/control-plane
+    operator: Exists

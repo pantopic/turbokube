@@ -1,16 +1,13 @@
-resource "digitalocean_droplet" "turbo" {
-  name     = "turbo"
+resource "digitalocean_droplet" "worker-control-plane" {
+  name     = "worker-contro-planel"
   region   = var.region
-  vpc_uuid = var.vpc_uuid
+  vpc_uuid = digitalocean_vpc.turbokube.id
+  tags     = ["turbokube"]
 
   image     = "ubuntu-22-04-x64"
-  size      = var.turbo_node_class
+  size      = var.node_class.worker-control-plane
   ssh_keys  = [var.ssh_key]
   user_data = file("setup.sh")
-}
-
-output "turbo" {
-  value = zipmap(["ext", "int"], [digitalocean_droplet.turbo.ipv4_address, digitalocean_droplet.turbo.ipv4_address_private])
 }
 
 resource "digitalocean_droplet_autoscale" "worker" {
@@ -24,12 +21,12 @@ resource "digitalocean_droplet_autoscale" "worker" {
     cooldown_minutes          = 5
   }
   droplet_template {
-    size               = var.worker_node_class
+    size               = var.node_class.worker
     region             = var.region
     image              = "ubuntu-22-04-x64"
     ssh_keys           = [var.ssh_key]
     with_droplet_agent = true
     user_data          = format("%s%s", file("setup.sh"), file("worker.sh"))
-    vpc_uuid           = var.vpc_uuid
+    vpc_uuid           = digitalocean_vpc.turbokube.id
   }
 }
