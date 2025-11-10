@@ -39,13 +39,6 @@ can present itself as one hundred (or more) nodes in *Cluster B* (the system und
 
 *TurboKube* makes Kubernetes control plane load testing faster, cheaper and simpler.
 
-## Adjacent Work
-
-- [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark)
-- [KWOK](https://kwok.sigs.k8s.io/)
-- [SimKube](https://github.com/acrlabs/simkube)
-- [kube-burner](https://github.com/kube-burner/kube-burner)
-
 ## Architecture
 
 <a href="https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.isolated.draw.io.png"><img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.isolated.draw.io.png"/></a>
@@ -59,8 +52,8 @@ worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those V
 Virtual Kubelet doesn't have a container runtime in which to run the containers in the pod spec. Instead, the provider
 simulates the behavior of a running container including healthchecks, metrics, etc.
 
-All of this is orchestrated with Terraform and a bunch of manually applied shell scripts. After the system is
-provisioned, load tests can be run using turbokube-cli (wip) on the admin node.
+The infrastructure is provisioned using [terraform](terraform) and a bunch of manually applied shell scripts. After the
+system is provisioned, load tests can be run using [turboctl](turboctl) (wip) on the admin node.
 
 ## Experiment Variables
 
@@ -81,22 +74,31 @@ provisioned, load tests can be run using turbokube-cli (wip) on the admin node.
 
 TBD
 
+## Adjacent Work
+
+- [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark)
+- [KWOK](https://kwok.sigs.k8s.io/)
+- [SimKube](https://github.com/acrlabs/simkube)
+- [kube-burner](https://github.com/kube-burner/kube-burner)
+
 ## Why not use something that already exists?
 
 1. **Focus** - Some of these tools (like [kube-burner](https://github.com/kube-burner/kube-burner)) might be a good fit
 except that it can be hard to know precisely what is going on under the hood. I could read all 8,600 lines of code to
-understand it completely and hope that its behavior matches my use case but I'd rather just build something simpler for
-myself that's tailored specifically to my project's goals (rather than OpenShift's).
+understand it completely and hope that its behavior matches my use case but it seems like all we're doing is applying
+some templated manifest files to a cluster in a loop. I'd rather just build something simple for myself that's tailored
+specifically to my project's goals so that it's easier for other people to comprehend.
 
 2. **Simplicity** - Some options like [KubeMark](https://github.com/kubernetes-sigs/cluster-api-provider-kubemark) are
 packaged as plugins to complex projects like Cluster API. They include cloud provider integrations to provision
 infrastructure as part of the load test. This might be valuable to organizations running automated load tests
-continuously but that's not what we're doing here. The goals of this project do not require or warrant the operational
+continuously but that's not what we're doing here. I can't tell from the documentation if there's another less
+complicated way to run it but I do know that the goals of this project do not require or warrant the operational
 complexity of a cluster provisioning solution.
 
 3. **Rigor** - When testing the performance and correctness of a critical component, it can be valuable to have multiple
 independent assessment frameworks to bring as many perspectives to the problem as possible. So in the grand scheme of
 things, having multiple redundant testing frameworks with slightly different approaches in the industry can be a good
-thing. [SimKube](https://github.com/acrlabs/simkube) has a number of interesting features that might be valuable in
-proving correctness, but we don't have any large scale production traces to replay. Better to let those experts run
-their own indepent tools to validate the results of our tests for corroboration.
+thing. [SimKube](https://github.com/acrlabs/simkube) has a number of interesting features that might be valuable, but
+we don't have any large scale production traces to replay. Better to let those experts run their own independent tools
+to validate the results of our tests for corroboration if required.
