@@ -1,4 +1,4 @@
-FROM debian:stable-slim as turbokube
+FROM scratch as turbokube
 
 COPY _dist/turbokube .
 

@@ -24,15 +24,23 @@ resource "digitalocean_project" "turbokube" {
   is_default  = true
 }
 
+resource "digitalocean_tag" "turbokube" {
+  name = "turbokube"
+}
+resource "digitalocean_tag" "api-server" {
+  name = "api-server"
+}
+
 # https://slugs.do-api.dev/
 variable "node_class" {
   default = {
-    apiserver : "g-4vcpu-16gb-intel"
+    api-server : "g-4vcpu-16gb-intel"
     etcd : "g-4vcpu-16gb-intel"
-    controller_manager : "s-4vcpu-16gb-amd"
+    controller-manager : "s-4vcpu-16gb-amd"
     scheduler : "s-4vcpu-16gb-amd"
     metrics : "s-4vcpu-16gb-amd"
-    turbo : "s-2vcpu-4gb"
+    worker-control-plane : "s-2vcpu-4gb"
     worker : "s-4vcpu-16gb-amd"
+    admin : "s-2vcpu-4gb"
   }
 }

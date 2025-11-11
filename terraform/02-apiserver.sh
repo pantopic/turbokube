@@ -1,50 +1,27 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.32
-export IP_ETCD_1=10.0.0.29
-export IP_ETCD_2=10.0.0.33
-export IP_APISERVER_0=10.0.0.32
-export IP_APISERVER_1=10.0.0.29
-export IP_APISERVER_2=10.0.0.33
-export IP_LB=10.0.0.28
+export IP_ETCD_0=10.0.0.17
+export IP_ETCD_1=10.0.0.19
+export IP_ETCD_2=10.0.0.16
+export IP_LB=10.0.0.35
 
-scp root@$IP_ECTD_0:/etcd/kubernetes/pki/etcd/etcd-ca.crt /etcd/kubernetes/pki/etcd/etcd-ca.crt
-scp root@$IP_ECTD_0:/etcd/kubernetes/pki/etcd/etcd.crt /etcd/kubernetes/pki/etcd/etcd.crt
-scp root@$IP_ECTD_0:/etcd/kubernetes/pki/etcd/etcd.key /etcd/kubernetes/pki/etcd/etcd.key
-
-cat <<EOF | sudo tee /etc/kubernetes/apiserver.conf
-cat
-apiVersion: kubeadm.k8s.io/v1beta2
+cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
+apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
-kubernetesVersion: v1.16.4
-apiServer:
-  extraArgs:
-    authorization-mode: Node,RBAC
-  timeoutForControlPlane: 4m0s
-certificatesDir: /etc/kubernetes/pki
-clusterName: kubernetes
+kubernetesVersion: stable
 controlPlaneEndpoint: $IP_LB:6443
-dns:
-  type: CoreDNS
 etcd:
   external:
     endpoints:
-    - "$ETCD_0:2379"
-    - "$ETCD_1:2379"
-    - "$ETCD_2:2379"
-    caFile: "/etcd/kubernetes/pki/etcd/etcd-ca.crt"
-    certFile: "/etcd/kubernetes/pki/etcd/etcd.crt"
-    keyFile: "/etcd/kubernetes/pki/etcd/etcd.key"
-imageRepository: k8s.gcr.io
+      - https://$IP_ETCD_0:2379
+      - https://$IP_ETCD_1:2379
+      - https://$IP_ETCD_2:2379
+    caFile: /etc/kubernetes/pki/etcd/ca.crt
+    certFile: /etc/kubernetes/pki/apiserver-etcd-client.crt
+    keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key
 networking:
-  dnsDomain: cluster.local
   podSubnet: 10.244.0.0/16
-  serviceSubnet: 10.96.0.0/12
----
-apiVersion: kubeproxy.config.k8s.io/v1alpha1
-kind: KubeProxyConfiguration
-mode: ipvs
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/configure-nlb.service
@@ -54,7 +31,7 @@ After=network.target
 
 [Service]
 ExecStart=/sbin/ip route add to local $IP_LB dev eth1
-ExecStart=/sbin/sysctl -w net.ipv4.conf.eth1.arp_announce=2
+ExecStart=/sbin/sysctl -w net.ipv4.conf.eth1.arp_announce=2 
 Type=oneshot
 RemainAfterExit=yes
 
@@ -64,39 +41,35 @@ EOF
 sudo systemctl enable configure-nlb
 sudo systemctl start configure-nlb
 
-# leader
+mkdir -p /etc/kubernetes/pki/etcd
+scp root@$IP_ETCD_0:/etc/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/ca.crt
+scp root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.crt /etc/kubernetes/pki/apiserver-etcd-client.crt
+scp root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.key /etc/kubernetes/pki/apiserver-etcd-client.key
+
 kubeadm init \
-    --config /etc/kubernetes/apiserver.conf \
-    --pod-network-cidr 10.244.0.0/16 \
-    --apiserver-advertise-address $IP_APISERVER_0 \
-    --control-plane-endpoint $IP_LB \
-    --upload-certs
+  --config /etc/kubernetes/kubeadm-config.conf \
+  --upload-certs
 
-# peers
-kubeadm join $IP_LB:6443 --token 8f0xav.c0nocq1sapbr99ob \
-    --config /etc/kubernetes/apiserver.conf \
-    --discovery-token-ca-cert-hash sha256:2b9233b564a3b2b7f8e966858b70f06f56621fd24f1efcf627f1629998bca671 \
-    --control-plane --certificate-key 2159b3ba50b6eb48e1406eeae1847b9cf92e793f63f6f92d1c993e51d5c551cb \
-    --apiserver-advertise-address $IP_APISERVER_1
-
-kubeadm join $IP_LB:6443 --token 8f0xav.c0nocq1sapbr99ob \
-    --config /etc/kubernetes/apiserver.conf \
-    --discovery-token-ca-cert-hash sha256:2b9233b564a3b2b7f8e966858b70f06f56621fd24f1efcf627f1629998bca671 \
-    --control-plane --certificate-key 2159b3ba50b6eb48e1406eeae1847b9cf92e793f63f6f92d1c993e51d5c551cb \
-    --apiserver-advertise-address $IP_APISERVER_2
+# control plane
+  kubeadm join 10.0.0.35:6443 --token qf7dvu.kwdk07eviq0i2btw \
+        --discovery-token-ca-cert-hash sha256:54141669ddda56478b768d1db6a6d9f12bfca4d1fd3e64a41a90c116d6468eeb \
+        --control-plane --certificate-key abaeae9d899fb5592d1606f304d3d09d1dfa5710087f8ea6bc0d5ce1e8420ad1
 
 # worker
-kubeadm join 10.0.0.28:6443 --token 8f0xav.c0nocq1sapbr99ob \
-    --discovery-token-ca-cert-hash sha256:2b9233b564a3b2b7f8e966858b70f06f56621fd24f1efcf627f1629998bca671
+kubeadm join 10.0.0.35:6443 --token anii5n.8kl9972920l372t6 \
+        --discovery-token-ca-cert-hash sha256:eab7e57d120480e5521c5e9c52d9a21c9a3f03a1f3f4285ebd40ab2207dabd01
+
 
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
-sed -i 's/--metric-resolution=15s/"--metric-resolution=15s --kubelet-preferred-address-types=InternalIP --kubelet-insecure-tls"/' components.yaml
+sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml
 kubectl apply -f components.yaml
 
 # Useful commands
+#
+#  cat /run/systemd/resolve/resolv.conf
 #
 #   watch kubectl get all -A
 #
@@ -106,6 +79,7 @@ kubectl apply -f components.yaml
 #   kubeadm init phase upload-certs --upload-certs
 #   kubeadm init phase upload-config kubeadm
 #
-# > cat /etc/kubernetes/pki/apiserver.crt
-# > cat /etc/kubernetes/pki/apiserver.key
-# > cat /etc/kubernetes/admin.conf
+cat /etc/kubernetes/pki/apiserver.crt
+cat /etc/kubernetes/pki/apiserver.key
+cat /etc/kubernetes/admin.conf
+

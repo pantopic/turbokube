@@ -15,16 +15,13 @@ helm install kube-prometheus-stack \
   --namespace kube-prometheus-stack \
   prometheus-community/kube-prometheus-stack
 
-# kube-burner
-wget https://raw.githubusercontent.com/kube-burner/kube-burner/refs/heads/main/hack/install.sh
-sed -i 's/set -euo pipefail/set -eu pipefail/' install.sh
-chmod +x install.sh
-./install.sh
-cp /root/.local/bin/kube-burner /usr/local/bin
-
-# turbokube-cli
-
-
 k get secret -n kube-prometheus-stack kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
 kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
 kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8081:80
+
+cat <<EOF | sudo tee /run/flannel/subnet.env
+FLANNEL_NETWORK=10.244.0.0/16
+FLANNEL_SUBNET=10.244.0.1/24
+FLANNEL_MTU=1450
+FLANNEL_IPMASQ=true
+EOF

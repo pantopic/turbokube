@@ -10,19 +10,27 @@ resource "digitalocean_firewall" "turbokube" {
   name = "turbokube"
   inbound_rule {
     protocol         = "tcp"
-    source_addresses = ["10.0.0.0/16"]
+    port_range       = "all"
+    source_addresses = ["0.0.0.0/0", "::/0"]
   }
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
     source_addresses = [var.ip_address]
   }
+  # inbound_rule {
+  #   protocol         = "tcp"
+  #   port_range       = "10250"
+  #   source_addresses = ["0.0.0.0/0", "::/0"]
+  # }
   outbound_rule {
     protocol              = "tcp"
+    port_range            = "all"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
   outbound_rule {
     protocol              = "udp"
+    port_range            = "all"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
   outbound_rule {
@@ -30,4 +38,25 @@ resource "digitalocean_firewall" "turbokube" {
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
   tags = ["turbokube"]
+}
+
+resource "digitalocean_loadbalancer" "kube" {
+  name     = "kube"
+  region   = var.region
+  vpc_uuid = digitalocean_vpc.turbokube.id
+
+  network = "INTERNAL"
+  type    = "REGIONAL_NETWORK"
+  forwarding_rule {
+    entry_port      = 6443
+    entry_protocol  = "tcp"
+    target_port     = 6443
+    target_protocol = "tcp"
+  }
+  healthcheck {
+    port     = 6443
+    protocol = "https"
+    path     = "/healthz"
+  }
+  droplet_tag = "api-server"
 }

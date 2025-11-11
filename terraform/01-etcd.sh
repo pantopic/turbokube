@@ -4,11 +4,12 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export HOST0=10.0.0.32
-export HOST1=10.0.0.29
-export HOST2=10.0.0.33
+export IP_ETCD_0=10.0.0.17
+export IP_ETCD_1=10.0.0.19
+export IP_ETCD_2=10.0.0.16
 
-# TODO - Start etcd
+# All nodes
+mkdir -p /etc/systemd/system/kubelet.service.d
 cat << EOF > /etc/systemd/system/kubelet.service.d/kubelet.conf
 apiVersion: kubelet.config.k8s.io/v1beta1
 kind: KubeletConfiguration
@@ -35,11 +36,11 @@ EOF
 systemctl daemon-reload
 systemctl restart kubelet
 
-# Create temp directories to store files that will end up on other hosts
-mkdir -p /tmp/${HOST0}/ /tmp/${HOST1}/ /tmp/${HOST2}/
+# etcd-0
+mkdir -p /tmp/${IP_ETCD_0}/ /tmp/${IP_ETCD_1}/ /tmp/${IP_ETCD_2}/
 
-HOSTS=(${HOST0} ${HOST1} ${HOST2})
-NAMES=(${NAME0} ${NAME1} ${NAME2})
+export HOSTS=(${IP_ETCD_0} ${IP_ETCD_1} ${IP_ETCD_2})
+export NAMES=(${NAME0} ${NAME1} ${NAME2})
 
 for i in "${!HOSTS[@]}"; do
 HOST=${HOSTS[$i]}
@@ -81,38 +82,64 @@ done
 
 kubeadm init phase certs etcd-ca
 
-# etcd-2
-kubeadm init phase certs etcd-server --config=/tmp/${HOST2}/kubeadmcfg.yaml
-kubeadm init phase certs etcd-peer --config=/tmp/${HOST2}/kubeadmcfg.yaml
-kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${HOST2}/kubeadmcfg.yaml
-kubeadm init phase certs apiserver-etcd-client --config=/tmp/${HOST2}/kubeadmcfg.yaml
-cp -R /etc/kubernetes/pki /tmp/${HOST2}/
+kubeadm init phase certs etcd-server --config=/tmp/${IP_ETCD_2}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-peer --config=/tmp/${IP_ETCD_2}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${IP_ETCD_2}/kubeadmcfg.yaml
+kubeadm init phase certs apiserver-etcd-client --config=/tmp/${IP_ETCD_2}/kubeadmcfg.yaml
+cp -R /etc/kubernetes/pki /tmp/${IP_ETCD_2}/
 # cleanup non-reusable certificates
 find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete
 
-# etcd-1
-kubeadm init phase certs etcd-server --config=/tmp/${HOST1}/kubeadmcfg.yaml
-kubeadm init phase certs etcd-peer --config=/tmp/${HOST1}/kubeadmcfg.yaml
-kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${HOST1}/kubeadmcfg.yaml
-kubeadm init phase certs apiserver-etcd-client --config=/tmp/${HOST1}/kubeadmcfg.yaml
-cp -R /etc/kubernetes/pki /tmp/${HOST1}/
+kubeadm init phase certs etcd-server --config=/tmp/${IP_ETCD_1}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-peer --config=/tmp/${IP_ETCD_1}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${IP_ETCD_1}/kubeadmcfg.yaml
+kubeadm init phase certs apiserver-etcd-client --config=/tmp/${IP_ETCD_1}/kubeadmcfg.yaml
+cp -R /etc/kubernetes/pki /tmp/${IP_ETCD_1}/
 find /etc/kubernetes/pki -not -name ca.crt -not -name ca.key -type f -delete
 
-# etcd-0
-kubeadm init phase certs etcd-server --config=/tmp/${HOST0}/kubeadmcfg.yaml
-kubeadm init phase certs etcd-peer --config=/tmp/${HOST0}/kubeadmcfg.yaml
-kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${HOST0}/kubeadmcfg.yaml
-kubeadm init phase certs apiserver-etcd-client --config=/tmp/${HOST0}/kubeadmcfg.yaml
-# No need to move the certs because they are for HOST0
+kubeadm init phase certs etcd-server --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-peer --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
+kubeadm init phase certs etcd-healthcheck-client --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
+kubeadm init phase certs apiserver-etcd-client --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
+# No need to move the certs because they are for IP_ETCD_0
 
 # clean up certs that should not be copied off this host
-find /tmp/${HOST2} -name ca.key -type f -delete
-find /tmp/${HOST1} -name ca.key -type f -delete
+find /tmp/${IP_ETCD_2} -name ca.key -type f -delete
+find /tmp/${IP_ETCD_1} -name ca.key -type f -delete
 
-USER=ubuntu
-HOST=${HOST1}
-scp -r /tmp/${HOST}/* ${USER}@${HOST}:
-ssh ${USER}@${HOST}
-USER@HOST $ sudo -Es
-root@HOST $ chown -R root:root pki
-root@HOST $ mv pki /etc/kubernetes/
+
+scp -r /tmp/${IP_ETCD_1}/* root@${IP_ETCD_1}:
+scp -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_2}:
+
+ETCD_VER=v3.5.24
+GOOGLE_URL=https://storage.googleapis.com/etcd
+GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
+DOWNLOAD_URL=${GOOGLE_URL}
+rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
+curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1 --no-same-owner
+rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
+mv /tmp/etcd-download-test/etcdctl /usr/local/bin
+
+kubeadm init phase etcd local --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
+
+# etcd-1
+mv pki /etc/kubernetes/
+kubeadm init phase etcd local --config=$HOME/kubeadmcfg.yaml
+
+# etcd-2
+mv pki /etc/kubernetes/
+kubeadm init phase etcd local --config=$HOME/kubeadmcfg.yaml
+
+ETCDCTL_API=3 etcdctl \
+--cert /etc/kubernetes/pki/etcd/peer.crt \
+--key /etc/kubernetes/pki/etcd/peer.key \
+--cacert /etc/kubernetes/pki/etcd/ca.crt \
+--endpoints https://${IP_ETCD_0}:2379,https://${IP_ETCD_1}:2379,https://${IP_ETCD_2}:2379 endpoint health
+
+ETCDCTL_API=3 etcdctl \
+--cert /etc/kubernetes/pki/etcd/peer.crt \
+--key /etc/kubernetes/pki/etcd/peer.key \
+--cacert /etc/kubernetes/pki/etcd/ca.crt \
+--endpoints https://${IP_ETCD_0}:2379,https://${IP_ETCD_1}:2379,https://${IP_ETCD_2}:2379 endpoint status

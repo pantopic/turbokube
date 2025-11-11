@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.27
+export IP_TURBO=10.0.0.17
 
 # leader
 kubeadm init \
