@@ -5,9 +5,6 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
-
-	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/tools/clientcmd"
 )
 
 func main() {
@@ -50,23 +47,4 @@ func main() {
 	}
 
 	println("done")
-}
-
-func getClient(conf string) (clientset *kubernetes.Clientset) {
-	config, err := clientcmd.BuildConfigFromFlags("", conf)
-	if err != nil {
-		panic(err)
-	}
-	clientset, err = kubernetes.NewForConfig(config)
-	if err != nil {
-		panic(err)
-	}
-	return
-}
-
-type Test interface {
-	Start(ctx context.Context)
-	Reset(ctx context.Context)
-	Stop()
-	Done() (done chan bool)
 }

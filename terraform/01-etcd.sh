@@ -111,17 +111,6 @@ find /tmp/${IP_ETCD_1} -name ca.key -type f -delete
 scp -r /tmp/${IP_ETCD_1}/* root@${IP_ETCD_1}:
 scp -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_2}:
 
-ETCD_VER=v3.5.24
-GOOGLE_URL=https://storage.googleapis.com/etcd
-GITHUB_URL=https://github.com/etcd-io/etcd/releases/download
-DOWNLOAD_URL=${GOOGLE_URL}
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-rm -rf /tmp/etcd-download-test && mkdir -p /tmp/etcd-download-test
-curl -L ${DOWNLOAD_URL}/${ETCD_VER}/etcd-${ETCD_VER}-linux-amd64.tar.gz -o /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-tar xzvf /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz -C /tmp/etcd-download-test --strip-components=1 --no-same-owner
-rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
-mv /tmp/etcd-download-test/etcdctl /usr/local/bin
-
 kubeadm init phase etcd local --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
 
 # etcd-1

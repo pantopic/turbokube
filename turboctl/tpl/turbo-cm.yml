@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: turbokube
+data:
+  config.json: |
+    {
+      "cpu": "2",
+      "memory": "64Gi",
+      "pods": "1024"
+    }
+  apiserver.crt: |{{ .Config.Crt | nindent 4 }}
+  apiserver.key: |{{ .Config.Key | nindent 4 }}
+  kubelet.conf: |{{ .Config.Kubelet | nindent 4 }}

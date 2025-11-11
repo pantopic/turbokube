@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Name }}
+spec:
+  replicas: {{ .Replicas }}
+  selector:
+    matchLabels:
+      app: turbokube
+  template:
+    metadata:
+      labels:
+        app: turbokube
+    spec:
+      containers:
+      - name: turbokube
+        image: pantopic/turbokube
+        imagePullPolicy: Always
+        args:
+        - /turbokube
+        - --provider-config
+        - /etc/turbokube/config.json
+        - --provider
+        - mock
+        - --startup-timeout
+        - 10s
+        volumeMounts:
+        - name: turbokube
+          mountPath: /etc/turbokube
+        env:
+        - name: KUBELET_PORT
+          value: "10250"
+        - name: VKUBELET_POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+        - name: APISERVER_KEY_LOCATION
+          value: /etc/turbokube/apiserver.key
+        - name: APISERVER_CERT_LOCATION
+          value: /etc/turbokube/apiserver.crt
+        - name: KUBECONFIG
+          value: /etc/turbokube/kubelet.conf
+        - name: VKUBELET_TAINT_KEY
+          value: {{ .Taint.Key }}
+        - name: VKUBELET_TAINT_VALUE
+          value: {{ .Taint.Value }}
+        - name: VKUBELET_TAINT_EFFECT
+          value: {{ .Taint.Effect }}
+      volumes:
+      - name: turbokube
+        configMap:
+          name: turbokube

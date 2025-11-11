@@ -5,7 +5,7 @@ export IP_TURBO=10.0.0.17
 
 # leader
 kubeadm init \
-    --pod-network-cidr 10.244.0.0/16 \
+    --pod-network-cidr 10.0.0.0/8 \
     --apiserver-advertise-address $IP_TURBO \
     --control-plane-endpoint $IP_TURBO \
     --upload-certs
