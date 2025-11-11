@@ -28,11 +28,11 @@ Hence...
 
 ## Why Turbo?
 
-A *turbocharger* in a car works by compressing air entering the engine's cylinders so that more fuel can be burnt on
-every stroke to increase horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
+A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke
+to increase horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
 
-A *turbopump* in a rocket engine works by preburning fuel and oxidizer to impel a turbine, pumping more fuel and
-oxidizer at a faster rate into the main combustion chamber, maximizing TWR (thrust to weight ratio).
+A *turbopump* in a rocket engine works by preburning fuel and oxidizer to impel a turbine, forcing more fuel and
+oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
 
 *TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in *Cluster A*
 can present itself as one hundred (or more) nodes in *Cluster B* (the system under load).
@@ -49,11 +49,12 @@ worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those V
 
 *Control Plane B* schedules Pods to these Virtual Kubelets. The pods scheduled to the Virtual Kubelets are real to
 *Cluster B* but "fake" to *Cluster A* because it knows that the pods don't exececute anything in any real sense. The
-Virtual Kubelet doesn't have a container runtime in which to run the containers in the pod spec. Instead, the provider
-simulates the behavior of a running container including healthchecks, metrics, etc.
+mock provider doesn't have a container runtime in which to run the containers in the pod spec. Instead, it simulates
+the behavior of a running container including healthchecks, metrics, etc.
 
 The infrastructure is provisioned using [terraform](terraform) and a bunch of manually applied shell scripts. After the
-system is provisioned, load tests can be run using [turboctl](turboctl) (wip) on the admin node.
+system is provisioned, load tests are run using [turboctl](turboctl) from the admin node which connects to both control
+planes at once to coordinate creation of virtual nodes and workloads scheduled upon them.
 
 ## Experiment Variables
 
