@@ -82,4 +82,3 @@ kubectl apply -f components.yaml
 cat /etc/kubernetes/pki/apiserver.crt
 cat /etc/kubernetes/pki/apiserver.key
 cat /etc/kubernetes/admin.conf
-

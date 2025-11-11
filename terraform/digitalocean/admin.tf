@@ -1,5 +1,5 @@
 resource "digitalocean_droplet" "admin" {
-  name     = "metrics"
+  name     = "admin"
   region   = var.region
   vpc_uuid = digitalocean_vpc.turbokube.id
   tags     = ["turbokube"]

@@ -15,13 +15,25 @@ helm install kube-prometheus-stack \
   --namespace kube-prometheus-stack \
   prometheus-community/kube-prometheus-stack
 
-k get secret -n kube-prometheus-stack kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 --decode
-kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
-kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8081:80
+# --- kfqBdf8TxbLLUybwRJmzOPbpoM1vKz3Snk4NWxHS
 
-cat <<EOF | sudo tee /run/flannel/subnet.env
-FLANNEL_NETWORK=10.244.0.0/16
-FLANNEL_SUBNET=10.244.0.1/24
-FLANNEL_MTU=1450
-FLANNEL_IPMASQ=true
-EOF
+kubectl --namespace kube-prometheus-stack get secrets kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
+
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
+helm install grafana-k8s-monitoring \
+  --create-namespace \
+  --namespace grafana-k8s-monitoring \
+  grafana/grafana-k8s-monitoring
+
+# --- promql ---
+
+# etcd requests by resource
+# sum by (resource) (rate(etcd_requests_total[1m]))
+
+# Percent lease renewals
+# sum (rate(etcd_requests_total{resource="leases"}[1m])) / sum (rate(etcd_requests_total[1m])) * 100
+
+# load apply
+# for i in $(seq 1 500); do cat load.yml | sed "s/0000/00$i/" | k apply -f -; sleep 5; done
