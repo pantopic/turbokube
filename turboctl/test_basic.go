@@ -106,7 +106,7 @@ func (t *testBasic) run(ctx context.Context) {
 	// Begin iterations
 	fmt.Println(`Begin iterations`)
 	for ; n < t.n || t.n == 0; n++ {
-		fmt.Printf(`Send %d\n`, n)
+		fmt.Printf("Send %d\n", n)
 		jobs <- n
 	}
 	fmt.Println(`Finish iterations`)
@@ -127,15 +127,16 @@ func (t *testBasic) Done() (done chan bool) {
 }
 
 func (t *testBasic) work(ctx context.Context, jobs chan int) {
+	fmt.Printf("work")
 	for n := range <-jobs {
 		select {
 		case <-t.stop:
-			fmt.Printf(`Stopping worker\n`)
+			fmt.Printf("Stopping worker\n")
 			return
 		default:
 		}
 		// Create Nodes
-		fmt.Printf(`%04x Create Nodes\n`, n)
+		fmt.Printf("%04x Create Nodes\n", n)
 		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
 		t.input.Taint.Value = fmt.Sprintf(`%04x`, n)
 		d, err := t.client_a.AppsV1().Deployments(`default`).
@@ -145,7 +146,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		}
 		t.awaitDeployment(ctx, t.client_a, d)
 		// Create namespace
-		fmt.Printf(`%04x Create Namespace\n`, n)
+		fmt.Printf("%04x Create Namespace\n", n)
 		namespace, err := t.client_b.CoreV1().Namespaces().
 			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, t.input), patchOpts)
 		if err != nil {
@@ -154,7 +155,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		// Create deployments
 		for i := range t.deployments {
 			t.input.Name = fmt.Sprintf(`turbokube-%02x`, i)
-			fmt.Printf(`%s Create Deploy %02x\n`, t.input.Name, i)
+			fmt.Printf("%s Create Deploy %02x\n", t.input.Name, i)
 			d, err := t.client_a.AppsV1().Deployments(namespace.Name).
 				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), patchOpts)
 			if err != nil {
