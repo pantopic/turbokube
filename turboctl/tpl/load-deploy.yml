@@ -1,16 +1,16 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: load
+  name: {{ .Name }}
 spec:
   replicas: {{ .Replicas }}
   selector:
     matchLabels:
-      app: load
+      app: {{ .Name }}
   template:
     metadata:
       labels:
-        app: load
+        app: {{ .Name }}
     spec:
       containers:
       - name: turbokube
