@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 	if len(os.Args) < 2 {
 		panic("Command required [run, reset]")
 	}
@@ -42,6 +42,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM)
 	select {
 	case <-stop:
+		cancel()
 		t.Stop()
 	case <-t.Done():
 	}

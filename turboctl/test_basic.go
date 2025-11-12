@@ -88,18 +88,20 @@ func (t *testBasic) run(ctx context.Context) {
 	// Create turbo configmap
 	fmt.Println(`Creating config map`)
 	if _, err := t.client_a.CoreV1().ConfigMaps(`default`).
-		Patch(ctx, `turbokube`, types.ApplyYAMLPatchType, t.mustRender(`turbo-cm.yml`, t.input), metav1.PatchOptions{}); err != nil {
+		Patch(ctx, `turbokube`, types.ApplyYAMLPatchType, t.mustRender(`turbo-cm.yml`, t.input), metav1.PatchOptions{FieldManager: `kubectl`}); err != nil {
 		panic(err)
 	}
-
+	fmt.Println(`Config map created`)
 	// Start workers
 	var jobs = make(chan int)
 	for range t.concurrency {
-		t.wg.Add(1)
-		go t.work(ctx, jobs)
+		fmt.Println(`Starting Worker`)
+		t.wg.Go(func() {
+			go t.work(ctx, jobs)
+		})
 	}
-
 	// Begin iterations
+	fmt.Println(`Begin iterations`)
 	for ; n < t.n; n++ {
 		jobs <- n
 	}
@@ -124,6 +126,11 @@ func (t *testBasic) Done() (done chan bool) {
 }
 func (t *testBasic) work(ctx context.Context, jobs <-chan int) {
 	for n := range <-jobs {
+		select {
+		case <-t.stop:
+			return
+		default:
+		}
 		// Create Nodes
 		fmt.Printf(`%04x Create Nodes\n`, n)
 		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
