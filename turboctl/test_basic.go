@@ -212,6 +212,8 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 		case e := <-w.ResultChan():
 			fmt.Printf("%#v\n", e)
 			switch e.Type {
+			case watch.Added:
+				fallthrough
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
 				if d.Status.ReadyReplicas == d.Status.Replicas {
