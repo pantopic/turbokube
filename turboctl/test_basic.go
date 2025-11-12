@@ -30,7 +30,7 @@ type testBasic struct {
 	n           int
 	stop        chan bool
 	tpl         *template.Template
-	wg          sync.WaitGroup
+	wg          *sync.WaitGroup
 }
 
 func newTestBasic(args []string) *testBasic {
@@ -70,7 +70,8 @@ func newTestBasic(args []string) *testBasic {
 				Effect: "NoSchedule",
 			},
 		},
-		n: *n,
+		n:  *n,
+		wg: &sync.WaitGroup{},
 	}
 }
 
@@ -99,12 +100,12 @@ func (t *testBasic) run(ctx context.Context) {
 	for range t.concurrency {
 		fmt.Println(`Starting Worker`)
 		t.wg.Go(func() {
-			go t.work(ctx, jobs)
+			t.work(ctx, jobs)
 		})
 	}
 	// Begin iterations
 	fmt.Println(`Begin iterations`)
-	for ; n < t.n; n++ {
+	for ; n < t.n || t.n == 0; n++ {
 		jobs <- n
 	}
 }
@@ -131,6 +132,7 @@ func (t *testBasic) work(ctx context.Context, jobs <-chan int) {
 	for n := range <-jobs {
 		select {
 		case <-t.stop:
+			fmt.Printf(`Stopping worker\n`)
 			return
 		default:
 		}

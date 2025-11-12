@@ -9,7 +9,7 @@ import (
 )
 
 func main() {
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx := context.Background()
 	if len(os.Args) < 2 {
 		panic("Command required [run, reset]")
 	}
@@ -36,7 +36,6 @@ func main() {
 			t.Reset(ctx)
 		}
 	}
-
 	// await stop
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
@@ -44,10 +43,7 @@ func main() {
 	select {
 	case <-stop:
 		fmt.Println(`stopping`)
-		cancel()
-		t.Stop()
 	case <-t.Done():
 	}
-
 	println("done")
 }
