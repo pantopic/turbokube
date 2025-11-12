@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -42,6 +43,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM)
 	select {
 	case <-stop:
+		fmt.Println(`stopping`)
 		cancel()
 		t.Stop()
 	case <-t.Done():
