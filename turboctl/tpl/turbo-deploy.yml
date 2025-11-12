@@ -41,11 +41,11 @@ spec:
         - name: KUBECONFIG
           value: /etc/turbokube/kubelet.conf
         - name: VKUBELET_TAINT_KEY
-          value: {{ .Taint.Key }}
+          value: "{{ .Taint.Key }}"
         - name: VKUBELET_TAINT_VALUE
-          value: {{ .Taint.Value }}
+          value: "{{ .Taint.Value }}"
         - name: VKUBELET_TAINT_EFFECT
-          value: {{ .Taint.Effect }}
+          value: "{{ .Taint.Effect }}"
       volumes:
       - name: turbokube
         configMap:

@@ -28,7 +28,7 @@ spec:
       tolerations:
       - key: virtual-kubelet.io/provider
         operator: Exists
-      - key: {{ .Taint.Key }}
-        value: {{ .Taint.Value }}
-        effect: {{ .Taint.Effect }}
+      - key: "{{ .Taint.Key }}"
+        value: "{{ .Taint.Value }}"
+        effect: "{{ .Taint.Effect }}"
         operator: "Equal"
