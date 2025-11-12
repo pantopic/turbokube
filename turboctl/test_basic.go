@@ -201,7 +201,7 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clientset, d *appsv1.Deployment) {
 	w, err := client.AppsV1().Deployments(d.Namespace).
 		Watch(ctx, metav1.ListOptions{
-			FieldSelector: `name=` + d.Name,
+			FieldSelector: `metadata.name=` + d.Name,
 		})
 	if err != nil {
 		panic(err)
