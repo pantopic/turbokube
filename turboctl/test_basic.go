@@ -127,14 +127,9 @@ func (t *testBasic) Done() (done chan bool) {
 }
 
 func (t *testBasic) work(ctx context.Context, jobs chan int) {
-	fmt.Printf("work")
+	fmt.Printf("work\n")
+	defer fmt.Printf("Stopping worker\n")
 	for n := range <-jobs {
-		select {
-		case <-t.stop:
-			fmt.Printf("Stopping worker\n")
-			return
-		default:
-		}
 		// Create Nodes
 		fmt.Printf("%04x Create Nodes\n", n)
 		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
