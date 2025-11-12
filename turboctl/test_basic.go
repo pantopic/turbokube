@@ -128,8 +128,7 @@ func (t *testBasic) Done() (done chan bool) {
 
 func (t *testBasic) work(ctx context.Context, jobs chan int) {
 	fmt.Printf("work\n")
-	defer fmt.Printf("Stopping worker\n")
-	for n := range <-jobs {
+	for n := range jobs {
 		// Create Nodes
 		fmt.Printf("%04x Create Nodes\n", n)
 		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
@@ -162,6 +161,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		// Create configmaps
 		// Create secrets
 	}
+	fmt.Printf("Stopping worker\n")
 }
 
 func (t *testBasic) mustRender(tpl string, input Input) []byte {
