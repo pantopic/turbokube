@@ -150,7 +150,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		for i := range t.deployments {
 			t.input.Name = fmt.Sprintf(`turbokube-%02x`, i)
 			fmt.Printf("%s Create Deploy %02x\n", t.input.Name, i)
-			d, err := t.client_a.AppsV1().Deployments(namespace.Name).
+			d, err := t.client_b.AppsV1().Deployments(namespace.Name).
 				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), patchOpts)
 			if err != nil {
 				panic(err)
