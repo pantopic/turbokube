@@ -1,6 +1,5 @@
 #!/bin/bash
 set -e
 
-kubeadm join 10.0.0.18:6443 --token 5bzirr.7bqj2afhkpcrp6ox \
-        --discovery-token-ca-cert-hash sha256:cbe10ab1d51992db48420ef3bcd4467dac74c24ccde0354b1689e13395e290e9
-
+kubeadm join 10.0.0.15:6443 --token n4d1qi.ps5u1v9dseb9i4tg \
+        --discovery-token-ca-cert-hash sha256:d2b638d91bc66b54a98ad17431d360c0bb8c22b8c23a321443e549ae3680452a
