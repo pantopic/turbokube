@@ -206,9 +206,11 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 	if err != nil {
 		panic(err)
 	}
+	fmt.Printf("Awaiting deployment %s\n", d.Name)
 	for {
 		select {
 		case e := <-w.ResultChan():
+			fmt.Printf("%#v\n", e)
 			switch e.Type {
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
