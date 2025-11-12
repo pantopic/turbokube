@@ -81,6 +81,8 @@ func (t *testBasic) Start(ctx context.Context) {
 	})
 }
 
+var patchOpts = metav1.PatchOptions{FieldManager: `kube-controller-manager`}
+
 func (t *testBasic) run(ctx context.Context) {
 	// Detect progress
 	var n = t.getProgress(ctx)
@@ -88,7 +90,7 @@ func (t *testBasic) run(ctx context.Context) {
 	// Create turbo configmap
 	fmt.Println(`Creating config map`)
 	if _, err := t.client_a.CoreV1().ConfigMaps(`default`).
-		Patch(ctx, `turbokube`, types.ApplyYAMLPatchType, t.mustRender(`turbo-cm.yml`, t.input), metav1.PatchOptions{FieldManager: `kubectl`}); err != nil {
+		Patch(ctx, `turbokube`, types.ApplyYAMLPatchType, t.mustRender(`turbo-cm.yml`, t.input), patchOpts); err != nil {
 		panic(err)
 	}
 	fmt.Println(`Config map created`)
@@ -118,6 +120,7 @@ func (t *testBasic) Stop() {
 }
 
 func (t *testBasic) Done() (done chan bool) {
+	done = make(chan bool)
 	go func() {
 		t.wg.Wait()
 		close(done)
@@ -136,7 +139,7 @@ func (t *testBasic) work(ctx context.Context, jobs <-chan int) {
 		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
 		t.input.Taint.Value = fmt.Sprintf(`%04x`, n)
 		d, err := t.client_a.AppsV1().Deployments(`default`).
-			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, t.input), metav1.PatchOptions{})
+			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, t.input), patchOpts)
 		if err != nil {
 			panic(err)
 		}
@@ -144,7 +147,7 @@ func (t *testBasic) work(ctx context.Context, jobs <-chan int) {
 		// Create namespace
 		fmt.Printf(`%04x Create Namespace\n`, n)
 		namespace, err := t.client_b.CoreV1().Namespaces().
-			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, t.input), metav1.PatchOptions{})
+			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, t.input), patchOpts)
 		if err != nil {
 			panic(err)
 		}
@@ -153,7 +156,7 @@ func (t *testBasic) work(ctx context.Context, jobs <-chan int) {
 			t.input.Name = fmt.Sprintf(`turbokube-%02x`, i)
 			fmt.Printf(`%s Create Deploy %02x\n`, t.input.Name, i)
 			d, err := t.client_a.AppsV1().Deployments(namespace.Name).
-				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), metav1.PatchOptions{})
+				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), patchOpts)
 			if err != nil {
 				panic(err)
 			}
