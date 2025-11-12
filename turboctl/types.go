@@ -7,7 +7,6 @@ import (
 type Test interface {
 	Start(ctx context.Context)
 	Reset(ctx context.Context)
-	Stop()
 	Done() (done chan bool)
 }
 

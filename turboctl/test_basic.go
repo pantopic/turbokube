@@ -106,18 +106,15 @@ func (t *testBasic) run(ctx context.Context) {
 	// Begin iterations
 	fmt.Println(`Begin iterations`)
 	for ; n < t.n || t.n == 0; n++ {
+		fmt.Printf(`Send %d\n`, n)
 		jobs <- n
 	}
+	fmt.Println(`Finish iterations`)
 }
 
 func (t *testBasic) Reset(ctx context.Context) {
 	// Delete namespaces
 	// Delete nodes
-}
-
-func (t *testBasic) Stop() {
-	close(t.stop)
-	t.wg.Wait()
 }
 
 func (t *testBasic) Done() (done chan bool) {
@@ -128,7 +125,8 @@ func (t *testBasic) Done() (done chan bool) {
 	}()
 	return
 }
-func (t *testBasic) work(ctx context.Context, jobs <-chan int) {
+
+func (t *testBasic) work(ctx context.Context, jobs chan int) {
 	for n := range <-jobs {
 		select {
 		case <-t.stop:
