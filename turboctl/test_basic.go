@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"sync"
 	"text/template"
+	"time"
 
 	"github.com/Masterminds/sprig/v3"
 	appsv1 "k8s.io/api/apps/v1"
@@ -28,6 +29,7 @@ type testBasic struct {
 	client_b    *kubernetes.Clientset
 	input       Input
 	n           int
+	pause       int
 	stop        chan bool
 	tpl         *template.Template
 	wg          *sync.WaitGroup
@@ -43,6 +45,7 @@ func newTestBasic(args []string) *testBasic {
 		crt         = fs.String("crt", "/etc/kubernetes/pki/apiserver.b.crt", "API Server Crt for cluster B (default /etc/kubernetes/pki/apiserver.b.crt)")
 		deployments = fs.Int("d", 4, "Number of deployments per namespace (default 4)")
 		key         = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
+		pause       = fs.Int("p", 1, "Pause in seconds between namespace creations (default 1)")
 		n           = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
 	)
 	err := fs.Parse(args)
@@ -70,8 +73,9 @@ func newTestBasic(args []string) *testBasic {
 				Effect: "NoSchedule",
 			},
 		},
-		n:  *n,
-		wg: &sync.WaitGroup{},
+		n:     *n,
+		pause: *pause,
+		wg:    &sync.WaitGroup{},
 	}
 }
 
@@ -86,7 +90,9 @@ var patchOpts = metav1.PatchOptions{FieldManager: `kube-controller-manager`}
 
 func (t *testBasic) run(ctx context.Context) {
 	// Detect progress
+	fmt.Println(`Detecting progress`)
 	var n = t.getProgress(ctx)
+	fmt.Printf(`Progress: %d`, n)
 
 	// Create turbo configmap
 	fmt.Println(`Creating config map`)
@@ -160,6 +166,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		// Create services
 		// Create configmaps
 		// Create secrets
+		time.Sleep(time.Duration(t.pause) * time.Second)
 	}
 	fmt.Printf("Stopping worker\n")
 }
@@ -189,6 +196,7 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 			if _, err := fmt.Sscanf(`turbokube-%04x`, d.Name, &i); err != nil {
 				panic(err)
 			}
+			fmt.Printf("deplyoy found: %d", i)
 			n = max(i, n)
 		}
 		if deploymentList.Continue == "" {
