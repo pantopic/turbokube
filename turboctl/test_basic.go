@@ -215,13 +215,12 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 	for {
 		select {
 		case e := <-w.ResultChan():
-			fmt.Printf("%#v\n", e)
 			switch e.Type {
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
-				fmt.Printf("Status: %#v\n", dump(d.Status))
+				fmt.Printf("%s %d/%d", e.Type, d.Status.Replicas, d.Status.ReadyReplicas)
 				if d.Status.Replicas > 0 && d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}
