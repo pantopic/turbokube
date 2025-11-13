@@ -146,31 +146,34 @@ func (t *testBasic) Done() (done chan bool) {
 
 func (t *testBasic) work(ctx context.Context, jobs chan int) {
 	for n := range jobs {
-		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
-		t.input.Taint.Value = fmt.Sprintf(`%04x`, n)
+		name := fmt.Sprintf(`turbokube-%04x`, n)
+		var input = t.input
+		input.Name = name
+		input.Taint.Value = fmt.Sprintf(`%04x`, n)
 		d, err := t.client_a.AppsV1().Deployments(`default`).
-			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, t.input), applyOpts)
+			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, input), applyOpts)
 		if err != nil {
 			panic(err)
 		}
 		t.awaitDeployment(ctx, t.client_a, `virtual node pool`, d)
 
-		log.Printf("%04x Create Namespace\n", n)
+		log.Printf("%s start\n", name)
 		namespace, err := t.client_b.CoreV1().Namespaces().
-			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, t.input), applyOpts)
+			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, input), applyOpts)
 		if err != nil {
 			panic(err)
 		}
-
+		var start = time.Now()
 		for i := range t.deployments {
-			t.input.Name = fmt.Sprintf(`turbokube-%02x`, i)
+			input.Name = fmt.Sprintf(`turbokube-%02x`, i)
 			d, err := t.client_b.AppsV1().Deployments(namespace.Name).
-				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), applyOpts)
+				Patch(ctx, input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, input), applyOpts)
 			if err != nil {
 				panic(err)
 			}
 			t.awaitDeployment(ctx, t.client_b, `deployment`, d)
 		}
+		log.Printf("%s done %d\n", name, time.Since(start).Milliseconds())
 		// Create services
 		// Create configmaps
 		// Create secrets
@@ -190,7 +193,7 @@ func (t *testBasic) resetWorker(ctx context.Context, jobs chan int) {
 			log.Fatalf(`%#v`, err)
 		}
 		log.Printf("Deleting virtual node pool %s\n", name)
-		err = t.client_a.AppsV1().Deployments(`default`).Delete(ctx, t.input.Name, deleteOpts)
+		err = t.client_a.AppsV1().Deployments(`default`).Delete(ctx, name, deleteOpts)
 		if err != nil && !isNotFound(err) {
 			log.Fatalf(`%#v`, err)
 		}
