@@ -114,7 +114,6 @@ func (t *testBasic) run(ctx context.Context) {
 	for ; n < t.n || t.n == 0; n++ {
 		jobs <- n
 	}
-	log.Println(`Finish iterations`)
 	close(jobs)
 }
 
@@ -213,7 +212,6 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 	if err != nil {
 		panic(err)
 	}
-	log.Printf("Awaiting deployment %s\n", d.Name)
 	for {
 		select {
 		case e := <-w.ResultChan():
@@ -222,7 +220,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 				fallthrough
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
-				log.Printf("%s %d/%d", e.Type, d.Status.ReadyReplicas, d.Status.Replicas)
+				log.Printf("[%s] %s %s %d/%d", d.Namespace, d.Name, e.Type, d.Status.ReadyReplicas, d.Status.Replicas)
 				if d.Status.Replicas > 0 && d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}
