@@ -3,8 +3,8 @@
 <a href="https://www.digitalocean.com/?refcode=a16ca694958a&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge"><img src="https://web-platforms.sfo2.cdn.digitaloceanspaces.com/WWW/Badge%203.svg" alt="DigitalOcean Referral Badge" align="right" height="65"/></a>
 
 A fork of Virtual Kubelet's <a href="https://github.com/virtual-kubelet/virtual-kubelet/blob/main/cmd/virtual-kubelet/internal/provider/mock/mock.go">Mock Provider</a>
-designed specifically to load test the Kubernetes control plane. Simulate the load of a 10,000 node cluster using a
-handful of small virtual machines.
+created to load test the Kubernetes control plane. This allows us to use a handful of virtual machines to simulate the
+load that would be imposed on the Kubernetes control plane by a 10,000 node Kubernetes cluster.
 
 ## Once upon a time on LinkedIn…
 
@@ -31,7 +31,7 @@ Hence...
 A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke
 to increase horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
 
-A *turbopump* in a rocket engine works by preburning fuel and oxidizer to impel a turbine, forcing more fuel and
+A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel a turbine, forcing more fuel and
 oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
 
 *TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in *Cluster A*
@@ -48,9 +48,9 @@ worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those V
 *Control Plane B*, joining the cluster pretending to be real virtual machines.
 
 *Control Plane B* schedules Pods to these Virtual Kubelets. The pods scheduled to the Virtual Kubelets are real to
-*Cluster B* but "fake" to *Cluster A* because it knows that the pods don't exececute anything in any real sense. The
+*Cluster B* but "fake" to *Cluster A* because it knows that the pods don't execute anything in any real sense. The
 mock provider doesn't have a container runtime in which to run the containers in the pod spec. Instead, it simulates
-the behavior of a running container including healthchecks, metrics, etc.
+the behavior of a running container including health checks, metrics, etc.
 
 The infrastructure is provisioned using [terraform](terraform) and a bunch of manually applied shell scripts. After the
 system is provisioned, load tests are run using [turboctl](turboctl) from the admin node which connects to both control
@@ -106,3 +106,17 @@ things, having multiple redundant testing frameworks with slightly different app
 thing. [SimKube](https://github.com/acrlabs/simkube) has a number of interesting features that might be valuable, but
 we don't have any large scale production traces to replay. Better to let those experts run their own independent tools
 to validate the results of our tests for corroboration if required.
+
+## Terminology
+
+In which we justify the invention of new terms.
+
+### Load Compression
+
+The term *load simulation* seems an inaccurate term for what we're doing here since we're not really simulating or
+emulating the load. We're running real kubelet code interacting with Kubernetes in a totally representative and
+authentic way.
+
+Since we don't have a better term for the sort of load test efficiency optimization characterized here, we are forced to
+invent a new term: *load compression*. If you think this falls cleanly into some other set of standard terminology,
+please open an issue to let us know and we'll rebrand the project.
