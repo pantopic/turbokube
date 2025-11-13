@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -13,6 +14,7 @@ func main() {
 	if len(os.Args) < 2 {
 		panic("Command required [run, reset]")
 	}
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
 	var t Test
 	switch os.Args[1] {
 	case "run":

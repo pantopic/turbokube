@@ -23,6 +23,11 @@ import (
 //go:embed tpl
 var templates embed.FS
 
+var (
+	applyOpts  = metav1.PatchOptions{FieldManager: `kube-controller-manager`}
+	deleteOpts = metav1.DeleteOptions{}
+)
+
 type testBasic struct {
 	async       bool
 	concurrency int
@@ -46,7 +51,7 @@ func newTestBasic(args []string) *testBasic {
 		crt         = fs.String("crt", "/etc/kubernetes/pki/apiserver.b.crt", "API Server Crt for cluster B (default /etc/kubernetes/pki/apiserver.b.crt)")
 		deployments = fs.Int("d", 4, "Number of deployments per namespace (default 4)")
 		key         = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
-		pause       = fs.Int("p", 1, "Pause in seconds between namespace creations (default 1)")
+		pause       = fs.Int("p", 0, "Pause in seconds between namespace creations (default 1)")
 		n           = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
 	)
 	err := fs.Parse(args)
@@ -86,31 +91,25 @@ func (t *testBasic) Start(ctx context.Context) {
 	})
 }
 
-var patchOpts = metav1.PatchOptions{FieldManager: `kube-controller-manager`}
-
 func (t *testBasic) run(ctx context.Context) {
-	// Detect progress
-	log.Println(`Detecting progress`)
 	var n = t.getProgress(ctx)
 	log.Printf("Progress: %d\n", n)
 
-	// Create turbo configmap
-	log.Println(`Creating config map`)
+	log.Println(`Creating turbokube config map`)
 	if _, err := t.client_a.CoreV1().ConfigMaps(`default`).
-		Patch(ctx, `turbokube`, types.ApplyYAMLPatchType, t.mustRender(`turbo-cm.yml`, t.input), patchOpts); err != nil {
+		Patch(ctx, `turbokube`, types.ApplyYAMLPatchType, t.mustRender(`turbo-cm.yml`, t.input), applyOpts); err != nil {
 		panic(err)
 	}
-	log.Println(`Config map created`)
-	// Start workers
-	var jobs = make(chan int)
+
 	log.Printf("Starting %d Worker(s)\n", t.concurrency)
+	var jobs = make(chan int)
 	for range t.concurrency {
 		t.wg.Go(func() {
 			t.work(ctx, jobs)
 		})
 	}
-	// Begin iterations
-	log.Println(`Begin iterations`)
+
+	log.Println(`Begin work`)
 	for ; n < t.n || t.n == 0; n++ {
 		jobs <- n
 	}
@@ -118,8 +117,22 @@ func (t *testBasic) run(ctx context.Context) {
 }
 
 func (t *testBasic) Reset(ctx context.Context) {
-	// Delete namespaces
-	// Delete nodes
+	var n = t.getProgress(ctx)
+	log.Printf("Progress: %d\n", n)
+
+	log.Printf("Starting %d Reset Worker(s)\n", t.concurrency)
+	var jobs = make(chan int)
+	for range t.concurrency {
+		t.wg.Go(func() {
+			t.resetWorker(ctx, jobs)
+		})
+	}
+
+	log.Println(`Begin reset work`)
+	for ; n >= 0; n-- {
+		jobs <- n
+	}
+	close(jobs)
 }
 
 func (t *testBasic) Done() (done chan bool) {
@@ -133,37 +146,55 @@ func (t *testBasic) Done() (done chan bool) {
 
 func (t *testBasic) work(ctx context.Context, jobs chan int) {
 	for n := range jobs {
-		// Create Nodes
-		log.Printf("%04x Create Nodes\n", n)
 		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
 		t.input.Taint.Value = fmt.Sprintf(`%04x`, n)
 		d, err := t.client_a.AppsV1().Deployments(`default`).
-			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, t.input), patchOpts)
+			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, t.input), applyOpts)
 		if err != nil {
 			panic(err)
 		}
-		t.awaitDeployment(ctx, t.client_a, d)
-		// Create namespace
+		t.awaitDeployment(ctx, t.client_a, `virtual node pool`, d)
+
 		log.Printf("%04x Create Namespace\n", n)
 		namespace, err := t.client_b.CoreV1().Namespaces().
-			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, t.input), patchOpts)
+			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, t.input), applyOpts)
 		if err != nil {
 			panic(err)
 		}
-		// Create deployments
+
 		for i := range t.deployments {
 			t.input.Name = fmt.Sprintf(`turbokube-%02x`, i)
-			log.Printf("%s Create Deploy %02x\n", t.input.Name, i)
 			d, err := t.client_b.AppsV1().Deployments(namespace.Name).
-				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), patchOpts)
+				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), applyOpts)
 			if err != nil {
 				panic(err)
 			}
-			t.awaitDeployment(ctx, t.client_b, d)
+			t.awaitDeployment(ctx, t.client_b, `deployment`, d)
 		}
 		// Create services
 		// Create configmaps
 		// Create secrets
+		if t.pause > 0 {
+			time.Sleep(time.Duration(t.pause) * time.Second)
+		}
+	}
+	log.Printf("Stopping worker\n")
+}
+
+func (t *testBasic) resetWorker(ctx context.Context, jobs chan int) {
+	for n := range jobs {
+		log.Printf("%04x Deleting namespace\n", n)
+		if err := t.client_b.CoreV1().Namespaces().Delete(ctx, t.input.Name, deleteOpts); err != nil {
+			panic(err)
+		}
+
+		log.Printf("%04x Deleting virtual node pools nodes\n", n)
+		if err := t.client_a.AppsV1().Deployments(`default`).Delete(ctx, t.input.Name, deleteOpts); err != nil {
+			panic(err)
+		}
+		// Delete services
+		// Delete configmaps
+		// Delete secrets
 		time.Sleep(time.Duration(t.pause) * time.Second)
 	}
 	log.Printf("Stopping worker\n")
@@ -204,7 +235,7 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 	return
 }
 
-func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clientset, d *appsv1.Deployment) {
+func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clientset, dtype string, d *appsv1.Deployment) {
 	w, err := client.AppsV1().Deployments(d.Namespace).
 		Watch(ctx, metav1.ListOptions{
 			FieldSelector: `metadata.name=` + d.Name,
@@ -220,7 +251,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 				fallthrough
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
-				log.Printf("[%s] %s %s %d/%d", d.Namespace, d.Name, e.Type, d.Status.ReadyReplicas, d.Status.Replicas)
+				log.Printf("[%s] %s %s %s %d/%d", d.Namespace, dtype, d.Name, e.Type, d.Status.ReadyReplicas, d.Status.Replicas)
 				if d.Status.Replicas > 0 && d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}
