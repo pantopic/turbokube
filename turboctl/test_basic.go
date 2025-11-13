@@ -90,7 +90,7 @@ func (t *testBasic) run(ctx context.Context) {
 	// Detect progress
 	fmt.Println(`Detecting progress`)
 	var n = t.getProgress(ctx)
-	fmt.Printf(`Progress: %d\n`, n)
+	fmt.Printf("Progress: %d\n", n)
 
 	// Create turbo configmap
 	fmt.Println(`Creating config map`)
@@ -101,8 +101,8 @@ func (t *testBasic) run(ctx context.Context) {
 	fmt.Println(`Config map created`)
 	// Start workers
 	var jobs = make(chan int)
+	fmt.Printf("Starting %d Worker(s)\n", t.concurrency)
 	for range t.concurrency {
-		fmt.Println(`Starting Worker`)
 		t.wg.Go(func() {
 			t.work(ctx, jobs)
 		})
@@ -110,11 +110,10 @@ func (t *testBasic) run(ctx context.Context) {
 	// Begin iterations
 	fmt.Println(`Begin iterations`)
 	for ; n < t.n || t.n == 0; n++ {
-		fmt.Printf("Send %d\n", n)
 		jobs <- n
 	}
-	close(jobs)
 	fmt.Println(`Finish iterations`)
+	close(jobs)
 }
 
 func (t *testBasic) Reset(ctx context.Context) {
@@ -132,7 +131,6 @@ func (t *testBasic) Done() (done chan bool) {
 }
 
 func (t *testBasic) work(ctx context.Context, jobs chan int) {
-	fmt.Printf("work\n")
 	for n := range jobs {
 		// Create Nodes
 		fmt.Printf("%04x Create Nodes\n", n)
@@ -223,7 +221,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
 				fmt.Printf("Status: %#v\n", dump(d.Status))
-				if d.Status.ReadyReplicas == d.Status.Replicas {
+				if d.Status.Replicas > 0 && d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}
 			case watch.Deleted:
