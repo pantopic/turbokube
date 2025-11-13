@@ -222,7 +222,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 				fallthrough
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
-				log.Printf("%s %d/%d", e.Type, d.Status.Replicas, d.Status.ReadyReplicas)
+				log.Printf("%s %d/%d", e.Type, d.Status.ReadyReplicas, d.Status.Replicas)
 				if d.Status.Replicas > 0 && d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}
