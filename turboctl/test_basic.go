@@ -185,6 +185,7 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 		deploymentList, err = t.client_a.AppsV1().Deployments(`default`).
 			List(ctx, metav1.ListOptions{
 				LabelSelector: `app=turbokube`,
+				Continue:      deploymentList.Continue,
 			})
 		if err != nil {
 			panic(err)
