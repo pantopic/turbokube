@@ -3,11 +3,13 @@ package main
 import (
 	"bytes"
 	"context"
-
 	"embed"
+	"encoding/csv"
 	"flag"
 	"fmt"
 	"log"
+	"os"
+	"strconv"
 	"sync"
 	"text/template"
 	"time"
@@ -31,12 +33,14 @@ var (
 type testBasic struct {
 	async       bool
 	concurrency int
+	csv         *csv.Writer
 	deployments int
 	client_a    *kubernetes.Clientset
 	client_b    *kubernetes.Clientset
 	input       Input
 	n           int
 	pause       int
+	out         string
 	tpl         *template.Template
 	wg          *sync.WaitGroup
 }
@@ -53,11 +57,27 @@ func newTestBasic(args []string) *testBasic {
 		key         = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
 		pause       = fs.Int("p", 0, "Pause in seconds between namespace creations (default 1)")
 		n           = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
+		out         = fs.String("out", "", "Output file path (default turbokube.[date].csv)")
 	)
 	err := fs.Parse(args)
 	if err != nil {
 		panic(err)
 	}
+	if *out == "" {
+		*out = fmt.Sprintf("turbokube.%s.csv", time.Now().UTC().Format(time.RFC3339))
+	}
+	f, err := os.OpenFile(*out, os.O_RDWR|os.O_CREATE, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := f.Close(); err != nil {
+			panic(err)
+		}
+	}()
+	w := csv.NewWriter(f)
+	defer w.Flush()
+	w.Write([]string{"sequence", "time (ms)"})
 	return &testBasic{
 		async:       *async,
 		concurrency: *concurrency,
@@ -80,6 +100,7 @@ func newTestBasic(args []string) *testBasic {
 			},
 		},
 		n:     *n,
+		csv:   w,
 		pause: *pause,
 		wg:    &sync.WaitGroup{},
 	}
@@ -130,6 +151,15 @@ func (t *testBasic) Reset(ctx context.Context) {
 
 	log.Println(`Begin reset work`)
 	for ; n >= 0; n-- {
+		name := fmt.Sprintf(`turbokube-%04x`, n)
+		var input = t.input
+		input.Name = name
+		input.Taint.Value = fmt.Sprintf(`%04x`, n)
+		_, err := t.client_a.AppsV1().Deployments(`default`).
+			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, input), applyOpts)
+		if err != nil {
+			panic(err)
+		}
 		jobs <- n
 	}
 	close(jobs)
@@ -150,13 +180,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		var input = t.input
 		input.Name = name
 		input.Taint.Value = fmt.Sprintf(`%04x`, n)
-		d, err := t.client_a.AppsV1().Deployments(`default`).
-			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, input), applyOpts)
-		if err != nil {
-			panic(err)
-		}
-		t.awaitDeployment(ctx, t.client_a, `virtual node pool`, d)
-
+		t.awaitDeployment(ctx, t.client_a, `virtual node pool`, `default`, name)
 		log.Printf("%s start\n", name)
 		namespace, err := t.client_b.CoreV1().Namespaces().
 			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, input), applyOpts)
@@ -171,9 +195,9 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 			if err != nil {
 				panic(err)
 			}
-			t.awaitDeployment(ctx, t.client_b, `deployment`, d)
+			t.awaitDeployment(ctx, t.client_b, `deployment`, d.Namespace, d.Name)
 		}
-		log.Printf("%s done %d\n", name, time.Since(start).Milliseconds())
+		t.csv.Write([]string{name, strconv.Itoa(int(time.Since(start) / time.Millisecond))})
 		// Create services
 		// Create configmaps
 		// Create secrets
@@ -240,10 +264,10 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 	return
 }
 
-func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clientset, dtype string, d *appsv1.Deployment) {
-	w, err := client.AppsV1().Deployments(d.Namespace).
+func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clientset, dtype, namespace, name string) {
+	w, err := client.AppsV1().Deployments(namespace).
 		Watch(ctx, metav1.ListOptions{
-			FieldSelector: `metadata.name=` + d.Name,
+			FieldSelector: `metadata.name=` + name,
 		})
 	if err != nil {
 		panic(err)
@@ -255,18 +279,18 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 			case watch.Added:
 				fallthrough
 			case watch.Modified:
-				d = e.Object.(*appsv1.Deployment)
-				log.Printf("[%s] %s %s %s %d/%d", d.Namespace, dtype, d.Name, e.Type, d.Status.ReadyReplicas, d.Status.Replicas)
+				d := e.Object.(*appsv1.Deployment)
+				log.Printf("[%s] %s %s %s %d/%d", namespace, dtype, name, e.Type, d.Status.ReadyReplicas, d.Status.Replicas)
 				if d.Status.Replicas > 0 && d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}
 			case watch.Deleted:
-				panic(`Deployment deleted: ` + d.Name)
+				panic(`Deployment deleted: ` + name)
 			case watch.Error:
-				panic(`Deployment error: ` + d.Name)
+				panic(`Deployment error: ` + name)
 			}
 		case <-ctx.Done():
-			panic(`Deployment cancelled: ` + d.Name)
+			panic(`Deployment cancelled: ` + name)
 		}
 	}
 }

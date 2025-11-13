@@ -28,8 +28,8 @@ Hence...
 
 ## Why Turbo?
 
-A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke
-to increase horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
+A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke,
+increasing horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
 
 A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel a turbine, forcing more fuel and
 oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
