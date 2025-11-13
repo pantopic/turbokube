@@ -189,8 +189,9 @@ func (t *testBasic) resetWorker(ctx context.Context, jobs chan int) {
 		}
 
 		log.Printf("%04x Deleting virtual node pools nodes\n", n)
-		if err := t.client_a.AppsV1().Deployments(`default`).Delete(ctx, t.input.Name, deleteOpts); err != nil {
-			panic(err)
+		err := t.client_a.AppsV1().Deployments(`default`).Delete(ctx, t.input.Name, deleteOpts)
+		if err != nil && !isNotFound(err) {
+			log.Fatalf(`%#v`, err)
 		}
 		// Delete services
 		// Delete configmaps

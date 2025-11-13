@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"os"
+	"strings"
 
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/tools/clientcmd"
@@ -34,4 +35,7 @@ func dump(subject any) string {
 		panic(err)
 	}
 	return string(b)
+}
+func isNotFound(err error) bool {
+	return strings.Contains(err.Error(), "not found")
 }
