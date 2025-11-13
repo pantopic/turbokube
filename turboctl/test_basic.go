@@ -185,11 +185,12 @@ func (t *testBasic) resetWorker(ctx context.Context, jobs chan int) {
 	for n := range jobs {
 		name := fmt.Sprintf(`turbokube-%04x`, n)
 		log.Printf("Deleting namespace %s\n", name)
-		if err := t.client_b.CoreV1().Namespaces().Delete(ctx, name, deleteOpts); err != nil {
-			panic(err)
+		err := t.client_b.CoreV1().Namespaces().Delete(ctx, name, deleteOpts)
+		if err != nil && !isNotFound(err) {
+			log.Fatalf(`%#v`, err)
 		}
 		log.Printf("Deleting virtual node pool %s\n", name)
-		err := t.client_a.AppsV1().Deployments(`default`).Delete(ctx, t.input.Name, deleteOpts)
+		err = t.client_a.AppsV1().Deployments(`default`).Delete(ctx, t.input.Name, deleteOpts)
 		if err != nil && !isNotFound(err) {
 			log.Fatalf(`%#v`, err)
 		}
