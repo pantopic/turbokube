@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+
 	"embed"
 	"flag"
 	"fmt"
@@ -89,31 +90,31 @@ var patchOpts = metav1.PatchOptions{FieldManager: `kube-controller-manager`}
 
 func (t *testBasic) run(ctx context.Context) {
 	// Detect progress
-	fmt.Println(`Detecting progress`)
+	log.Println(`Detecting progress`)
 	var n = t.getProgress(ctx)
-	fmt.Printf("Progress: %d\n", n)
+	log.Printf("Progress: %d\n", n)
 
 	// Create turbo configmap
-	fmt.Println(`Creating config map`)
+	log.Println(`Creating config map`)
 	if _, err := t.client_a.CoreV1().ConfigMaps(`default`).
 		Patch(ctx, `turbokube`, types.ApplyYAMLPatchType, t.mustRender(`turbo-cm.yml`, t.input), patchOpts); err != nil {
 		panic(err)
 	}
-	fmt.Println(`Config map created`)
+	log.Println(`Config map created`)
 	// Start workers
 	var jobs = make(chan int)
-	fmt.Printf("Starting %d Worker(s)\n", t.concurrency)
+	log.Printf("Starting %d Worker(s)\n", t.concurrency)
 	for range t.concurrency {
 		t.wg.Go(func() {
 			t.work(ctx, jobs)
 		})
 	}
 	// Begin iterations
-	fmt.Println(`Begin iterations`)
+	log.Println(`Begin iterations`)
 	for ; n < t.n || t.n == 0; n++ {
 		jobs <- n
 	}
-	fmt.Println(`Finish iterations`)
+	log.Println(`Finish iterations`)
 	close(jobs)
 }
 
@@ -134,7 +135,7 @@ func (t *testBasic) Done() (done chan bool) {
 func (t *testBasic) work(ctx context.Context, jobs chan int) {
 	for n := range jobs {
 		// Create Nodes
-		fmt.Printf("%04x Create Nodes\n", n)
+		log.Printf("%04x Create Nodes\n", n)
 		t.input.Name = fmt.Sprintf(`turbokube-%04x`, n)
 		t.input.Taint.Value = fmt.Sprintf(`%04x`, n)
 		d, err := t.client_a.AppsV1().Deployments(`default`).
@@ -144,7 +145,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		}
 		t.awaitDeployment(ctx, t.client_a, d)
 		// Create namespace
-		fmt.Printf("%04x Create Namespace\n", n)
+		log.Printf("%04x Create Namespace\n", n)
 		namespace, err := t.client_b.CoreV1().Namespaces().
 			Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-namespace.yml`, t.input), patchOpts)
 		if err != nil {
@@ -153,7 +154,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		// Create deployments
 		for i := range t.deployments {
 			t.input.Name = fmt.Sprintf(`turbokube-%02x`, i)
-			fmt.Printf("%s Create Deploy %02x\n", t.input.Name, i)
+			log.Printf("%s Create Deploy %02x\n", t.input.Name, i)
 			d, err := t.client_b.AppsV1().Deployments(namespace.Name).
 				Patch(ctx, t.input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, t.input), patchOpts)
 			if err != nil {
@@ -166,7 +167,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 		// Create secrets
 		time.Sleep(time.Duration(t.pause) * time.Second)
 	}
-	fmt.Printf("Stopping worker\n")
+	log.Printf("Stopping worker\n")
 }
 
 func (t *testBasic) mustRender(tpl string, input Input) []byte {
@@ -193,7 +194,7 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 			if _, err := fmt.Sscanf(d.Name, `turbokube-%04x`, &i); err != nil {
 				log.Fatalf("%v %s", err, d.Name)
 			}
-			fmt.Printf("deploy found: %d", i)
+			log.Printf("deploy found: %d", i)
 			n = max(i, n)
 		}
 		if deploymentList.Continue == "" {
@@ -211,7 +212,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("Awaiting deployment %s\n", d.Name)
+	log.Printf("Awaiting deployment %s\n", d.Name)
 	for {
 		select {
 		case e := <-w.ResultChan():
@@ -220,7 +221,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 				fallthrough
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
-				fmt.Printf("%s %d/%d", e.Type, d.Status.Replicas, d.Status.ReadyReplicas)
+				log.Printf("%s %d/%d", e.Type, d.Status.Replicas, d.Status.ReadyReplicas)
 				if d.Status.Replicas > 0 && d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}
