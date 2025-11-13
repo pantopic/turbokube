@@ -132,6 +132,15 @@ func (t *testBasic) run(ctx context.Context) {
 
 	log.Println(`Begin work`)
 	for ; n < t.n || t.n == 0; n++ {
+		name := fmt.Sprintf(`turbokube-%04x`, n)
+		var input = t.input
+		input.Name = name
+		input.Taint.Value = fmt.Sprintf(`%04x`, n)
+		_, err := t.client_a.AppsV1().Deployments(`default`).
+			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, input), applyOpts)
+		if err != nil {
+			panic(err)
+		}
 		jobs <- n
 	}
 	close(jobs)
@@ -151,15 +160,6 @@ func (t *testBasic) Reset(ctx context.Context) {
 
 	log.Println(`Begin reset work`)
 	for ; n >= 0; n-- {
-		name := fmt.Sprintf(`turbokube-%04x`, n)
-		var input = t.input
-		input.Name = name
-		input.Taint.Value = fmt.Sprintf(`%04x`, n)
-		_, err := t.client_a.AppsV1().Deployments(`default`).
-			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`turbo-deploy.yml`, input), applyOpts)
-		if err != nil {
-			panic(err)
-		}
 		jobs <- n
 	}
 	close(jobs)
