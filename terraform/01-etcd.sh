@@ -4,9 +4,9 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.16
-export IP_ETCD_1=10.0.0.19
-export IP_ETCD_2=10.0.0.17
+export IP_ETCD_0=10.0.0.14
+export IP_ETCD_1=10.0.0.8
+export IP_ETCD_2=10.0.0.7
 
 # All nodes
 mkdir -p /etc/systemd/system/kubelet.service.d
@@ -108,16 +108,12 @@ find /tmp/${IP_ETCD_2} -name ca.key -type f -delete
 find /tmp/${IP_ETCD_1} -name ca.key -type f -delete
 
 
-scp -r /tmp/${IP_ETCD_1}/* root@${IP_ETCD_1}:
-scp -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_2}:
+scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_1}/* root@${IP_ETCD_1}:
+scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_2}:
 
 kubeadm init phase etcd local --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
 
-# etcd-1
-mv pki /etc/kubernetes/
-kubeadm init phase etcd local --config=$HOME/kubeadmcfg.yaml
-
-# etcd-2
+# etcd-1 /\ etcd-2
 mv pki /etc/kubernetes/
 kubeadm init phase etcd local --config=$HOME/kubeadmcfg.yaml
 

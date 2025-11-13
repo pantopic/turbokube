@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.17
-export IP_ETCD_1=10.0.0.19
-export IP_ETCD_2=10.0.0.16
+export IP_ETCD_0=10.0.0.14
+export IP_ETCD_1=10.0.0.8
+export IP_ETCD_2=10.0.0.7
 export IP_LB=10.0.0.35
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
@@ -42,23 +42,22 @@ sudo systemctl enable configure-nlb
 sudo systemctl start configure-nlb
 
 mkdir -p /etc/kubernetes/pki/etcd
-scp root@$IP_ETCD_0:/etc/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/ca.crt
-scp root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.crt /etc/kubernetes/pki/apiserver-etcd-client.crt
-scp root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.key /etc/kubernetes/pki/apiserver-etcd-client.key
+scp -o "StrictHostKeyChecking=accept-new" root@$IP_ETCD_0:/etc/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/ca.crt
+scp -o "StrictHostKeyChecking=accept-new" root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.crt /etc/kubernetes/pki/apiserver-etcd-client.crt
+scp -o "StrictHostKeyChecking=accept-new" root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.key /etc/kubernetes/pki/apiserver-etcd-client.key
 
 kubeadm init \
   --config /etc/kubernetes/kubeadm-config.conf \
   --upload-certs
 
 # control plane
-  kubeadm join 10.0.0.35:6443 --token qf7dvu.kwdk07eviq0i2btw \
-        --discovery-token-ca-cert-hash sha256:54141669ddda56478b768d1db6a6d9f12bfca4d1fd3e64a41a90c116d6468eeb \
-        --control-plane --certificate-key abaeae9d899fb5592d1606f304d3d09d1dfa5710087f8ea6bc0d5ce1e8420ad1
+kubeadm join 10.0.0.35:6443 --token mjge65.zqkdfpntgtqfk2qd \
+        --discovery-token-ca-cert-hash sha256:348bc363a91f543977d3ce44e0e06684a819e13e45121eb9661397dd54661064 \
+        --control-plane --certificate-key 3cd2605e60870d635139c12cf610f2791d25d85fa6564aee8b37106af29fb98c
 
-# worker
-kubeadm join 10.0.0.35:6443 --token anii5n.8kl9972920l372t6 \
-        --discovery-token-ca-cert-hash sha256:eab7e57d120480e5521c5e9c52d9a21c9a3f03a1f3f4285ebd40ab2207dabd01
-
+# metrics
+kubeadm join 10.0.0.35:6443 --token mjge65.zqkdfpntgtqfk2qd \
+        --discovery-token-ca-cert-hash sha256:348bc363a91f543977d3ce44e0e06684a819e13e45121eb9661397dd54661064
 
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml

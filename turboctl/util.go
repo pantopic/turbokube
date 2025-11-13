@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"os"
 
 	"k8s.io/client-go/kubernetes"
@@ -25,4 +26,12 @@ func getClient(conf string) (clientset *kubernetes.Clientset) {
 		panic(err)
 	}
 	return
+}
+
+func dump(subject any) string {
+	b, err := json.MarshalIndent(subject, "", "\t")
+	if err != nil {
+		panic(err)
+	}
+	return string(b)
 }

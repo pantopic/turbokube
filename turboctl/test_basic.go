@@ -30,7 +30,6 @@ type testBasic struct {
 	input       Input
 	n           int
 	pause       int
-	stop        chan bool
 	tpl         *template.Template
 	wg          *sync.WaitGroup
 }
@@ -80,7 +79,6 @@ func newTestBasic(args []string) *testBasic {
 }
 
 func (t *testBasic) Start(ctx context.Context) {
-	t.stop = make(chan bool)
 	t.wg.Go(func() {
 		t.run(ctx)
 	})
@@ -92,7 +90,7 @@ func (t *testBasic) run(ctx context.Context) {
 	// Detect progress
 	fmt.Println(`Detecting progress`)
 	var n = t.getProgress(ctx)
-	fmt.Printf(`Progress: %d`, n)
+	fmt.Printf(`Progress: %d\n`, n)
 
 	// Create turbo configmap
 	fmt.Println(`Creating config map`)
@@ -115,6 +113,7 @@ func (t *testBasic) run(ctx context.Context) {
 		fmt.Printf("Send %d\n", n)
 		jobs <- n
 	}
+	close(jobs)
 	fmt.Println(`Finish iterations`)
 }
 
@@ -186,7 +185,6 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 		deploymentList, err = t.client_a.AppsV1().Deployments(`default`).
 			List(ctx, metav1.ListOptions{
 				LabelSelector: `app=turbokube`,
-				Continue:      deploymentList.Continue,
 			})
 		if err != nil {
 			panic(err)
@@ -196,7 +194,7 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 			if _, err := fmt.Sscanf(`turbokube-%04x`, d.Name, &i); err != nil {
 				panic(err)
 			}
-			fmt.Printf("deplyoy found: %d", i)
+			fmt.Printf("deploy found: %d", i)
 			n = max(i, n)
 		}
 		if deploymentList.Continue == "" {
@@ -224,6 +222,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 				fallthrough
 			case watch.Modified:
 				d = e.Object.(*appsv1.Deployment)
+				fmt.Printf("Status: %#v\n", dump(d.Status))
 				if d.Status.ReadyReplicas == d.Status.Replicas {
 					return
 				}

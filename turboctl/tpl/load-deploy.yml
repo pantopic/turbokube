@@ -2,6 +2,8 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .Name }}
+  labels:
+    app: turbokube
 spec:
   replicas: {{ .Replicas }}
   selector:

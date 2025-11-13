@@ -3,12 +3,39 @@ set -e
 
 export IP_TURBO=10.0.0.15
 
+cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
+apiServer: 
+  advertiseAddress: $IP_TURBO
+apiVersion: kubeadm.k8s.io/v1beta4
+caCertificateValidityPeriod: 87600h0m0s
+certificateValidityPeriod: 8760h0m0s
+certificatesDir: /etc/kubernetes/pki
+clusterName: kubernetes
+controlPlaneEndpoint: $IP_TURBO:6443
+controllerManager:
+  extraArgs:
+    - name: node-cidr-mask-size
+      value: "20"
+dns: {}
+encryptionAlgorithm: RSA-2048
+etcd:
+  local:
+    dataDir: /var/lib/etcd
+imageRepository: registry.k8s.io
+kind: ClusterConfiguration
+kubernetesVersion: v1.34.1
+networking:
+  dnsDomain: cluster.local
+  podSubnet: 10.244.0.0/16
+  serviceSubnet: 10.96.0.0/12
+proxy: {}
+scheduler: {}
+EOF
+
 # leader
 kubeadm init \
-    --pod-network-cidr 10.244.0.0/16 \
-    --apiserver-advertise-address $IP_TURBO \
-    --control-plane-endpoint $IP_TURBO \
-    --upload-certs
+  --config /etc/kubernetes/kubeadm-config.conf \
+  --upload-certs
 
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
