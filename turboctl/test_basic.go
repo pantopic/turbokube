@@ -6,6 +6,7 @@ import (
 	"embed"
 	"flag"
 	"fmt"
+	"log"
 	"sync"
 	"text/template"
 	"time"
@@ -190,7 +191,7 @@ func (t *testBasic) getProgress(ctx context.Context) (n int) {
 		var i int
 		for _, d := range deploymentList.Items {
 			if _, err := fmt.Sscanf(`turbokube-%04x`, d.Name, &i); err != nil {
-				panic(err)
+				log.Fatalf("%v %s", err, d.Name)
 			}
 			fmt.Printf("deploy found: %d", i)
 			n = max(i, n)
