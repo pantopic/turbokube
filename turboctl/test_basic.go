@@ -181,7 +181,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int) {
 			}
 			t.awaitDeployment(ctx, t.client_b, `deployment`, d.Namespace, d.Name)
 		}
-		t.csv.Write([]string{name, strconv.Itoa(int(time.Since(start) / time.Millisecond))})
+		t.csv.WriteAll([][]string{{name, strconv.Itoa(int(time.Since(start) / time.Millisecond))}})
 		// Create services
 		// Create configmaps
 		// Create secrets
