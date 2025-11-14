@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 	"sync"
 	"text/template"
@@ -45,7 +44,7 @@ type testBasic struct {
 	wg          *sync.WaitGroup
 }
 
-func newTestBasic(args []string) *testBasic {
+func newTestBasic(args []string, w *csv.Writer) *testBasic {
 	fs := flag.FlagSet{}
 	var (
 		async       = fs.Bool("async", false, "Do not wait for provisioning")
@@ -57,27 +56,11 @@ func newTestBasic(args []string) *testBasic {
 		key         = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
 		pause       = fs.Int("p", 0, "Pause in seconds between namespace creations (default 1)")
 		n           = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
-		out         = fs.String("out", "", "Output file path (default turbokube.[date].csv)")
 	)
 	err := fs.Parse(args)
 	if err != nil {
 		panic(err)
 	}
-	if *out == "" {
-		*out = fmt.Sprintf("turbokube.%s.csv", time.Now().UTC().Format(time.RFC3339))
-	}
-	f, err := os.OpenFile(*out, os.O_RDWR|os.O_CREATE, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func() {
-		if err := f.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	w := csv.NewWriter(f)
-	defer w.Flush()
-	w.Write([]string{"sequence", "time (ms)"})
 	return &testBasic{
 		async:       *async,
 		concurrency: *concurrency,

@@ -13,7 +13,7 @@ func TestBasic(t *testing.T) {
 		"--confb=test/kubelet.conf.yml",
 		"--crt=test/apiserver.crt",
 		"--key=test/apiserver.key",
-	})
+	}, nil)
 	observed := strings.TrimSpace(string(b.mustRender(`turbo-cm.yml`, b.input)))
 	expected := strings.TrimSpace(mustRead(`test/turbo-cm.expected.yml`))
 	if observed != expected {

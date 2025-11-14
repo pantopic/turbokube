@@ -2,11 +2,13 @@ package main
 
 import (
 	"context"
+	"encoding/csv"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 func main() {
@@ -24,7 +26,20 @@ func main() {
 			args = os.Args[3:]
 			fallthrough
 		default:
-			t = newTestBasic(args)
+			out := fmt.Sprintf("turbokube.%s.csv", time.Now().UTC().Format(time.RFC3339))
+			f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE, 0644)
+			if err != nil {
+				log.Fatal(err)
+			}
+			defer func() {
+				if err := f.Close(); err != nil {
+					panic(err)
+				}
+			}()
+			w := csv.NewWriter(f)
+			w.Write([]string{"sequence", "time (ms)"})
+			defer w.Flush()
+			t = newTestBasic(args, w)
 			t.Start(ctx)
 		}
 	case "reset":
@@ -34,7 +49,7 @@ func main() {
 			args = os.Args[3:]
 			fallthrough
 		default:
-			t = newTestBasic(args)
+			t = newTestBasic(args, nil)
 			t.Reset(ctx)
 		}
 	}
