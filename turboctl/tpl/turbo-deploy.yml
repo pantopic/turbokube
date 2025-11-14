@@ -16,10 +16,8 @@ spec:
     spec:
       containers:
       - name: turbokube
-        image: registry.digitalocean.com/turbokube/turbokube
+        image: mirror.gcr.io/pantopic/turbokube
         imagePullPolicy: IfNotPresent
-        imagePullSecrets:
-        - name: registry-turbokube
         args:
         - /turbokube
         - --provider-config
