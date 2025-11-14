@@ -37,7 +37,8 @@ resource "digitalocean_firewall" "turbokube" {
     protocol              = "icmp"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
-  tags = ["turbokube"]
+  depends_on = [digitalocean_tag.turbokube]
+  tags       = ["turbokube"]
 }
 
 resource "digitalocean_loadbalancer" "kube" {

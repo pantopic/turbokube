@@ -4,8 +4,8 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.14
-export IP_ETCD_1=10.0.0.8
+export IP_ETCD_0=10.0.0.9
+export IP_ETCD_1=10.0.0.15
 export IP_ETCD_2=10.0.0.7
 
 # All nodes

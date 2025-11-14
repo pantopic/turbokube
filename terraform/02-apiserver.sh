@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.14
-export IP_ETCD_1=10.0.0.8
+export IP_ETCD_0=10.0.0.9
+export IP_ETCD_1=10.0.0.15
 export IP_ETCD_2=10.0.0.7
-export IP_LB=10.0.0.35
+export IP_LB=10.0.0.20
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -51,13 +51,13 @@ kubeadm init \
   --upload-certs
 
 # control plane
-kubeadm join 10.0.0.35:6443 --token mjge65.zqkdfpntgtqfk2qd \
-        --discovery-token-ca-cert-hash sha256:348bc363a91f543977d3ce44e0e06684a819e13e45121eb9661397dd54661064 \
-        --control-plane --certificate-key 3cd2605e60870d635139c12cf610f2791d25d85fa6564aee8b37106af29fb98c
+  kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
+        --discovery-token-ca-cert-hash sha256:ad2bec2b4c294b44022ac6454454bb55593e9be325794bdf08f40b60688b30b3 \
+        --control-plane --certificate-key 74de487df0912bb7d2254e07eec2d879023d144040f98dc716b1abf452afa4c9
 
 # metrics
-kubeadm join 10.0.0.35:6443 --token mjge65.zqkdfpntgtqfk2qd \
-        --discovery-token-ca-cert-hash sha256:348bc363a91f543977d3ce44e0e06684a819e13e45121eb9661397dd54661064
+kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
+        --discovery-token-ca-cert-hash sha256:ad2bec2b4c294b44022ac6454454bb55593e9be325794bdf08f40b60688b30b3
 
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
@@ -78,6 +78,6 @@ kubectl apply -f components.yaml
 #   kubeadm init phase upload-certs --upload-certs
 #   kubeadm init phase upload-config kubeadm
 #
-cat /etc/kubernetes/pki/apiserver.crt
-cat /etc/kubernetes/pki/apiserver.key
-cat /etc/kubernetes/admin.conf
+# cat /etc/kubernetes/pki/apiserver.crt
+# cat /etc/kubernetes/pki/apiserver.key
+# cat /etc/kubernetes/admin.conf

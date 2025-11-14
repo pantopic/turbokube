@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.15
+export IP_TURBO=10.0.0.17
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiServer: 
@@ -61,7 +61,5 @@ kubectl apply -f components.yaml
 #   kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
 #   kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8081:80
 #
+#   doctl registry kubernetes-manifest
 #   
-  tolerations:
-  - key: node-role.kubernetes.io/control-plane
-    operator: Exists

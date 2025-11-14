@@ -1,9 +1,5 @@
 build:
-	@go build -ldflags="-s -w" -o _dist/turbokube .
-	@docker build -t pantopic/turbokube .
-
-push:
-	@docker push pantopic/turbokube
+	@go build
 
 test:
 	@go test ./...
