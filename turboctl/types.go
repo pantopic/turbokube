@@ -26,5 +26,6 @@ type Input struct {
 	Config   Config
 	Name     string
 	Replicas int
+	VNodes   int
 	Taint    Taint
 }

@@ -98,6 +98,7 @@ func newTestBasic(args []string) *testBasic {
 				Value:  "0000",
 				Effect: "NoSchedule",
 			},
+			VNodes: 4,
 		},
 		n:     *n,
 		csv:   w,
