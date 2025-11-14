@@ -16,8 +16,10 @@ spec:
     spec:
       containers:
       - name: turbokube
-        image: pantopic/turbokube
-        imagePullPolicy: Always
+        image: registry.digitalocean.com/turbokube/turbokube
+        imagePullPolicy: IfNotPresent
+        imagePullSecrets:
+        - name: registry-turbokube
         args:
         - /turbokube
         - --provider-config
