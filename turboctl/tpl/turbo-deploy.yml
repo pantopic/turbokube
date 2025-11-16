@@ -18,6 +18,9 @@ spec:
       - name: turbokube
         image: mirror.gcr.io/pantopic/turbokube
         imagePullPolicy: IfNotPresent
+        resources:
+          requests:
+            memory: 50Mi
         args:
         - /turbokube
         - --provider-config

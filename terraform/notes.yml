@@ -1,0 +1,17 @@
+Surprises:
+  etcd:
+    - Network bandwidth is higher than expected
+    - CPU usage in relation to other metrics is lower than expected
+    - Memory usage is way lower than expected (under 0.5 GB out of 16)
+  api-server:
+    - Memory usage is about half of expected (4 GB out of 16)
+  scheduler: 
+    - |
+      The turbokube scheduler is really bad at assigning pods to underutilized nodes. The entire process stalled many
+      times after autoscale because the scheduler assigned new pods to older nodes even when there were new nodes
+      with relatively few pods assigned. Maybe the lack of resource requests is breaking the scheduler algorithm and
+      we need to request some minimum amount of memory in order for balance to occur?
+
+Not surprises:
+  leases:
+    - Renewal throughput grows linearly (as suspected)

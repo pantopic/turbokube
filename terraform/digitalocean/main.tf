@@ -35,10 +35,10 @@ resource "digitalocean_tag" "api-server" {
 variable "node_class" {
   default = {
     api-server : "g-4vcpu-16gb-intel"
-    etcd : "g-4vcpu-16gb-intel"
-    metrics : "m-4vcpu-32gb"
+    etcd : "c2-4vcpu-8gb-intel"
+    metrics : "m-8vcpu-64gb"
     worker-control-plane : "s-4vcpu-16gb-amd"
-    worker : "m-8vcpu-64gb"
+    worker : "m-4vcpu-32gb"
     admin : "s-2vcpu-4gb"
   }
 }

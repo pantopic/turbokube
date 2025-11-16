@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.9
-export IP_ETCD_1=10.0.0.15
-export IP_ETCD_2=10.0.0.7
-export IP_LB=10.0.0.20
+export IP_ETCD_0=10.0.0.5
+export IP_ETCD_1=10.0.0.30
+export IP_ETCD_2=10.0.0.2
+export IP_LB=10.0.0.14
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -56,8 +56,9 @@ kubeadm init \
         --control-plane --certificate-key 74de487df0912bb7d2254e07eec2d879023d144040f98dc716b1abf452afa4c9
 
 # metrics
-kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
-        --discovery-token-ca-cert-hash sha256:ad2bec2b4c294b44022ac6454454bb55593e9be325794bdf08f40b60688b30b3
+kubeadm join 10.0.0.14:6443 --token dl1xl5.1urwt9dbhj0gdeud \
+        --discovery-token-ca-cert-hash sha256:96aa4c64f4952e4cb7bc2ef299c1ffa566be63cc529b4aa4177b2c76ede97304
+
 
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml

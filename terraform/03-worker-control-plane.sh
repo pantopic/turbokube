@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.17
+export IP_TURBO=10.0.0.4
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiServer: 
@@ -42,7 +42,7 @@ kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 # Fix metrics server configuration to not be a giant PITA
-sed -i 's/--metric-resolution=15s/"--metric-resolution=15s --kubelet-preferred-address-types=InternalIP --kubelet-insecure-tls"/' components.yaml
+sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml
 # Allow metrics server to run on worker control node
 sed -i 's/    spec:/    spec:\n      tolerations:\n      - key: node-role.kubernetes.io\/control-plane\n        operator: Exists/' components.yaml
 kubectl apply -f components.yaml
