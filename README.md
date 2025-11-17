@@ -63,6 +63,7 @@ planes at once to coordinate creation of virtual nodes and workloads scheduled u
 - Types of load (few large deployments vs many small deployments)
 - Topology of control plane (colocated vs offloaded: etcd, scheduler, etc)
 - Configuration of control plane (api server cache size, etcd knobs, etc)
+- Scheduler (default vs [YuniKorn](https://github.com/apache/yunikorn-core))
 
 ## Experiment Goals
 

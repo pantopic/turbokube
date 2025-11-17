@@ -6,12 +6,27 @@ Surprises:
   api-server:
     - Memory usage is about half of expected (4 GB out of 16)
   scheduler: 
-    - |
+    resource_requests:
       The turbokube scheduler is really bad at assigning pods to underutilized nodes. The entire process stalled many
       times after autoscale because the scheduler assigned new pods to older nodes even when there were new nodes
       with relatively few pods assigned. Maybe the lack of resource requests is breaking the scheduler algorithm and
       we need to request some minimum amount of memory in order for balance to occur?
+    concurrency:
+      A `-c` param was added to turboctl from the start so that namespaces could be provisioned in parallel. Once a
+      clean run was produced surpassing 32k pods, turboctl was run with `-c 2` which should, in theory, double the
+      rate at which pods and nodes are created. This did not happen. Instead, latency doubled and throughput remained
+      almost unchanged. Turns out the rate at which we can add pods to the cluster is determined by the scheduler.
 
 Not surprises:
   leases:
-    - Renewal throughput grows linearly (as suspected)
+    - Lease renewal throughput grows linearly (as suspected)
+
+Thoughts:
+  - |
+    What are we really load testing here? Stretching past 150,000 pods when we're provisioning at 12 pods per second
+    feels like a waste of time and money. Do we want to pay $40 for a 4 hour load test just to find the next bottleneck
+    so we can run it again? What's the ROI? It seems like the default scheduler is just going to 
+    [desample](https://kubernetes.io/docs/concepts/scheduling-eviction/scheduler-perf-tuning/#percentage-of-nodes-to-score) 
+    as node count increases to maintain consistent performance anyways.  
+    Wouldn't it be faster, cheaper and more useful to accelerate the test by improving the scheduler? Isn't that the
+    original complaint? Throughput rather than maximum capacity?  
