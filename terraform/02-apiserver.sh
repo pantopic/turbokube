@@ -2,11 +2,17 @@
 set -e
 
 export IP_ETCD_0=10.0.0.5
-export IP_ETCD_1=10.0.0.30
-export IP_ETCD_2=10.0.0.2
-export IP_LB=10.0.0.14
+export IP_ETCD_1=10.0.0.22
+export IP_ETCD_2=10.0.0.23
+export IP_LB=10.0.0.2
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: $IP_LB
+  bindPort: 6443
+---
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 kubernetesVersion: stable
