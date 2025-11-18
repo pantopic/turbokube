@@ -53,7 +53,7 @@ kubectl apply -f components.yaml
 #
 #   cat /var/log/cloud-init-output.log
 #   tail /var/log/cloud-init-output.log -f
-#   
+#
 #   kubeadm init phase upload-certs --upload-certs
 #   kubeadm init phase upload-config kubeadm
 #
@@ -62,4 +62,4 @@ kubectl apply -f components.yaml
 #   kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8081:80
 #
 #   doctl registry kubernetes-manifest
-#   
+#

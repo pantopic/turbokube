@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.12
-export IP_ETCD_1=10.0.0.11
-export IP_ETCD_2=10.0.0.17
-export IP_APISERVER_0=10.0.0.13
+export IP_ETCD_0=10.0.0.25
+export IP_ETCD_1=10.0.0.23
+export IP_ETCD_2=10.0.0.24
+export IP_APISERVER_0=10.0.0.6
 export IP_TURBO=10.0.0.4
 
 mkdir -p /etc/kubernetes/pki/etcd

@@ -1,11 +1,11 @@
-# resource "digitalocean_droplet" "worker-control-plane" {
-#   name     = "worker-control-plane"
+# resource "digitalocean_droplet" "worker-control" {
+#   name     = "worker-control"
 #   region   = var.region
 #   vpc_uuid = digitalocean_vpc.turbokube.id
 #   tags     = ["turbokube"]
 
 #   image     = "ubuntu-22-04-x64"
-#   size      = var.node_class.worker-control-plane
+#   size      = var.node_class.worker-control
 #   ssh_keys  = [var.ssh_key]
 #   user_data = file("setup.sh")
 # }

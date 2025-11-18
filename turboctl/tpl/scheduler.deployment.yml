@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    component: turbokube-scheduler
+  name: {{ .Scheduler.Name }}
+  namespace: kube-system
+spec:
+  selector:
+    matchLabels:
+      component: turbokube-scheduler
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        component: turbokube-scheduler
+    spec:
+      serviceAccountName: turbokube-scheduler
+      containers:
+      - command:
+        - /usr/local/bin/kube-scheduler
+        - --config=/etc/kubernetes/turbokube-scheduler/config.yaml
+        image: pantopic/turbokube-scheduler:1.35
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+          initialDelaySeconds: 15
+        name: kube-second-scheduler
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 10259
+            scheme: HTTPS
+        resources:
+          requests:
+            cpu: '0.1'
+        securityContext:
+          privileged: false
+        volumeMounts:
+          - name: config-volume
+            mountPath: /etc/kubernetes/turbokube-scheduler
+      hostNetwork: false
+      hostPID: false
+      volumes:
+        - name: config-volume
+          configMap:
+            name: {{ .Scheduler.Name }}
+      nodeSelector:
+        pantopic/turbokube: scheduler
+      tolerations:
+      - key: pantopic/turbokube
+        value: scheduler
+        operator: Exists

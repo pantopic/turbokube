@@ -107,9 +107,8 @@ kubeadm init phase certs apiserver-etcd-client --config=/tmp/${IP_ETCD_0}/kubead
 find /tmp/${IP_ETCD_2} -name ca.key -type f -delete
 find /tmp/${IP_ETCD_1} -name ca.key -type f -delete
 
-
-scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_1}/* root@${IP_ETCD_1}:
-scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_2}:
+scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_1}/* root@${IP_ETCD_1}:/etc/kubernetes
+scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_2}:/etc/kubernetes
 
 kubeadm init phase etcd local --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
 

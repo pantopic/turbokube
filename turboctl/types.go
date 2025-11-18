@@ -23,9 +23,14 @@ type Config struct {
 }
 
 type Input struct {
-	Config   Config
-	Name     string
-	Replicas int
-	VNodes   int
-	Taint    Taint
+	Config    Config
+	Name      string
+	Replicas  int
+	VNodes    int
+	Taint     Taint
+	Scheduler Scheduler
+}
+
+type Scheduler struct {
+	Name string
 }

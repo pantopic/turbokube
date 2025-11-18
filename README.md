@@ -35,7 +35,7 @@ A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel
 oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
 
 *TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in *Cluster A*
-can present itself as one hundred (or more) nodes in *Cluster B* (the system under load).
+can present itself as hundreds of nodes in *Cluster B* (the system under load).
 
 *TurboKube* makes Kubernetes control plane load testing faster, cheaper and simpler.
 

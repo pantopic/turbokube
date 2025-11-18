@@ -15,9 +15,9 @@ and `kubectl`.
 The shell scripts here are expected to be altered based on output from terraform and kubeadm. They should be run
 manually in this order:
 - [01-etcd.sh](01-etcd.sh) should be run on etcd nodes in *cluster B* to start etcd
-- [02-apiserver.sh](02-apiserver.sh) should be run on apiserver nodes in *cluster B* to start the kubernetes cluster
+- [02-api-server.sh](02-apiserver.sh) should be run on api-server nodes in *cluster B* to start the kubernetes cluster
 - [03-scheduler.sh](03-scheduler.sh) should be run on the scheduler node in *cluster B*
-- [04-controller-manager.sh](04-controller-manager.sh) should be run on the controller-manager node in *cluster B*
-- [05-worker-control.sh](05-worker-control.sh) should be run on the *cluster A* control node to start the other kubernetes cluster
-- [06-metrics.sh](06-metrics.sh) configures the metrics server with prometheus and grafana in *cluster B*
-- [07-admin.sh](07-admin.sh) should be run on the cluster A control node to start the other kubernetes cluster
+<!-- - [04-controller-manager.sh](04-controller-manager.sh) should be run on the controller-manager node in *cluster B* -->
+- [04-worker.sh](04-worker.sh) should be run on the *cluster A* control node to start the other kubernetes cluster
+- [05-metrics.sh](05-metrics.sh) configures the metrics server with prometheus and grafana in *cluster B*
+- [06-admin.sh](06-admin.sh) should be run on the cluster A control node to start the other kubernetes cluster

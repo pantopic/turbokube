@@ -81,6 +81,9 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 				Value:  "0000",
 				Effect: "NoSchedule",
 			},
+			Scheduler: Scheduler{
+				Name: "default-scheduler",
+			},
 			VNodes: 4,
 		},
 		n:     *n,
@@ -106,11 +109,41 @@ func (t *testBasic) run(ctx context.Context) {
 		panic(err)
 	}
 
+	if t.concurrency > 1 {
+		// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+		log.Println(`Creating turbokube scheduler service account`)
+		if _, err := t.client_b.CoreV1().ServiceAccounts(`kube-system`).
+			Patch(ctx, `turbokube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.serviceaccount.yml`, t.input), applyOpts); err != nil {
+			panic(err)
+		}
+		log.Println(`Creating turbokube scheduler cluster role binding`)
+		if _, err := t.client_b.RbacV1().ClusterRoleBindings().
+			Patch(ctx, `turbokube-scheduler-as-kube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.clusterrolebinding.yml`, t.input), applyOpts); err != nil {
+			panic(err)
+		}
+		log.Println(`Creating turbokube scheduler role binding`)
+		if _, err := t.client_b.RbacV1().RoleBindings(`kube-system`).
+			Patch(ctx, `turbokube-scheduler-extension-apiserver-authentication-reader`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.rolebinding.yml`, t.input), applyOpts); err != nil {
+			panic(err)
+		}
+		for i := range t.concurrency {
+			t.input.Scheduler.Name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
+			if _, err := t.client_b.CoreV1().ConfigMaps(`kube-system`).
+				Patch(ctx, t.input.Scheduler.Name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.configmap.yml`, t.input), applyOpts); err != nil {
+				panic(err)
+			}
+			if _, err := t.client_b.AppsV1().Deployments(`kube-system`).
+				Patch(ctx, t.input.Scheduler.Name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.deployment.yml`, t.input), applyOpts); err != nil {
+				panic(err)
+			}
+		}
+	}
+
 	log.Printf("Starting %d Worker(s)\n", t.concurrency)
 	var jobs = make(chan int)
-	for range t.concurrency {
+	for i := range t.concurrency {
 		t.wg.Go(func() {
-			t.work(ctx, jobs)
+			t.work(ctx, jobs, i)
 		})
 	}
 
@@ -158,10 +191,14 @@ func (t *testBasic) Done() (done chan bool) {
 	return
 }
 
-func (t *testBasic) work(ctx context.Context, jobs chan int) {
+func (t *testBasic) work(ctx context.Context, jobs chan int, i int) {
+	var base = t.input
+	if t.concurrency > 1 {
+		base.Scheduler.Name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
+	}
 	for n := range jobs {
 		name := fmt.Sprintf(`turbokube-%04x`, n)
-		var input = t.input
+		var input = base
 		input.Name = name
 		input.Taint.Value = fmt.Sprintf(`%04x`, n)
 		t.awaitDeployment(ctx, t.client_a, `virtual node pool`, `default`, name)

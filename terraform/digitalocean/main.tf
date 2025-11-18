@@ -12,6 +12,7 @@ terraform {
     }
   }
 }
+
 provider "digitalocean" {
   # set env var DIGITALOCEAN_ACCESS_TOKEN
 }
@@ -27,6 +28,7 @@ resource "digitalocean_project" "turbokube" {
 resource "digitalocean_tag" "turbokube" {
   name = "turbokube"
 }
+
 resource "digitalocean_tag" "api-server" {
   name = "api-server"
 }
@@ -34,12 +36,20 @@ resource "digitalocean_tag" "api-server" {
 # https://slugs.do-api.dev/
 variable "node_class" {
   default = {
+    admin : "s-2vcpu-4gb"
     api-server : "g-4vcpu-16gb-intel"
     etcd : "c2-4vcpu-8gb-intel"
     metrics : "m-8vcpu-64gb"
-    worker-control-plane : "s-4vcpu-16gb-amd"
+    scheduler : "g-4vcpu-16gb-intel"
     worker : "m-4vcpu-32gb"
-    admin : "s-2vcpu-4gb"
+    worker-control-plane : "s-4vcpu-16gb-amd"
+  }
+}
+variable "node_count" {
+  default = {
+    api-server : 3
+    etcd : 3
+    scheduler : 1
   }
 }
 

@@ -30,20 +30,6 @@ networking:
   podSubnet: 10.244.0.0/16
 EOF
 
-cat <<EOF | sudo tee /etc/systemd/system/configure-nlb.service
-[Unit]
-Description=Configure Network Load Balancer
-After=network.target
-
-[Service]
-ExecStart=/sbin/ip route add to local $IP_LB dev eth1
-ExecStart=/sbin/sysctl -w net.ipv4.conf.eth1.arp_announce=2 
-Type=oneshot
-RemainAfterExit=yes
-
-[Install]
-WantedBy=multi-user.target
-EOF
 sudo systemctl enable configure-nlb
 sudo systemctl start configure-nlb
 
@@ -57,14 +43,13 @@ kubeadm init \
   --upload-certs
 
 # control plane
-  kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
-        --discovery-token-ca-cert-hash sha256:ad2bec2b4c294b44022ac6454454bb55593e9be325794bdf08f40b60688b30b3 \
-        --control-plane --certificate-key 74de487df0912bb7d2254e07eec2d879023d144040f98dc716b1abf452afa4c9
+  kubeadm join 10.0.0.2:6443 --token tpbgnw.mph1m8tbtshg2s87 \
+        --discovery-token-ca-cert-hash sha256:8a88425a52558190f65b54e52062aa352b9a6b48443ae1e5f9fef4e5b0512f79 \
+        --control-plane --certificate-key 102ad9fef2df3d0b8536ee2bab3ccff74c56bcd43498b595fdc60cc0133f8ae6
 
 # metrics
-kubeadm join 10.0.0.14:6443 --token dl1xl5.1urwt9dbhj0gdeud \
-        --discovery-token-ca-cert-hash sha256:96aa4c64f4952e4cb7bc2ef299c1ffa566be63cc529b4aa4177b2c76ede97304
-
+kubeadm join 10.0.0.2:6443 --token tpbgnw.mph1m8tbtshg2s87 \
+        --discovery-token-ca-cert-hash sha256:8a88425a52558190f65b54e52062aa352b9a6b48443ae1e5f9fef4e5b0512f79
 
 # Add flannel for networking
 kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
