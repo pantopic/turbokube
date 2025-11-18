@@ -116,9 +116,14 @@ func (t *testBasic) run(ctx context.Context) {
 			Patch(ctx, `turbokube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.serviceaccount.yml`, t.input), applyOpts); err != nil {
 			panic(err)
 		}
-		log.Println(`Creating turbokube scheduler cluster role binding`)
+		log.Println(`Creating turbokube scheduler cluster role binding kube scheduler`)
 		if _, err := t.client_b.RbacV1().ClusterRoleBindings().
-			Patch(ctx, `turbokube-scheduler-as-kube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.clusterrolebinding.yml`, t.input), applyOpts); err != nil {
+			Patch(ctx, `turbokube-scheduler-as-kube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-kube.yml`, t.input), applyOpts); err != nil {
+			panic(err)
+		}
+		log.Println(`Creating turbokube scheduler cluster role binding volume scheduler`)
+		if _, err := t.client_b.RbacV1().ClusterRoleBindings().
+			Patch(ctx, `turbokube-scheduler-as-volume-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-volume.yml`, t.input), applyOpts); err != nil {
 			panic(err)
 		}
 		log.Println(`Creating turbokube scheduler role binding`)
