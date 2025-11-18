@@ -52,4 +52,4 @@ spec:
       tolerations:
       - key: pantopic/turbokube
         value: scheduler
-        operator: Exists
+        operator: Equal
