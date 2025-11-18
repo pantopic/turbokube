@@ -4,9 +4,9 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.5
-export IP_ETCD_1=10.0.0.30
-export IP_ETCD_2=10.0.0.2
+export IP_ETCD_0=10.0.0.4
+export IP_ETCD_1=10.0.0.7
+export IP_ETCD_2=10.0.0.5
 
 # All nodes
 mkdir -p /etc/systemd/system/kubelet.service.d
@@ -114,7 +114,7 @@ kubeadm init phase etcd local --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
 
 # etcd-1 /\ etcd-2
 mv pki /etc/kubernetes/
-kubeadm init phase etcd local --config=$HOME/kubeadmcfg.yaml
+kubeadm init phase etcd local --config=/etc/kubernetes/kubeadmcfg.yaml
 
 ETCDCTL_API=3 etcdctl \
 --cert /etc/kubernetes/pki/etcd/peer.crt \

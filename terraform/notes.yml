@@ -21,12 +21,20 @@ Not surprises:
   leases:
     - Lease renewal throughput grows linearly (as suspected)
 
-Thoughts:
-  - |
-    What are we really load testing here? Stretching past 150,000 pods when we're provisioning at 12 pods per second
+2025-nov-16:
+  - What are we really load testing here? Stretching past 150,000 pods when we're provisioning at 12 pods per second
     feels like a waste of time and money. Do we want to pay $40 for a 4 hour load test just to find the next bottleneck
     so we can run it again? What's the ROI? It seems like the default scheduler is just going to 
     [desample](https://kubernetes.io/docs/concepts/scheduling-eviction/scheduler-perf-tuning/#percentage-of-nodes-to-score) 
     as node count increases to maintain consistent performance anyways.  
     Wouldn't it be faster, cheaper and more useful to accelerate the test by improving the scheduler? Isn't that the
-    original complaint? Throughput rather than maximum capacity?  
+    original complaint? Throughput rather than maximum capacity?
+
+2025-nov-17:
+  - Pegged at 16 pods per second no matter what.
+  - Adding a bunch of schedulers didn't increase throughput at all. All it did is occupy more memory. This is exciting.
+  - API server memory util is nearly 50% of 16GB beyond 64k pods.
+  - Etcd is still bing chilling.
+  - Worker pool was not correctly balanced. More nodes with less ram and lower scaling thresholds will be better.
+  - It might be time to attack the watch cache.
+  - This is starting to look like a lock contention issue.

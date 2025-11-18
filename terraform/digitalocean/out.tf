@@ -5,9 +5,9 @@ output "ext" {
     zipmap(digitalocean_droplet.api-server.*.name, digitalocean_droplet.api-server.*.ipv4_address),
     zipmap(digitalocean_droplet.scheduler.*.name, digitalocean_droplet.scheduler.*.ipv4_address),
     {
-      # "admin" : digitalocean_droplet.admin.ipv4_address
-      # "metrics" : digitalocean_droplet.metrics.ipv4_address
-      # "turbo" : digitalocean_droplet.worker-control.ipv4_address
+      "admin" : digitalocean_droplet.admin.ipv4_address
+      "metrics" : digitalocean_droplet.metrics.ipv4_address
+      "turbo" : digitalocean_droplet.worker-control.ipv4_address
     }
   )
 }
@@ -18,9 +18,9 @@ output "int" {
     zipmap(digitalocean_droplet.scheduler.*.name, digitalocean_droplet.scheduler.*.ipv4_address_private),
     {
       "lb" : digitalocean_loadbalancer.kube.ip
-      # "admin" : digitalocean_droplet.admin.ipv4_address_private
-      # "metrics" : digitalocean_droplet.metrics.ipv4_address_private
-      # "turbo" : digitalocean_droplet.worker-control.ipv4_address_private
+      "admin" : digitalocean_droplet.admin.ipv4_address_private
+      "metrics" : digitalocean_droplet.metrics.ipv4_address_private
+      "turbo" : digitalocean_droplet.worker-control.ipv4_address_private
     }
   )
 }

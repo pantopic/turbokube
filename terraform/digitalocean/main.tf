@@ -41,8 +41,8 @@ variable "node_class" {
     etcd : "c2-4vcpu-8gb-intel"
     metrics : "m-8vcpu-64gb"
     scheduler : "g-4vcpu-16gb-intel"
-    worker : "m-4vcpu-32gb"
-    worker-control-plane : "s-4vcpu-16gb-amd"
+    worker : "g-4vcpu-16gb-intel"
+    worker-control : "s-4vcpu-16gb-amd"
   }
 }
 variable "node_count" {

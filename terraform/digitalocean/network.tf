@@ -11,12 +11,17 @@ resource "digitalocean_firewall" "turbokube" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "all"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+    source_addresses = ["10.0.0.0/8"]
   }
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
     source_addresses = [var.ip_address]
+  }
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "10250"
+    source_addresses = ["0.0.0.0/0", "::/0"]
   }
   outbound_rule {
     protocol              = "tcp"

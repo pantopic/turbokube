@@ -1,9 +1,15 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.4
+export IP_TURBO=10.0.0.26
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
+apiVersion: kubeadm.k8s.io/v1beta4
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: $IP_TURBO
+  bindPort: 6443
+---
 apiServer: 
   advertiseAddress: $IP_TURBO
 apiVersion: kubeadm.k8s.io/v1beta4
