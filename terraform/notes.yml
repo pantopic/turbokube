@@ -27,14 +27,28 @@ Not surprises:
     so we can run it again? What's the ROI? It seems like the default scheduler is just going to 
     [desample](https://kubernetes.io/docs/concepts/scheduling-eviction/scheduler-perf-tuning/#percentage-of-nodes-to-score) 
     as node count increases to maintain consistent performance anyways.  
-    Wouldn't it be faster, cheaper and more useful to accelerate the test by improving the scheduler? Isn't that the
-    original complaint? Throughput rather than maximum capacity?
+    Wouldn't it be faster, cheaper and more useful to accelerate the test by improving the throughput of the scheduler?
+    Isn't that the original complaint? Throughput rather than maximum capacity?
 
 2025-nov-17:
-  - Pegged at 16 pods per second no matter what.
-  - Adding a bunch of schedulers didn't increase throughput at all. All it did is occupy more memory. This is exciting.
+  - Adding a bunch of schedulers didn't increase throughput at all. All it did is occupy more memory.
+  - Pegged at 16 pods per second no matter what. This is exciting.
   - API server memory util is nearly 50% of 16GB beyond 64k pods.
-  - Etcd is still bing chilling.
+  - Etcd still appears not to be a bottleneck.
   - Worker pool was not correctly balanced. More nodes with less ram and lower scaling thresholds will be better.
-  - It might be time to attack the watch cache.
-  - This is starting to look like a lock contention issue.
+  - The very predictable throughput makes this start to look like some kind of lock contention issue.
+  - It might be time to attack the api server (watch cache).
+  - Tuning params?: # https://kubernetes.io/docs/reference/command-line-tools-reference/kube-apiserver/
+    - --profiling
+    - --max-requests-inflight          (2025-11-18T15-01-37Z - no effect)
+    - --max-mutating-requests-inflight (2025-11-18T15-01-37Z - no effect)
+    - --watch-cache                    (2025-11-18T15-50-40Z - no effect but huge network spike)
+    - --watch-cache-sizes
+    - --storage-backend?
+  - Let's get krv running and experiment with read replication, then mess with the wach cache.
+  - Cloud bill so far is $80
+
+2025-nov-18:
+  - Network throughput with the watch cache disabled is insane. 300Mbps network outbound from < 3Mbps disk.
+  - Etcd 1500 nodes (48k pods) = 566M snap, 367M wal. Status reports 602 MB.
+  - Api server is pegged

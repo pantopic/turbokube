@@ -109,19 +109,20 @@ func (t *testBasic) run(ctx context.Context) {
 		panic(err)
 	}
 
+	// Start schedulers
+	// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 	if t.concurrency > 1 {
-		// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 		log.Println(`Creating turbokube scheduler service account`)
 		if _, err := t.client_b.CoreV1().ServiceAccounts(`kube-system`).
 			Patch(ctx, `turbokube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.serviceaccount.yml`, t.input), applyOpts); err != nil {
 			panic(err)
 		}
-		log.Println(`Creating turbokube scheduler cluster role binding kube scheduler`)
+		log.Println(`Creating turbokube scheduler cluster role binding kube-scheduler`)
 		if _, err := t.client_b.RbacV1().ClusterRoleBindings().
 			Patch(ctx, `turbokube-scheduler-as-kube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-kube.yml`, t.input), applyOpts); err != nil {
 			panic(err)
 		}
-		log.Println(`Creating turbokube scheduler cluster role binding volume scheduler`)
+		log.Println(`Creating turbokube scheduler cluster role binding volume-scheduler`)
 		if _, err := t.client_b.RbacV1().ClusterRoleBindings().
 			Patch(ctx, `turbokube-scheduler-as-volume-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-volume.yml`, t.input), applyOpts); err != nil {
 			panic(err)
@@ -133,17 +134,18 @@ func (t *testBasic) run(ctx context.Context) {
 		}
 		var startup sync.WaitGroup
 		for i := range t.concurrency {
-			t.input.Scheduler.Name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
+			var name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
+			t.input.Scheduler.Name = name
 			if _, err := t.client_b.CoreV1().ConfigMaps(`kube-system`).
-				Patch(ctx, t.input.Scheduler.Name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.configmap.yml`, t.input), applyOpts); err != nil {
+				Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.configmap.yml`, t.input), applyOpts); err != nil {
 				panic(err)
 			}
 			if _, err := t.client_b.AppsV1().Deployments(`kube-system`).
-				Patch(ctx, t.input.Scheduler.Name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.deployment.yml`, t.input), applyOpts); err != nil {
+				Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.deployment.yml`, t.input), applyOpts); err != nil {
 				panic(err)
 			}
 			startup.Go(func() {
-				t.awaitDeployment(ctx, t.client_b, `scheduler`, `kube-system`, t.input.Scheduler.Name)
+				t.awaitDeployment(ctx, t.client_b, `scheduler`, `kube-system`, name)
 			})
 		}
 		startup.Wait()

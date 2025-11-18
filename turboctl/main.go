@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -26,7 +27,8 @@ func main() {
 			args = os.Args[3:]
 			fallthrough
 		default:
-			out := fmt.Sprintf("turbokube.%s.csv", time.Now().UTC().Format(time.RFC3339))
+			date := strings.ReplaceAll(time.Now().UTC().Format(time.RFC3339), `:`, `-`)
+			out := fmt.Sprintf("turbokube.%s.csv", date)
 			f, err := os.OpenFile(out, os.O_RDWR|os.O_CREATE, 0644)
 			if err != nil {
 				log.Fatal(err)

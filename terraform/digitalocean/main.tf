@@ -33,6 +33,14 @@ resource "digitalocean_tag" "api-server" {
   name = "api-server"
 }
 
+variable "node_count" {
+  default = {
+    api-server : 3
+    etcd : 3
+    scheduler : 1
+  }
+}
+
 # https://slugs.do-api.dev/
 variable "node_class" {
   default = {
@@ -43,13 +51,6 @@ variable "node_class" {
     scheduler : "g-4vcpu-16gb-intel"
     worker : "g-4vcpu-16gb-intel"
     worker-control : "s-4vcpu-16gb-amd"
-  }
-}
-variable "node_count" {
-  default = {
-    api-server : 3
-    etcd : 3
-    scheduler : 1
   }
 }
 

@@ -22,7 +22,7 @@ kubectl --namespace kube-prometheus-stack get secrets kube-prometheus-stack-graf
 
 kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
 
-kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-prometheus 9092:9090
+kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-prometheus 9093:9090
 
 # helm repo add grafana https://grafana.github.io/helm-charts
 # helm repo update

@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.4
-export IP_ETCD_1=10.0.0.7
-export IP_ETCD_2=10.0.0.5
-export IP_APISERVER_0=10.0.0.6
-export IP_TURBO=10.0.0.26
+export IP_ETCD_0=10.0.0.29
+export IP_ETCD_1=10.0.0.34
+export IP_ETCD_2=10.0.0.32
+export IP_APISERVER_0=10.0.0.28
+export IP_TURBO=10.0.0.31
 
 mkdir -p /etc/kubernetes/pki/etcd
 scp -o "StrictHostKeyChecking=accept-new" root@$IP_TURBO:/etc/kubernetes/admin.conf /etc/kubernetes/admin.a.conf
@@ -15,12 +15,6 @@ scp -o "StrictHostKeyChecking=accept-new" root@$IP_APISERVER_0:/etc/kubernetes/p
 scp -o "StrictHostKeyChecking=accept-new" root@$IP_ETCD_0:/etc/kubernetes/pki/etcd/ca.crt /etc/kubernetes/pki/etcd/ca.crt
 scp -o "StrictHostKeyChecking=accept-new" root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.crt /etc/kubernetes/pki/apiserver-etcd-client.crt
 scp -o "StrictHostKeyChecking=accept-new" root@$IP_ETCD_0:/etc/kubernetes/pki/apiserver-etcd-client.key /etc/kubernetes/pki/apiserver-etcd-client.key
-
-ETCDCTL_API=3 etcdctl \
---cert /etc/kubernetes/pki/apiserver-etcd-client.crt \
---key /etc/kubernetes/pki/apiserver-etcd-client.key \
---cacert /etc/kubernetes/pki/etcd/ca.crt \
---endpoints https://${IP_ETCD_0}:2379,https://${IP_ETCD_1}:2379,https://${IP_ETCD_2}:2379 endpoint health
 
 wget https://go.dev/dl/go1.25.4.linux-amd64.tar.gz
 rm -rf /usr/local/go && tar -C /usr/local -xzf go1.25.4.linux-amd64.tar.gz
