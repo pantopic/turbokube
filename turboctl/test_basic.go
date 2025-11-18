@@ -131,6 +131,7 @@ func (t *testBasic) run(ctx context.Context) {
 			Patch(ctx, `turbokube-scheduler-extension-apiserver-authentication-reader`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.rolebinding.yml`, t.input), applyOpts); err != nil {
 			panic(err)
 		}
+		var startup sync.WaitGroup
 		for i := range t.concurrency {
 			t.input.Scheduler.Name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
 			if _, err := t.client_b.CoreV1().ConfigMaps(`kube-system`).
@@ -141,7 +142,11 @@ func (t *testBasic) run(ctx context.Context) {
 				Patch(ctx, t.input.Scheduler.Name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.deployment.yml`, t.input), applyOpts); err != nil {
 				panic(err)
 			}
+			startup.Go(func() {
+				t.awaitDeployment(ctx, t.client_b, `scheduler`, `kube-system`, t.input.Scheduler.Name)
+			})
 		}
+		startup.Wait()
 	}
 
 	log.Printf("Starting %d Worker(s)\n", t.concurrency)
