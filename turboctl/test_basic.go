@@ -109,46 +109,9 @@ func (t *testBasic) run(ctx context.Context) {
 		panic(err)
 	}
 
-	// Start schedulers
-	// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 	if t.concurrency > 1 {
-		log.Println(`Creating turbokube scheduler service account`)
-		if _, err := t.client_b.CoreV1().ServiceAccounts(`kube-system`).
-			Patch(ctx, `turbokube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.serviceaccount.yml`, t.input), applyOpts); err != nil {
-			panic(err)
-		}
-		log.Println(`Creating turbokube scheduler cluster role binding kube-scheduler`)
-		if _, err := t.client_b.RbacV1().ClusterRoleBindings().
-			Patch(ctx, `turbokube-scheduler-as-kube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-kube.yml`, t.input), applyOpts); err != nil {
-			panic(err)
-		}
-		log.Println(`Creating turbokube scheduler cluster role binding volume-scheduler`)
-		if _, err := t.client_b.RbacV1().ClusterRoleBindings().
-			Patch(ctx, `turbokube-scheduler-as-volume-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-volume.yml`, t.input), applyOpts); err != nil {
-			panic(err)
-		}
-		log.Println(`Creating turbokube scheduler role binding`)
-		if _, err := t.client_b.RbacV1().RoleBindings(`kube-system`).
-			Patch(ctx, `turbokube-scheduler-extension-apiserver-authentication-reader`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.rolebinding.yml`, t.input), applyOpts); err != nil {
-			panic(err)
-		}
-		var startup sync.WaitGroup
-		for i := range t.concurrency {
-			var name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
-			t.input.Scheduler.Name = name
-			if _, err := t.client_b.CoreV1().ConfigMaps(`kube-system`).
-				Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.configmap.yml`, t.input), applyOpts); err != nil {
-				panic(err)
-			}
-			if _, err := t.client_b.AppsV1().Deployments(`kube-system`).
-				Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.deployment.yml`, t.input), applyOpts); err != nil {
-				panic(err)
-			}
-			startup.Go(func() {
-				t.awaitDeployment(ctx, t.client_b, `scheduler`, `kube-system`, name)
-			})
-		}
-		startup.Wait()
+		// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
+		t.startSchedulers(ctx)
 	}
 
 	log.Printf("Starting %d Worker(s)\n", t.concurrency)
@@ -203,6 +166,48 @@ func (t *testBasic) Done() (done chan bool) {
 	return
 }
 
+func (t *testBasic) startSchedulers(ctx context.Context) {
+	defer log.Println(`Schedulers ready`)
+	log.Println(`Creating turbokube scheduler service account`)
+	if _, err := t.client_b.CoreV1().ServiceAccounts(`kube-system`).
+		Patch(ctx, `turbokube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.serviceaccount.yml`, t.input), applyOpts); err != nil {
+		panic(err)
+	}
+	log.Println(`Creating turbokube scheduler cluster role binding kube-scheduler`)
+	if _, err := t.client_b.RbacV1().ClusterRoleBindings().
+		Patch(ctx, `turbokube-scheduler-as-kube-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-kube.yml`, t.input), applyOpts); err != nil {
+		panic(err)
+	}
+	log.Println(`Creating turbokube scheduler cluster role binding volume-scheduler`)
+	if _, err := t.client_b.RbacV1().ClusterRoleBindings().
+		Patch(ctx, `turbokube-scheduler-as-volume-scheduler`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.crb-volume.yml`, t.input), applyOpts); err != nil {
+		panic(err)
+	}
+	log.Println(`Creating turbokube scheduler apiserver auth role binding`)
+	if _, err := t.client_b.RbacV1().RoleBindings(`kube-system`).
+		Patch(ctx, `turbokube-scheduler-extension-apiserver-authentication-reader`, types.ApplyYAMLPatchType, t.mustRender(`scheduler.rolebinding.yml`, t.input), applyOpts); err != nil {
+		panic(err)
+	}
+	var startup sync.WaitGroup
+	for i := range t.concurrency {
+		var name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
+		t.input.Scheduler.Name = name
+		if _, err := t.client_b.CoreV1().ConfigMaps(`kube-system`).
+			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.configmap.yml`, t.input), applyOpts); err != nil {
+			panic(err)
+		}
+		if _, err := t.client_b.AppsV1().Deployments(`kube-system`).
+			Patch(ctx, name, types.ApplyYAMLPatchType, t.mustRender(`scheduler.deployment.yml`, t.input), applyOpts); err != nil {
+			panic(err)
+		}
+		startup.Go(func() {
+			t.awaitDeployment(ctx, t.client_b, `scheduler`, `kube-system`, name)
+		})
+	}
+	log.Println(`Awaiting schedulers`)
+	startup.Wait()
+}
+
 func (t *testBasic) work(ctx context.Context, jobs chan int, i int) {
 	var base = t.input
 	if t.concurrency > 1 {
@@ -221,15 +226,19 @@ func (t *testBasic) work(ctx context.Context, jobs chan int, i int) {
 			panic(err)
 		}
 		var start = time.Now()
+		var deploys sync.WaitGroup
 		for i := range t.deployments {
-			input.Name = fmt.Sprintf(`turbokube-%02x`, i)
-			d, err := t.client_b.AppsV1().Deployments(namespace.Name).
-				Patch(ctx, input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, input), applyOpts)
-			if err != nil {
-				panic(err)
-			}
-			t.awaitDeployment(ctx, t.client_b, `deployment`, d.Namespace, d.Name)
+			deploys.Go(func() {
+				input.Name = fmt.Sprintf(`turbokube-%02x`, i)
+				d, err := t.client_b.AppsV1().Deployments(namespace.Name).
+					Patch(ctx, input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, input), applyOpts)
+				if err != nil {
+					panic(err)
+				}
+				t.awaitDeployment(ctx, t.client_b, `deployment`, d.Namespace, d.Name)
+			})
 		}
+		deploys.Wait()
 		t.csv.WriteAll([][]string{{name, strconv.Itoa(int(time.Since(start) / time.Millisecond))}})
 		// Create services
 		// Create configmaps
