@@ -229,6 +229,7 @@ func (t *testBasic) work(ctx context.Context, jobs chan int, i int) {
 		var deploys sync.WaitGroup
 		for i := range t.deployments {
 			deploys.Go(func() {
+				input := input
 				input.Name = fmt.Sprintf(`turbokube-%02x`, i)
 				d, err := t.client_b.AppsV1().Deployments(namespace.Name).
 					Patch(ctx, input.Name, types.ApplyYAMLPatchType, t.mustRender(`load-deploy.yml`, input), applyOpts)
