@@ -40,6 +40,7 @@ type testBasic struct {
 	n           int
 	pause       int
 	out         string
+	s           int
 	tpl         *template.Template
 	wg          *sync.WaitGroup
 }
@@ -56,6 +57,7 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 		key         = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
 		pause       = fs.Int("p", 0, "Pause in seconds between namespace creations (default 0)")
 		n           = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
+		s           = fs.Int("s", 0, "Start of namspace to create (default 0)")
 	)
 	err := fs.Parse(args)
 	if err != nil {
@@ -89,6 +91,7 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 		n:     *n,
 		csv:   w,
 		pause: *pause,
+		s:     *s,
 		wg:    &sync.WaitGroup{},
 	}
 }
@@ -100,7 +103,7 @@ func (t *testBasic) Start(ctx context.Context) {
 }
 
 func (t *testBasic) run(ctx context.Context) {
-	var n = t.getProgress(ctx)
+	var n = max(t.s, t.getProgress(ctx))
 	log.Printf("Progress: %d\n", n)
 
 	log.Println(`Creating turbokube config map`)
@@ -315,6 +318,7 @@ func (t *testBasic) awaitDeployment(ctx context.Context, client *kubernetes.Clie
 	if err != nil {
 		panic(err)
 	}
+	defer w.Stop()
 	for {
 		select {
 		case e := <-w.ResultChan():
