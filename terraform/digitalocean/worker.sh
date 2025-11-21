@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-kubeadm join 10.0.0.33:6443 --token 8xp9mo.7ywrf8vgh1n0niu7 \
-        --discovery-token-ca-cert-hash sha256:fcc2ad162f0bd80a6648653b061d1bfd07ef123294acd5fd437eed0d99929d34
+kubeadm join 10.0.0.21:6443 --token ca2ada.0mpbc7f6eds7e6bm \
+        --discovery-token-ca-cert-hash sha256:1439dd3f4b4b9ebacbfe3d8dc46665fae76cad914d35efe360d3244d0bb24555
 
-echo "maxPods: 2026" >> /var/lib/kubelet/config.yaml
+echo "maxPods: 1000" >> /var/lib/kubelet/config.yaml
 systemctl restart kubelet

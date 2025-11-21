@@ -52,3 +52,36 @@ Not surprises:
   - Network throughput with the watch cache disabled is insane. 300Mbps network outbound from < 3Mbps disk.
   - Etcd 1500 nodes (48k pods) = 566M snap, 367M wal. Status reports 602 MB.
   - Api server is pegged
+
+2025-nov-19:
+  - It's alive!
+  - Etcd 1500 nodes (48k pods) = 772M data, 129M raft. Status reports 772 MB.
+  - Stalled worker paused test at 3.2k nodes, 100k pods. Killed worker to resume. PodCidr conflict.
+  - Reduce pod cider from /20 to /21 and increase worker limit from 16 to 32
+  - Krv memory usage is about the same as the database size.
+  - Prometheus starts to freak out around 114k pods w/ 8 pegged cores @ 38GB memory usage
+  - Increase raft compaction limit from 10k to 100k to reduce disk io
+  - etcd-2 ran out of ram. Unable to recover. Absolute panic. 3700 nodes, 116k pods
+  - |
+    (altered) > iostat -d -x 5 -z
+    Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+    vda              0.00      0.00     0.00   0.00    0.00     0.00 6792.60  31069.60   766.60  10.14    0.48     4.57    0.00      0.00     0.00   0.00    0.00     0.00 1155.20    0.04    3.28  60.16
+  - |
+    (unaltered) > iostat -d -x 5 -z
+    Device            r/s     rkB/s   rrqm/s  %rrqm r_await rareq-sz     w/s     wkB/s   wrqm/s  %wrqm w_await wareq-sz     d/s     dkB/s   drqm/s  %drqm d_await dareq-sz     f/s f_await  aqu-sz  %util
+    vda              0.00      0.00     0.00   0.00    0.00     0.00 1354.60   7472.80   508.00  27.27    0.09     5.52    0.00      0.00     0.00   0.00    0.00     0.00  902.80    0.04    0.16  57.60
+
+2025-nov-20:
+  - Fixed a bug preventing the shard controller from scheduling read replicas. See `Placement triggers` for long term fix.
+  - Fixed a bug in kvr snapshot (lmdb env folder -> file)
+  - Kube-controller-manager is hammering apiserver-0 with asymmetric load. Need to isolate it.
+  - Read replica test went well. Local consistent reads reduced bandwidth.
+  - Disabling watch cache will be fun.
+  - Extracting lease expiration will be funner.
+  - Provisioning rate is locked but steady at ~1024 pods per minute. Scheduler queue is locked.
+  - Possible scheduler improvements:
+    - Batch pod scheduling
+    - Add support for multiple scheduling queues during PreEnqueue
+
+2025-nov-21:
+  -

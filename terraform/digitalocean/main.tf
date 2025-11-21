@@ -29,15 +29,16 @@ resource "digitalocean_tag" "turbokube" {
   name = "turbokube"
 }
 
-resource "digitalocean_tag" "api-server" {
-  name = "api-server"
+resource "digitalocean_tag" "apiserver" {
+  name = "apiserver"
 }
 
 variable "node_count" {
   default = {
-    api-server : 3
+    apiserver : 3
     etcd : 3
     scheduler : 1
+    worker : 4
   }
 }
 
@@ -45,12 +46,13 @@ variable "node_count" {
 variable "node_class" {
   default = {
     admin : "s-2vcpu-4gb"
-    api-server : "g-4vcpu-16gb-intel"
-    etcd : "c2-4vcpu-8gb-intel"
-    metrics : "m-8vcpu-64gb"
-    scheduler : "g-4vcpu-16gb-intel"
-    worker : "g-4vcpu-16gb-intel"
-    worker-control : "s-4vcpu-16gb-amd"
+    apiserver : "g-4vcpu-16gb-intel"
+    controller-manager : "s-4vcpu-16gb-amd"
+    etcd : "g-4vcpu-16gb-intel"
+    metrics : "s-2vcpu-4gb"
+    scheduler : "s-4vcpu-16gb-amd"
+    turbo : "s-2vcpu-4gb"
+    worker : "s-4vcpu-16gb-amd"
   }
 }
 
