@@ -30,8 +30,6 @@ Hence...
 
 TurboKube is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in Cluster A can present itself as hundreds of nodes in Cluster B (the system under load).
 
-TurboKube makes Kubernetes control plane load testing faster, cheaper and simpler.
-
 <a href="https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.isolated.draw.io.png"><img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.isolated.draw.io.png"/></a>
 
 *Control Plane A* schedules <a href="https://virtual-kubelet.io/">Virtual Kubelet</a> containers as pods in an autoscaling pool of
