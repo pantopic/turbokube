@@ -26,20 +26,11 @@ Hence...
 
 <br/><br/><br/><br/><br/><br/><br/><br/>
 
-## Why Turbo?
-
-A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke,
-increasing horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
-
-A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel a turbine, forcing more fuel and
-oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
-
-*TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in *Cluster A*
-can present itself as hundreds of nodes in *Cluster B* (the system under load).
-
-*TurboKube* makes Kubernetes control plane load testing faster, cheaper and simpler.
-
 ## Architecture
+
+TurboKube is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in Cluster A can present itself as hundreds of nodes in Cluster B (the system under load).
+
+TurboKube makes Kubernetes control plane load testing faster, cheaper and simpler.
 
 <a href="https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.isolated.draw.io.png"><img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.isolated.draw.io.png"/></a>
 
@@ -108,16 +99,15 @@ thing. [SimKube](https://github.com/acrlabs/simkube) has a number of interesting
 we don't have any large scale production traces to replay. Better to let those experts run their own independent tools
 to validate the results of our tests for corroboration if required.
 
-## Terminology
+## Why Turbo?
 
-In which we justify the invention of new terms.
+A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke,
+increasing horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
 
-### Load Compression
+A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel a turbine, forcing more fuel and
+oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
 
-The term *load simulation* seems an inaccurate term for what we're doing here since we're not really simulating or
-emulating the load. We're running real kubelet code interacting with Kubernetes in a totally representative and
-authentic way.
+*TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in *Cluster A*
+can present itself as hundreds of nodes in *Cluster B* (the system under load).
 
-Since we don't have a better term for the sort of load test efficiency optimization characterized here, we are forced to
-invent a new term: *load compression*. If you think this falls cleanly into some other set of standard terminology,
-please open an issue to let us know and we'll rebrand the project.
+*TurboKube* makes Kubernetes control plane load testing faster, cheaper and simpler.
