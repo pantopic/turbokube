@@ -4,16 +4,16 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.15
-export IP_ETCD_1=10.0.0.27
+export IP_ETCD_0=10.0.0.6
+export IP_ETCD_1=10.0.0.4
 export IP_ETCD_2=10.0.0.23
 
 export APINAME0="apiserver-0"
 export APINAME1="apiserver-1"
 export APINAME2="apiserver-2"
-export IP_APISERVER_0=10.0.0.20
-export IP_APISERVER_1=10.0.0.25
-export IP_APISERVER_2=10.0.0.22
+export IP_APISERVER_0=10.0.0.31
+export IP_APISERVER_1=10.0.0.32
+export IP_APISERVER_2=10.0.0.5
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -130,3 +130,11 @@ etcdctl --endpoints ${KRV_ENDPOINTS} endpoint health
 wget https://raw.githubusercontent.com/ymdysk/iostat-csv/refs/heads/master/iostat-csv.sh
 chmod +x iostat-csv.sh
 ./iostat-csv.sh > iostat.$(date +%Y%m%d%H%M).csv &
+
+
+
+scp -o "StrictHostKeyChecking=accept-new" /usr/bin/krv root@${IP_APISERVER_0}:/usr/bin
+scp -o "StrictHostKeyChecking=accept-new" /usr/bin/krv root@${IP_APISERVER_1}:/usr/bin
+scp -o "StrictHostKeyChecking=accept-new" /usr/bin/krv root@${IP_APISERVER_2}:/usr/bin
+scp -o "StrictHostKeyChecking=accept-new" /usr/bin/krv root@${IP_ETCD_1}:/usr/bin
+scp -o "StrictHostKeyChecking=accept-new" /usr/bin/krv root@${IP_ETCD_2}:/usr/bin

@@ -41,7 +41,8 @@ worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those V
 mock provider doesn't have a container runtime in which to run the containers in the pod spec. Instead, it simulates
 the behavior of a running container including health checks, metrics, etc.
 
-The infrastructure is provisioned using [terraform](terraform) and a bunch of manually applied shell scripts. After the
+The infrastructure is provisioned using [terraform](terraform) and a tangled mess of manually applied shell scripts
+that will be difficult for anyone else to follow because I never learned how to use Anssible. After the
 system is provisioned, load tests are run using [turboctl](turboctl) from the admin node which connects to both control
 planes at once to coordinate creation of virtual nodes and workloads scheduled upon them.
 
@@ -105,7 +106,5 @@ increasing horsepower without adding more cylinders, maximizing PWR (power to we
 A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel a turbine, forcing more fuel and
 oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
 
-*TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes. One node in *Cluster A*
-can present itself as hundreds of nodes in *Cluster B* (the system under load).
-
-*TurboKube* makes Kubernetes control plane load testing faster, cheaper and simpler.
+*TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes, making Kubernetes
+control plane load testing faster, cheaper and simpler.

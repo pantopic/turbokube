@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.15
-export IP_ETCD_1=10.0.0.27
+export IP_ETCD_0=10.0.0.6
+export IP_ETCD_1=10.0.0.4
 export IP_ETCD_2=10.0.0.23
-export IP_LB=10.0.0.43
+export IP_LB=10.0.0.2
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
