@@ -2,45 +2,57 @@
 set -e
 
 # Prometheus + Grafana
-# https://spacelift.io/blog/prometheus-kubernetes
-# curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
-# echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
-# sudo apt-get update
-# sudo NEEDRESTART_MODE=a apt-get install -y helm
+curl -fsSL https://packages.buildkite.com/helm-linux/helm-debian/gpgkey | gpg --dearmor | sudo tee /usr/share/keyrings/helm.gpg > /dev/null
+echo "deb [signed-by=/usr/share/keyrings/helm.gpg] https://packages.buildkite.com/helm-linux/helm-debian/any/ any main" | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo NEEDRESTART_MODE=a apt-get install -y helm
 
-# helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
-# helm repo update
-# helm install kube-prometheus-stack \
-#   --create-namespace \
-#   --namespace kube-prometheus-stack \
-#   --version 79.4.1 \
-#   prometheus-community/kube-prometheus-stack
+# https://docs.victoriametrics.com/guides/k8s-monitoring-via-vm-single/
+helm repo add vm https://victoriametrics.github.io/helm-charts/
+helm repo add grafana https://grafana.github.io/helm-charts
+helm repo update
 
-# --- x7v6wxpjE6ilIoaHIXK5c3bMHEgAsXf2N9vs3Rpc
+curl https://docs.victoriametrics.com/guides/examples/guide-vmsingle-values.yaml -o vm.values.yml
+sed -i 's/- role: node/- role: node\n              selectors:\n              - role: node\n                label: "type != virtual-kubelet"/g' vm.values.yml
+helm install vmsingle vm/victoria-metrics-single -f vm.values.yaml
 
-# kubectl --namespace kube-prometheus-stack get secrets kube-prometheus-stack-grafana -o jsonpath="{.data.admin-password}" | base64 -d ; echo
+cat <<EOF | helm install grafana grafana/grafana -f -
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: victoriametrics
+          type: prometheus
+          orgId: 1
+          url: http://vmsingle-victoria-metrics-single-server.default.svc.cluster.local:8428
+          access: proxy
+          isDefault: true
+          updateIntervalSeconds: 10
+          editable: true
 
-# kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-grafana 8080:80
+  dashboardProviders:
+   dashboardproviders.yaml:
+     apiVersion: 1
+     providers:
+     - name: 'default'
+       orgId: 1
+       folder: ''
+       type: file
+       disableDeletion: true
+       editable: true
+       options:
+         path: /var/lib/grafana/dashboards/default
 
-# kubectl port-forward -n kube-prometheus-stack svc/kube-prometheus-stack-prometheus 9095:9090
+  dashboards:
+    default:
+      victoriametrics:
+        gnetId: 10229
+        revision: 22
+        datasource: victoriametrics
+      kubernetes:
+        gnetId: 14205
+        revision: 1
+        datasource: victoriametrics
+EOF
 
-# helm repo add grafana https://grafana.github.io/helm-charts
-# helm repo update
-# helm install grafana-k8s-monitoring \
-#   --create-namespace \
-#   --namespace grafana-k8s-monitoring \
-#   grafana/grafana-k8s-monitoring
-
-# --- promql ---
-
-# etcd requests by resource
-# sum by (resource) (rate(etcd_requests_total[1m]))
-
-# Percent lease renewals
-# sum (rate(etcd_requests_total{resource="leases"}[1m])) / sum (rate(etcd_requests_total[1m])) * 100
-
-# load apply
-# for i in $(seq 1 500); do cat load.yml | sed "s/0000/00$i/" | k apply -f -; sleep 5; done
-
-# kubectl --namespace kube-prometheus-stack port-forward pod/prometheus-kube-prometheus-stack-prometheus-0 9091
-# kubectl --namespace kube-prometheus-stack port-forward pod/kube-prometheus-stack-grafana-7f6cbd6f7-tw4rb 3000
+# kubectl get secret --namespace default my-grafana -o jsonpath="{.data.admin-password}" | base64 --decode ; echo

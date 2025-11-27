@@ -38,7 +38,7 @@ variable "node_count" {
     apiserver : 3
     etcd : 3
     scheduler : 1
-    worker : 4
+    worker : 2
   }
 }
 

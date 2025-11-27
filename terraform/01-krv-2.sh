@@ -4,16 +4,16 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.6
-export IP_ETCD_1=10.0.0.4
-export IP_ETCD_2=10.0.0.23
+export IP_ETCD_0=10.0.0.35
+export IP_ETCD_1=10.0.0.30
+export IP_ETCD_2=10.0.0.31
 
 export APINAME0="apiserver-0"
 export APINAME1="apiserver-1"
 export APINAME2="apiserver-2"
-export IP_APISERVER_0=10.0.0.31
-export IP_APISERVER_1=10.0.0.32
-export IP_APISERVER_2=10.0.0.5
+export IP_APISERVER_0=10.0.0.29
+export IP_APISERVER_1=10.0.0.11
+export IP_APISERVER_2=10.0.0.28
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -122,7 +122,7 @@ scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_APISERVER_2}/* root@${IP_
 scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_1}/* root@${IP_ETCD_1}:/etc/kubernetes
 scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_2}:/etc/kubernetes
 
-nohup /usr/bin/krv &
+/usr/bin/krv
 
 export KRV_ENDPOINTS=https://${IP_ETCD_0}:2379,https://${IP_ETCD_1}:2379,https://${IP_ETCD_2}:2379
 etcdctl --endpoints ${KRV_ENDPOINTS} endpoint health

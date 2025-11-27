@@ -4,9 +4,9 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.6
-export IP_ETCD_1=10.0.0.4
-export IP_ETCD_2=10.0.0.23
+export IP_ETCD_0=10.0.0.7
+export IP_ETCD_1=10.0.0.5
+export IP_ETCD_2=10.0.0.4
 
 # All nodes
 mkdir -p /etc/systemd/system/kubelet.service.d

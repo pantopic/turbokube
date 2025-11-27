@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.6
-export IP_ETCD_1=10.0.0.4
-export IP_ETCD_2=10.0.0.23
-export IP_LB=10.0.0.2
+export IP_ETCD_0=10.0.0.35
+export IP_ETCD_1=10.0.0.30
+export IP_ETCD_2=10.0.0.31
+export IP_LB=10.0.0.27
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -36,6 +36,12 @@ etcd:
     keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key
 networking:
   podSubnet: 10.244.0.0/16
+controllerManager:
+  extraArgs:
+    - name: kube-api-qps
+      value: "800"
+    - name: kube-api-burst
+      value: "1200"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/configure-nlb.service
@@ -64,6 +70,8 @@ kubeadm init \
   --config /etc/kubernetes/kubeadm-config.conf \
   --upload-certs
 
+kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+
 # followers
 kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
     --discovery-token-ca-cert-hash sha256:ad2bec2b4c294b44022ac6454454bb55593e9be325794bdf08f40b60688b30b3 \
@@ -72,8 +80,6 @@ kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
 # metrics
 kubeadm join 10.0.0.43:6443 --token weyod3.2tsi0xt3giax7v1q \
         --discovery-token-ca-cert-hash sha256:3d66c594423ffa17f2ff656acdd54568f626dbb30415ee8c42128e3feb72f41e
-
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml

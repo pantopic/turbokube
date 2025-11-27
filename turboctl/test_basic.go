@@ -42,6 +42,7 @@ type testBasic struct {
 	out         string
 	s           int
 	tpl         *template.Template
+	volcano     bool
 	wg          *sync.WaitGroup
 }
 
@@ -58,6 +59,7 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 		pause       = fs.Int("p", 0, "Pause in seconds between namespace creations (default 0)")
 		n           = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
 		s           = fs.Int("s", 0, "Start of namspace to create (default 0)")
+		volcano     = fs.Bool("volcano", false, "Use volcano scheduler")
 	)
 	err := fs.Parse(args)
 	if err != nil {
@@ -88,11 +90,12 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 			},
 			VNodes: 4,
 		},
-		n:     *n,
-		csv:   w,
-		pause: *pause,
-		s:     *s,
-		wg:    &sync.WaitGroup{},
+		n:       *n,
+		csv:     w,
+		pause:   *pause,
+		s:       *s,
+		volcano: *volcano,
+		wg:      &sync.WaitGroup{},
 	}
 }
 
@@ -112,7 +115,7 @@ func (t *testBasic) run(ctx context.Context) {
 		panic(err)
 	}
 
-	if t.concurrency > 1 {
+	if t.concurrency > 1 && !t.volcano {
 		// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 		t.startSchedulers(ctx)
 	}
@@ -213,7 +216,9 @@ func (t *testBasic) startSchedulers(ctx context.Context) {
 
 func (t *testBasic) work(ctx context.Context, jobs chan int, i int) {
 	var base = t.input
-	if t.concurrency > 1 {
+	if t.volcano {
+		base.Scheduler.Name = `volcano`
+	} else if t.concurrency > 1 {
 		base.Scheduler.Name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
 	}
 	for n := range jobs {

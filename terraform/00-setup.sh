@@ -23,3 +23,6 @@
 #  | tr -d "\n" | sed "s/\"finalizers\": \[[^]]\+\]/\"finalizers\": []/" \
 #  | kubectl replace --raw /api/v1/namespaces/turbokube-0003/finalize -f -
 
+kubeadm join 10.0.0.43:6443 --token xd75hh.xv5ax9hnmfzv573u \
+        --discovery-token-ca-cert-hash sha256:e1ae3456c79c71244ce649169e14862fa121f07687e48ff7f70254c91ae910ac \
+        --control-plane --certificate-key f38345bc383e360b72d63ebb2dca9440d6a8a19b34c6e80951c5a3b207a79a69
