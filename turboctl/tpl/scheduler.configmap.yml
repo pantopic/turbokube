@@ -11,3 +11,6 @@ data:
       - schedulerName: {{ .Scheduler.Name }}
     leaderElection:
       leaderElect: false
+    clientConnection:
+      qps: 800
+      burst: 1200
