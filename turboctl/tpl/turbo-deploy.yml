@@ -20,7 +20,7 @@ spec:
         imagePullPolicy: IfNotPresent
         resources:
           requests:
-            memory: 50Mi
+            memory: 32Mi
         args:
         - /turbokube
         - --provider-config
