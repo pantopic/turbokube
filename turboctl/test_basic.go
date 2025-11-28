@@ -118,7 +118,7 @@ func (t *testBasic) run(ctx context.Context) {
 		panic(err)
 	}
 
-	if t.concurrency > 1 && !t.volcano {
+	if t.concurrency > 1 && !t.volcano && !t.defaultScheduler {
 		// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 		t.startSchedulers(ctx)
 	}
