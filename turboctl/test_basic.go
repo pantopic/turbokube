@@ -30,48 +30,51 @@ var (
 )
 
 type testBasic struct {
-	async       bool
-	concurrency int
-	csv         *csv.Writer
-	deployments int
-	client_a    *kubernetes.Clientset
-	client_b    *kubernetes.Clientset
-	input       Input
-	n           int
-	pause       int
-	out         string
-	s           int
-	tpl         *template.Template
-	volcano     bool
-	wg          *sync.WaitGroup
+	async            bool
+	client_a         *kubernetes.Clientset
+	client_b         *kubernetes.Clientset
+	concurrency      int
+	csv              *csv.Writer
+	defaultScheduler bool
+	deployments      int
+	input            Input
+	n                int
+	out              string
+	pause            int
+	s                int
+	tpl              *template.Template
+	volcano          bool
+	wg               *sync.WaitGroup
 }
 
 func newTestBasic(args []string, w *csv.Writer) *testBasic {
 	fs := flag.FlagSet{}
 	var (
-		async       = fs.Bool("async", false, "Do not wait for provisioning")
-		concurrency = fs.Int("c", 1, "Concurrency (default 1)")
-		conf_a      = fs.String("confa", "/etc/kubernetes/admin.a.conf", "Kubeconfig for cluster A (default /etc/kubernetes/admin.a.conf)")
-		conf_b      = fs.String("confb", "/etc/kubernetes/admin.b.conf", "Kubeconfig for cluster B (default /etc/kubernetes/admin.b.conf)")
-		crt         = fs.String("crt", "/etc/kubernetes/pki/apiserver.b.crt", "API Server Crt for cluster B (default /etc/kubernetes/pki/apiserver.b.crt)")
-		deployments = fs.Int("d", 8, "Number of deployments per namespace (default 8)")
-		key         = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
-		pause       = fs.Int("p", 0, "Pause in seconds between namespace creations (default 0)")
-		n           = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
-		s           = fs.Int("s", 0, "Start of namspace to create (default 0)")
-		volcano     = fs.Bool("volcano", false, "Use volcano scheduler")
+		async            = fs.Bool("async", false, "Do not wait for provisioning")
+		concurrency      = fs.Int("c", 1, "Concurrency (default 1)")
+		conf_a           = fs.String("confa", "/etc/kubernetes/admin.a.conf", "Kubeconfig for cluster A (default /etc/kubernetes/admin.a.conf)")
+		conf_b           = fs.String("confb", "/etc/kubernetes/admin.b.conf", "Kubeconfig for cluster B (default /etc/kubernetes/admin.b.conf)")
+		crt              = fs.String("crt", "/etc/kubernetes/pki/apiserver.b.crt", "API Server Crt for cluster B (default /etc/kubernetes/pki/apiserver.b.crt)")
+		defaultScheduler = fs.Bool("default", false, "Use default scheduler")
+		deployments      = fs.Int("d", 8, "Number of deployments per namespace (default 8)")
+		key              = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
+		n                = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
+		pause            = fs.Int("p", 0, "Pause in seconds between namespace creations (default 0)")
+		s                = fs.Int("s", 0, "Start of namspace to create (default 0)")
+		volcano          = fs.Bool("volcano", false, "Use volcano scheduler")
 	)
 	err := fs.Parse(args)
 	if err != nil {
 		panic(err)
 	}
 	return &testBasic{
-		async:       *async,
-		concurrency: *concurrency,
-		client_a:    getClient(*conf_a),
-		client_b:    getClient(*conf_b),
-		deployments: *deployments,
-		tpl:         template.Must(template.New(`tpl`).Funcs(sprig.FuncMap()).ParseFS(templates, "tpl/*.yml")),
+		async:            *async,
+		concurrency:      *concurrency,
+		client_a:         getClient(*conf_a),
+		client_b:         getClient(*conf_b),
+		defaultScheduler: *defaultScheduler,
+		deployments:      *deployments,
+		tpl:              template.Must(template.New(`tpl`).Funcs(sprig.FuncMap()).ParseFS(templates, "tpl/*.yml")),
 		input: Input{
 			Config: Config{
 				Crt:     mustRead(*crt),
@@ -216,7 +219,9 @@ func (t *testBasic) startSchedulers(ctx context.Context) {
 
 func (t *testBasic) work(ctx context.Context, jobs chan int, i int) {
 	var base = t.input
-	if t.volcano {
+	if t.defaultScheduler {
+		base.Scheduler.Name = `default-scheduler`
+	} else if t.volcano {
 		base.Scheduler.Name = `volcano`
 	} else if t.concurrency > 1 {
 		base.Scheduler.Name = fmt.Sprintf(`turbokube-scheduler-%02x`, i)
