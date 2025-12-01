@@ -59,5 +59,6 @@ resource "digitalocean_loadbalancer" "kube" {
     protocol = "https"
     path     = "/healthz"
   }
+  size_unit   = 2
   droplet_tag = "apiserver"
 }

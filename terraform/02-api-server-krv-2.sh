@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.35
-export IP_ETCD_1=10.0.0.30
-export IP_ETCD_2=10.0.0.31
-export IP_LB=10.0.0.27
+export IP_ETCD_0=10.0.0.19
+export IP_ETCD_1=10.0.0.18
+export IP_ETCD_2=10.0.0.23
+export IP_LB=10.0.0.41
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -39,9 +39,15 @@ networking:
 controllerManager:
   extraArgs:
     - name: kube-api-qps
-      value: "800"
+      value: "16000"
     - name: kube-api-burst
-      value: "1200"
+      value: "24000"
+scheduler:
+  extraArgs:
+    - name: kube-api-qps
+      value: "16000"
+    - name: kube-api-burst
+      value: "24000"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/configure-nlb.service
@@ -51,7 +57,7 @@ After=network.target
 
 [Service]
 ExecStart=/sbin/ip route add to local $IP_LB dev eth1
-ExecStart=/sbin/sysctl -w net.ipv4.conf.eth1.arp_announce=2 
+ExecStart=/sbin/sysctl -w net.ipv4.conf.eth1.arp_announce=2
 Type=oneshot
 RemainAfterExit=yes
 
@@ -70,7 +76,7 @@ kubeadm init \
   --config /etc/kubernetes/kubeadm-config.conf \
   --upload-certs
 
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
 # followers
 kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
@@ -89,3 +95,5 @@ kubectl apply -f components.yaml
 #
 #  crictl ps | grep apiserver | awk '{print $1}' | xargs crictl logs -f
 #
+#  kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+# 

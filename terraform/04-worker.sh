@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.33
+export IP_TURBO=10.0.0.20
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -58,7 +58,7 @@ kubectl apply -f components.yaml
 #
 
 cat <<EOF > wa.sh
-kubectl get node | grep none | awk '{print $1}' | xargs kubectl describe node | grep -E 'Non\-terminated Pods|Name:'
+kubectl get node | grep none | awk '{print \$1}' | xargs kubectl describe node | grep -E 'Non\-terminated Pods|Name:'
 EOF
 chmod +x wa.sh
 watch ./wa.sh

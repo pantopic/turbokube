@@ -12,5 +12,5 @@ data:
     leaderElection:
       leaderElect: false
     clientConnection:
-      qps: 800
-      burst: 1200
+      qps: 8000
+      burst: 16000

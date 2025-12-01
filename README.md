@@ -72,6 +72,7 @@ TBD
 - [KWOK](https://kwok.sigs.k8s.io/)
 - [SimKube](https://github.com/acrlabs/simkube)
 - [kube-burner](https://github.com/kube-burner/kube-burner)
+- [CL2](https://github.com/kubernetes/perf-tests/tree/master/clusterloader2)
 
 ## Why not use something that already exists?
 

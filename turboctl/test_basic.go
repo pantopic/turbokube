@@ -44,7 +44,10 @@ type testBasic struct {
 	s                int
 	tpl              *template.Template
 	volcano          bool
-	wg               *sync.WaitGroup
+
+	pods   int
+	vnodes int
+	wg     *sync.WaitGroup
 }
 
 func newTestBasic(args []string, w *csv.Writer) *testBasic {
@@ -56,7 +59,9 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 		conf_b           = fs.String("confb", "/etc/kubernetes/admin.b.conf", "Kubeconfig for cluster B (default /etc/kubernetes/admin.b.conf)")
 		crt              = fs.String("crt", "/etc/kubernetes/pki/apiserver.b.crt", "API Server Crt for cluster B (default /etc/kubernetes/pki/apiserver.b.crt)")
 		defaultScheduler = fs.Bool("default", false, "Use default scheduler")
-		deployments      = fs.Int("d", 8, "Number of deployments per namespace (default 8)")
+		deployments      = fs.Int("d", 4, "Number of deployments per namespace (default 4)")
+		vnodes           = fs.Int("d", 8, "Number of vnodes per namespace (default 8)")
+		pods             = fs.Int("d", 32, "Number of pods per vnode (default 32)")
 		key              = fs.String("key", "/etc/kubernetes/pki/apiserver.b.key", "API Server Key for cluster B (default /etc/kubernetes/pki/apiserver.b.key)")
 		n                = fs.Int("n", 0, "Number of namespaces to create (default 0 = infinite)")
 		pause            = fs.Int("p", 0, "Pause in seconds between namespace creations (default 0)")
@@ -82,7 +87,7 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 				Kubelet: mustRead(*conf_b),
 			},
 			Name:     "turbokube-0000",
-			Replicas: 16,
+			Replicas: (*pods * *vnodes) / *deployments,
 			Taint: Taint{
 				Key:    "pantopic.com/turbokube",
 				Value:  "0000",
@@ -91,7 +96,7 @@ func newTestBasic(args []string, w *csv.Writer) *testBasic {
 			Scheduler: Scheduler{
 				Name: "default-scheduler",
 			},
-			VNodes: 4,
+			VNodes: *vnodes,
 		},
 		n:       *n,
 		csv:     w,
@@ -119,7 +124,6 @@ func (t *testBasic) run(ctx context.Context) {
 	}
 
 	if t.concurrency > 1 && !t.volcano && !t.defaultScheduler {
-		// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 		t.startSchedulers(ctx)
 	}
 
@@ -175,6 +179,7 @@ func (t *testBasic) Done() (done chan bool) {
 	return
 }
 
+// https://kubernetes.io/docs/tasks/extend-kubernetes/configure-multiple-schedulers/
 func (t *testBasic) startSchedulers(ctx context.Context) {
 	defer log.Println(`Schedulers ready`)
 	log.Println(`Creating turbokube scheduler service account`)

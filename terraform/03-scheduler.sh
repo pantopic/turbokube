@@ -15,3 +15,7 @@ kubeadm join 10.0.0.2:6443 --token l1fr3u.61p7mmlkuggarrv1 \
 # Commands to apply taints and labels manually post-hoc
 kubectl taint nodes scheduler-0 pantopic/turbokube=scheduler:NoSchedule
 kubectl label nodes scheduler-0 pantopic/turbokube=scheduler
+
+# ---
+
+

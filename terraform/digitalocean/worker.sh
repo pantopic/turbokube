@@ -1,8 +1,11 @@
 #!/bin/bash
 set -e
 
-kubeadm join 10.0.0.33:6443 --token jctplr.mrk0kw4iddixbjxv \
-        --discovery-token-ca-cert-hash sha256:4c6b19be6517f469026657bff5b9788832915fad9b2462d9d731b596d093085b
+export HOST_IP=$(ip addr show dev eth1 | grep 10.0 | awk '{print $2}' | sed 's/\/.*//')
+
+kubeadm join 10.0.0.20:6443 --token yurd1w.jis5p09gp3lm5vuv \
+        --discovery-token-ca-cert-hash sha256:7d5e35ba03c9b0922dc4f205ce804a7d404bd12e0fee1f02816d980eba722e0d \
+        --node-name "$(hostname)-$($HOST_IP | sed 's/\./\-/g')"
 
 echo "maxPods: 1000" >> /var/lib/kubelet/config.yaml
 systemctl restart kubelet

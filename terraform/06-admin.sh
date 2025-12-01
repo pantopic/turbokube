@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.35
-export IP_ETCD_1=10.0.0.30
-export IP_ETCD_2=10.0.0.31
-export IP_APISERVER_0=10.0.0.29
-export IP_TURBO=10.0.0.33
+export IP_ETCD_0=10.0.0.19
+export IP_ETCD_1=10.0.0.18
+export IP_ETCD_2=10.0.0.23
+export IP_APISERVER_0=10.0.0.13
+export IP_TURBO=10.0.0.20
 
 mkdir -p /etc/kubernetes/pki/etcd
 scp -o "StrictHostKeyChecking=accept-new" root@$IP_TURBO:/etc/kubernetes/admin.conf /etc/kubernetes/admin.a.conf
@@ -19,3 +19,5 @@ rm -rf /usr/local/go && tar -C /usr/local -xzf go1.25.4.linux-amd64.tar.gz
 git clone https://github.com/pantopic/turbokube.git
 cd turbokube/turboctl
 go build
+
+./turboctl run basic -c 4 -default

@@ -83,5 +83,14 @@ Not surprises:
     - Batch pod scheduling
     - Add support for multiple scheduling queues during PreEnqueue
 
-2025-nov-21:
-  -
+2025-nov-28:
+  - 4,276 nodes, 136,832 pods 
+  - API Server ran out of CPU
+  - Scheduler using more cpu than apiserver. 
+  - Turbo also running low on CPU
+  - 50+ pods per second not bad
+  - Flannel's pod cidr range is limited to /16 (64k)
+  - Try out Calico after we surpass 32k nodes
+  - Next run:
+    - Vertically scale API Servers and turbo control plane
+    - Fix offloaded schedulers
