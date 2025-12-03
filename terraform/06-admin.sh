@@ -1,11 +1,11 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.19
-export IP_ETCD_1=10.0.0.18
-export IP_ETCD_2=10.0.0.23
-export IP_APISERVER_0=10.0.0.13
-export IP_TURBO=10.0.0.20
+export IP_ETCD_0=10.0.0.26
+export IP_ETCD_1=10.0.0.25
+export IP_ETCD_2=10.0.0.44
+export IP_APISERVER_0=10.0.0.23
+export IP_TURBO=10.0.0.45
 
 mkdir -p /etc/kubernetes/pki/etcd
 scp -o "StrictHostKeyChecking=accept-new" root@$IP_TURBO:/etc/kubernetes/admin.conf /etc/kubernetes/admin.a.conf

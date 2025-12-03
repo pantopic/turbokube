@@ -15,6 +15,11 @@ resource "digitalocean_firewall" "turbokube" {
   }
   inbound_rule {
     protocol         = "tcp"
+    port_range       = "6443"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+  inbound_rule {
+    protocol         = "tcp"
     port_range       = "22"
     source_addresses = [var.ip_address]
   }
@@ -59,6 +64,6 @@ resource "digitalocean_loadbalancer" "kube" {
     protocol = "https"
     path     = "/healthz"
   }
-  size_unit   = 2
+  size_unit   = 1
   droplet_tag = "apiserver"
 }

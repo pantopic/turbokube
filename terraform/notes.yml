@@ -94,3 +94,11 @@ Not surprises:
   - Next run:
     - Vertically scale API Servers and turbo control plane
     - Fix offloaded schedulers
+
+2025-dec-01:
+  - 150 pods/sec w/ 4 schedulers
+  - Over 6k vnodes and 200k pods
+  - etcd disk is the bottleneck, 1k ops/s steady @ 30% cpu & 95% disk util
+  - scheduler instances are pegged, scale from 2 to 4 instances, 4 to 8 pods
+  - apiserver-0 is getting low on ram (controller manager) upgrade to m-8vcpu-64gb-intel
+  - krv storage 4.7G @ 8,192 x 32

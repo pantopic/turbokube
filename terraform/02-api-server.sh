@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.29
-export IP_ETCD_1=10.0.0.34
-export IP_ETCD_2=10.0.0.32
-export IP_LB=10.0.0.35
+export IP_ETCD_0=10.0.0.26
+export IP_ETCD_1=10.0.0.25
+export IP_ETCD_2=10.0.0.44
+export IP_LB=10.0.0.47
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4

@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.20
+export IP_TURBO=10.0.0.45
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -43,8 +43,8 @@ kubeadm init \
   --config /etc/kubernetes/kubeadm-config.conf \
   --upload-certs
 
-# Add flannel for networking
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
+# CNI
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml

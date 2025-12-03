@@ -1,0 +1,11 @@
+Scaling the Kubernetes control plane
+
+0. Purpose, methodology, and goals
+1. Workload isolation
+2. Scheduler replacement
+3. Etcd replacement
+4. Lease management
+6. Vertical partitioning
+5. Read replication
+7. Density
+8. Evolution
