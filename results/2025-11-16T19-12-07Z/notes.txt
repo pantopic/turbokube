@@ -1,0 +1,37 @@
+admin ~/turbokube/turboctl
+> curl -k --cert /etc/kubernetes/pki/apiserver-etcd-client.crt --key /etc/kubernetes/pki/apiserver-etcd-client.key --cacert /etc/kubernetes/pki/etcd/ca.crt https://${IP_ETCD_0}:2379/metrics | grep size
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0# HELP etcd_debugging_mvcc_total_put_size_in_bytes The total size of put kv pairs seen by this member.
+# TYPE etcd_debugging_mvcc_total_put_size_in_bytes gauge
+etcd_debugging_mvcc_total_put_size_in_bytes 1.967281164e+09
+# HELP etcd_mvcc_db_total_size_in_bytes Total size of the underlying database physically allocated in bytes.
+# TYPE etcd_mvcc_db_total_size_in_bytes gauge
+etcd_mvcc_db_total_size_in_bytes 1.179926528e+09
+# HELP etcd_mvcc_db_total_size_in_use_in_bytes Total size of the underlying database logically in use in bytes.
+# TYPE etcd_mvcc_db_total_size_in_use_in_bytes gauge
+etcd_mvcc_db_total_size_in_use_in_bytes 6.43989504e+08
+# HELP etcd_server_quota_backend_bytes Current backend storage quota size in bytes.
+# HELP go_gc_gogc_percent Heap size target percentage configured by the user, otherwise 100. This value is set by the GOGC environment variable, and the runtime/debug.SetGCPercent function. Sourced from /gc/gogc:percent
+100  177k    0  177k    0     0  10.0M      0 --:--:-- --:--:-- --:--:-- 10.1M
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+admin ~/turbokube/turboctl
+> curl -k --cert /etc/kubernetes/pki/apiserver-etcd-client.crt --key /etc/kubernetes/pki/apiserver-etcd-client.key --cacert /etc/kubernetes/pki/etcd/ca.crt https://${IP_ETCD_0}:2379/metrics | grep size
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0# HELP etcd_debugging_mvcc_total_put_size_in_bytes The total size of put kv pairs seen by this member.
+# TYPE etcd_debugging_mvcc_total_put_size_in_bytes gauge
+etcd_debugging_mvcc_total_put_size_in_bytes 2.238866807e+09
+# HELP etcd_mvcc_db_total_size_in_bytes Total size of the underlying database physically allocated in bytes.
+# TYPE etcd_mvcc_db_total_size_in_bytes gauge
+etcd_mvcc_db_total_size_in_bytes 1.179926528e+09
+# HELP etcd_mvcc_db_total_size_in_use_in_bytes Total size of the underlying database logically in use in bytes.
+# TYPE etcd_mvcc_db_total_size_in_use_in_bytes gauge
+etcd_mvcc_db_total_size_in_use_in_bytes 7.5722752e+07
+# HELP etcd_server_quota_backend_bytes Current backend storage quota size in bytes.
+# HELP go_gc_gogc_percent Heap size target percentage configured by the user, otherwise 100. This value is set by the GOGC environment variable, and the runtime/debug.SetGCPercent function. Sourced from /gc/gogc:percent
+100  177k    0  177k    0     0  9847k      0 --:--:-- --:--:-- --:--:-- 10.1M
+# HELP process_resident_memory_bytes Resident memory size in bytes.
+# HELP process_virtual_memory_bytes Virtual memory size in bytes.
+

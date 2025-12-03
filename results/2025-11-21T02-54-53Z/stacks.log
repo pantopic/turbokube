@@ -1,0 +1,176 @@
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x38c pc=0xb0c9f2]
+
+goroutine 64 [running]:
+github.com/lni/dragonboat/v4.(*NodeHost).readIndex(0x1204fc0?, 0xc00040a930?, 0x1978a80?)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:1411 +0x12
+github.com/lni/dragonboat/v4.(*NodeHost).linearizableRead(0x0, {0x1204fc0, 0xc00040a930}, 0x1, 0xc00016b7c8)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:1449 +0x4d
+github.com/lni/dragonboat/v4.(*NodeHost).SyncRead(0x1204f18?, {0x1204fc0?, 0xc00040a930?}, 0x0?, {0xf1bae0?, 0xc000265d40?})
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:602 +0x45
+github.com/logbn/zongzi.(*grpcServer).Read(0xc000200480, {0x1204f18, 0xc0002659e0}, 0xc0004142d0)
+        /home/kev/logbn/zongzi/grpc_server.go:251 +0x197
+github.com/logbn/zongzi/internal._Internal_Read_Handler({0x1038860, 0xc000200480}, {0x1204f18, 0xc0002659e0}, 0xc000193c80, 0x0)
+        /home/kev/logbn/zongzi/internal/zongzi_grpc.pb.go:450 +0x1a6
+google.golang.org/grpc.(*Server).processUnaryRPC(0xc0000cd200, {0x1204f18, 0xc000265950}, 0xc000229680, 0xc0002275c0, 0x190a4d8, 0x0)
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1431 +0xfe8
+google.golang.org/grpc.(*Server).handleStream(0xc0000cd200, {0x1205678, 0xc0002fc000}, 0xc000229680)
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1841 +0xb95
+google.golang.org/grpc.(*Server).serveStreams.func2.1()
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1061 +0x7f
+created by google.golang.org/grpc.(*Server).serveStreams.func2 in goroutine 27
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1072 +0x11d
+
+
+------------------
+
+
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x38c pc=0xb0c9f2]
+
+goroutine 29 [running]:
+github.com/lni/dragonboat/v4.(*NodeHost).readIndex(0x1204fc0?, 0xc000207d50?, 0x1978a80?)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:1411 +0x12
+github.com/lni/dragonboat/v4.(*NodeHost).linearizableRead(0x0, {0x1204fc0, 0xc000207d50}, 0x1, 0xc0001797c8)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:1449 +0x4d
+github.com/lni/dragonboat/v4.(*NodeHost).SyncRead(0x1204f18?, {0x1204fc0?, 0xc000207d50?}, 0x0?, {0xf1bae0?, 0xc00026eff0?})
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:602 +0x45
+github.com/logbn/zongzi.(*grpcServer).Read(0xc000212440, {0x1204f18, 0xc00026ec90}, 0xc00017b9a0)
+        /home/kev/logbn/zongzi/grpc_server.go:251 +0x197
+github.com/logbn/zongzi/internal._Internal_Read_Handler({0x1038860, 0xc000212440}, {0x1204f18, 0xc00026ec90}, 0xc0001a3680, 0x0)
+        /home/kev/logbn/zongzi/internal/zongzi_grpc.pb.go:450 +0x1a6
+google.golang.org/grpc.(*Server).processUnaryRPC(0xc0000b2000, {0x1204f18, 0xc00026ec00}, 0xc00023ade0, 0xc0000982a0, 0x190a4d8, 0x0)
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1431 +0xfe8
+google.golang.org/grpc.(*Server).handleStream(0xc0000b2000, {0x1205678, 0xc00039c000}, 0xc00023ade0)
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1841 +0xb95
+google.golang.org/grpc.(*Server).serveStreams.func2.1()
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1061 +0x7f
+created by google.golang.org/grpc.(*Server).serveStreams.func2 in goroutine 69
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1072 +0x11d
+panic: runtime error: invalid memory address or nil pointer dereference
+[signal SIGSEGV: segmentation violation code=0x1 addr=0x38c pc=0xb0c9f2]
+
+goroutine 28 [running]:
+github.com/lni/dragonboat/v4.(*NodeHost).readIndex(0x1204fc0?, 0xc0002abf10?, 0x1978a80?)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:1411 +0x12
+github.com/lni/dragonboat/v4.(*NodeHost).linearizableRead(0x0, {0x1204fc0, 0xc0002abf10}, 0x1, 0xc0000bd7c8)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:1449 +0x4d
+github.com/lni/dragonboat/v4.(*NodeHost).SyncRead(0x1204f18?, {0x1204fc0?, 0xc0002abf10?}, 0x0?, {0xf1bae0?, 0xc0003895f0?})
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:602 +0x45
+github.com/logbn/zongzi.(*grpcServer).Read(0xc000212440, {0x1204f18, 0xc0003895c0}, 0xc0003a20f0)
+        /home/kev/logbn/zongzi/grpc_server.go:251 +0x197
+github.com/logbn/zongzi/internal._Internal_Read_Handler({0x1038860, 0xc000212440}, {0x1204f18, 0xc0003895c0}, 0xc0002a4580, 0x0)
+        /home/kev/logbn/zongzi/internal/zongzi_grpc.pb.go:450 +0x1a6
+google.golang.org/grpc.(*Server).processUnaryRPC(0xc0000b2000, {0x1204f18, 0xc000389530}, 0xc00023ad80, 0xc0000982a0, 0x190a4d8, 0x0)
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1431 +0xfe8
+google.golang.org/grpc.(*Server).handleStream(0xc0000b2000, {0x1205678, 0xc00039c000}, 0xc00023ad80)
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1841 +0xb95
+google.golang.org/grpc.(*Server).serveStreams.func2.1()
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1061 +0x7f
+created by google.golang.org/grpc.(*Server).serveStreams.func2 in goroutine 69
+        /home/kev/go/pkg/mod/google.golang.org/grpc@v1.74.2/server.go:1072 +0x11d
+
+
+
+----------------
+
+
+2025-11-21 04:16:12.316299 I | dragonboat: [00001:00005] requested to stream to 4
+2025-11-21 04:16:12.316350 I | INFO PrepareSnapshot
+2025-11-21 04:16:12.316418 I | INFO PrepareSnapshot done err=<nil>
+2025-11-21 04:16:12.316649 I | INFO SaveSnapshot
+2025-11-21 04:16:12.316755 I | INFO SaveSnapshot done err="read /var/lib/krv/data/00000005/env: is a directory"
+2025-11-21 04:16:12.316986 C | dragonboat: [00001:00005] stream failed: read /var/lib/krv/data/00000005/env: is a directory
+(1) attached stack trace
+  -- stack trace:
+  | github.com/lni/dragonboat/v4.(*node).stream
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/node.go:834
+  | [...repeated from below...]
+Wraps: (2) [00001:00005] stream failed
+Wraps: (3) attached stack trace
+  -- stack trace:
+  | github.com/lni/dragonboat/v4/internal/rsm.(*OnDiskStateMachine).Save
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/adapter.go:331
+  | github.com/lni/dragonboat/v4/internal/rsm.(*NativeSM).save
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/managed.go:278
+  | github.com/lni/dragonboat/v4/internal/rsm.(*NativeSM).Stream
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/managed.go:286
+  | github.com/lni/dragonboat/v4.(*snapshotter).Stream
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/snapshotter.go:94
+  | github.com/lni/dragonboat/v4/internal/rsm.(*StateMachine).stream
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/statemachine.go:793
+  | github.com/lni/dragonboat/v4/internal/rsm.(*StateMachine).Stream
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/statemachine.go:569
+  | github.com/lni/dragonboat/v4.(*node).stream
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/node.go:832
+  | github.com/lni/dragonboat/v4.(*ssWorker).stream
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:307
+  | github.com/lni/dragonboat/v4.(*ssWorker).handle
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:283
+  | github.com/lni/dragonboat/v4.(*ssWorker).workerMain
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:265
+  | github.com/lni/dragonboat/v4.newSSWorker.func1
+  |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:251
+  | github.com/lni/goutils/syncutil.(*Stopper).runWorker.func1
+  |     /home/kev/go/pkg/mod/github.com/lni/goutils@v1.4.0/syncutil/stopper.go:79
+  | runtime.goexit
+  |     /usr/local/go/src/runtime/asm_amd64.s:1693
+Wraps: (4) read /var/lib/krv/data/00000005/env
+Wraps: (5) is a directory
+Error types: (1) *withstack.withStack (2) *errutil.withPrefix (3) *withstack.withStack (4) *fs.PathError (5) syscall.Errno
+panic: [00001:00005] stream failed: read /var/lib/krv/data/00000005/env: is a directory
+        (1) attached stack trace
+          -- stack trace:
+          | github.com/lni/dragonboat/v4.(*node).stream
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/node.go:834
+          | [...repeated from below...]
+        Wraps: (2) [00001:00005] stream failed
+        Wraps: (3) attached stack trace
+          -- stack trace:
+          | github.com/lni/dragonboat/v4/internal/rsm.(*OnDiskStateMachine).Save
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/adapter.go:331
+          | github.com/lni/dragonboat/v4/internal/rsm.(*NativeSM).save
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/managed.go:278
+          | github.com/lni/dragonboat/v4/internal/rsm.(*NativeSM).Stream
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/managed.go:286
+          | github.com/lni/dragonboat/v4.(*snapshotter).Stream
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/snapshotter.go:94
+          | github.com/lni/dragonboat/v4/internal/rsm.(*StateMachine).stream
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/statemachine.go:793
+          | github.com/lni/dragonboat/v4/internal/rsm.(*StateMachine).Stream
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/internal/rsm/statemachine.go:569
+          | github.com/lni/dragonboat/v4.(*node).stream
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/node.go:832
+          | github.com/lni/dragonboat/v4.(*ssWorker).stream
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:307
+          | github.com/lni/dragonboat/v4.(*ssWorker).handle
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:283
+          | github.com/lni/dragonboat/v4.(*ssWorker).workerMain
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:265
+          | github.com/lni/dragonboat/v4.newSSWorker.func1
+          |     /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:251
+          | github.com/lni/goutils/syncutil.(*Stopper).runWorker.func1
+          |     /home/kev/go/pkg/mod/github.com/lni/goutils@v1.4.0/syncutil/stopper.go:79
+          | runtime.goexit
+          |     /usr/local/go/src/runtime/asm_amd64.s:1693
+        Wraps: (4) read /var/lib/krv/data/00000005/env
+        Wraps: (5) is a directory
+        Error types: (1) *withstack.withStack (2) *errutil.withPrefix (3) *withstack.withStack (4) *fs.PathError (5) syscall.Errno
+
+goroutine 89 [running]:
+github.com/lni/goutils/logutil/capnslog.(*PackageLogger).Panicf(0xc000240090, {0x108f312?, 0xc00011c848?}, {0xc00829f8f0?, 0xc0002389e0?, 0xc007d47c98?})
+        /home/kev/go/pkg/mod/github.com/lni/goutils@v1.4.0/logutil/capnslog/pkg_logger.go:88 +0xb5
+github.com/lni/dragonboat/v4/logger.(*capnsLog).Panicf(0xc0002389c0?, {0x108f312?, 0x4235a5?}, {0xc00829f8f0?, 0x190?, 0xc00829f8f0?})
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/logger/capnslogger.go:74 +0x25
+github.com/lni/dragonboat/v4/logger.(*dragonboatLogger).Panicf(0xc005c67108?, {0x108f312, 0x3}, {0xc00829f8f0, 0x1, 0x1})
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/logger/logger.go:135 +0x51
+github.com/lni/dragonboat/v4.panicNow(...)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/nodehost.go:2193
+github.com/lni/dragonboat/v4.(*ssWorker).workerMain(0xc00011ec40)
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:266 +0x1cf
+github.com/lni/dragonboat/v4.newSSWorker.func1()
+        /home/kev/go/pkg/mod/github.com/lni/dragonboat/v4@v4.0.0-20231222133740-1d6e2d76cd57/engine.go:251 +0x17
+github.com/lni/goutils/syncutil.(*Stopper).runWorker.func1()
+        /home/kev/go/pkg/mod/github.com/lni/goutils@v1.4.0/syncutil/stopper.go:79 +0x123
+created by github.com/lni/goutils/syncutil.(*Stopper).runWorker in goroutine 1
+        /home/kev/go/pkg/mod/github.com/lni/goutils@v1.4.0/syncutil/stopper.go:74 +0xc6
