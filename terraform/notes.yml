@@ -102,3 +102,48 @@ Not surprises:
   - scheduler instances are pegged, scale from 2 to 4 instances, 4 to 8 pods
   - apiserver-0 is getting low on ram (controller manager) upgrade to m-8vcpu-64gb-intel
   - krv storage 4.7G @ 8,192 x 32
+
+2025-12-09T14-01-05Z_8k:
+  - Lease renewals are batched now
+  - System throughput still appears to be limited by disk iops even with proposal batching
+  - Graphs seem to anecdotally exhibit reduced throughput variation so batching is likely improving something
+  - We'll upgrade to storage optimized nodes for the db to improve the baseline for comparison w/ etcd
+  - But async lease expiration will definitely be necessary
+  - Workers ran out of memory, switching to memory optimized
+
+2025-12-09T21-45-46Z:
+  - The watch cache disablement experiment in krv failed with a panic about too many open read transactions in LMDB
+  - After switching gears to run a new etcd baseline test, the watch cache was accidentally disabled during setup
+  - So as the result of a happy accident, we now have a baseline for behavior of etcd when the watch cache is disabled
+
+2025-12-09T22-55-48Z:
+  - The next etcd run was really messed up. It slowed to an absolute crawl after about 1800 nodes
+  - Everything looked okay but nothing was making progress
+  - It seems like we might be experiencing some infrastructure level throttling
+  - We're going to have to replace all shared node classes entirely and replace them with dedicated instances
+  - Next run:
+    - Take worker nodes back to 16GB ram and don't schedule more than 400 vnodes per worker
+    - Likely caused by pod cidr exhaustion in the turbo
+
+2025-12-10T14-30-08Z_etcd_4k:
+  - The api server is running out of memory after 4k nodes
+  - The worker scaling pool was slow to respond so some workers have 480 vnodes
+  - Next run:
+    - Scale api servers to m-8vcpu-64gb-intel
+    - Prescale entire worker pool
+
+2025-12-10T15-41-29Z:
+  - turboctl crash before 4k nodes: |
+      2025/12/10 15:53:15.924112 turbokube-0188 start
+      panic: etcdserver: mvcc: database space exceeded
+  - Apparently etcd's default max db size is 2gb, not 8gb
+  - Results not captured
+  - Next run:
+    - Increase quota-backend-bytes from 2GiB to 8GiB
+
+2025-12-10T16-35-16Z_etcd_8k:
+  - Taking etcd to 8k shows we have headroom to push to 16k
+  - We should split off events into a separate etcd instance before pushing to 16k
+  - Performance was very good, maintaining > 100 pods/sec throughout the test
+  - Next run:
+    - Take krv to 8k nodes w/ configured infrastructure for new baseline

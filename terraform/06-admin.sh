@@ -1,8 +1,8 @@
 #!/bin/bash
 set -e
 
-export IP_APISERVER_0=10.0.0.37
-export IP_TURBO=10.0.0.32
+export IP_APISERVER_0=10.0.0.48
+export IP_TURBO=10.0.0.50
 
 mkdir -p /etc/kubernetes/pki/etcd
 scp -o "StrictHostKeyChecking=accept-new" root@$IP_TURBO:/etc/kubernetes/admin.conf /etc/kubernetes/admin.a.conf
@@ -17,4 +17,4 @@ git clone https://github.com/pantopic/turbokube.git
 cd turbokube/turboctl
 go build
 
-./turboctl run basic -c 4 -n 1024
+# ./turboctl run basic -c 4 -n 1024

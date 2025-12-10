@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.14
-export IP_ETCD_1=10.0.0.12
-export IP_ETCD_2=10.0.0.11
-export IP_LB=10.0.0.39
+export IP_ETCD_0=10.0.0.44
+export IP_ETCD_1=10.0.0.41
+export IP_ETCD_2=10.0.0.43
+export IP_LB=10.0.0.42
 
 export HOST_IP=$(ip addr show dev eth1 | grep 10.0 | tail -n 1 | awk '{print $2}' | sed 's/\/.*//')
 
@@ -74,15 +74,15 @@ kubeadm init \
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
 # control plane
-kubeadm join 10.0.0.39:6443 --token 9gpbbu.bi5pkp2wmvuzxi1q \
-        --discovery-token-ca-cert-hash sha256:720ca16e0644d65c26e2cc9f86d53b198a9969f81ee9f48e1a63422db506d29d \
-        --control-plane --certificate-key 5a57ec3e678289369a0471dcc488968c800744eb478579bd5fd5c151752cd1a6 \
+kubeadm join 10.0.0.42:6443 --token hncohs.7ui93bnv64baq14h \
+        --discovery-token-ca-cert-hash sha256:6e838598c45557b497a9dbdb18a93e170ff340f8dff55c5742ed315ba2b70761 \
+        --control-plane --certificate-key 8494f355e8d0b3ff08eeed955d554481c697f21bcefe6dd7bfa29506b279520b \
     --apiserver-advertise-address $HOST_IP
 
 
 # metrics
-kubeadm join 10.0.0.39:6443 --token 9gpbbu.bi5pkp2wmvuzxi1q \
-        --discovery-token-ca-cert-hash sha256:720ca16e0644d65c26e2cc9f86d53b198a9969f81ee9f48e1a63422db506d29d
+kubeadm join 10.0.0.42:6443 --token hncohs.7ui93bnv64baq14h \
+        --discovery-token-ca-cert-hash sha256:6e838598c45557b497a9dbdb18a93e170ff340f8dff55c5742ed315ba2b70761
 
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
