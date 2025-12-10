@@ -15,8 +15,8 @@ resource "digitalocean_droplet_autoscale" "worker" {
 
   config {
     min_instances             = var.node_count.worker
-    max_instances             = 32
-    target_memory_utilization = 0.40
+    max_instances             = var.node_max.worker
+    target_memory_utilization = 0.25
     cooldown_minutes          = 5
   }
   droplet_template {

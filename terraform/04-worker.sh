@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.45
+export IP_TURBO=10.0.0.32
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -62,3 +62,4 @@ kubectl get node | grep none | awk '{print \$1}' | xargs kubectl describe node |
 EOF
 chmod +x wa.sh
 watch ./wa.sh
+

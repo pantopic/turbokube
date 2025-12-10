@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.26
-export IP_ETCD_1=10.0.0.25
-export IP_ETCD_2=10.0.0.44
-export IP_LB=10.0.0.47
+export IP_ETCD_0=10.0.0.18
+export IP_ETCD_1=10.0.0.28
+export IP_ETCD_2=10.0.0.22
+export IP_LB=10.0.0.2
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -16,6 +16,7 @@ export KRV_HOST_PEERS=${IP_ETCD_0}:${KRV_PORT_ZONGZI},${IP_ETCD_1}:${KRV_PORT_ZO
 export KRV_HOST_NAME=${HOST_IP}
 export KRV_HOST_TAGS="pantopic/krv=nonvoting"
 
+# apiserver-0
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
 kind: InitConfiguration
@@ -27,10 +28,6 @@ apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 kubernetesVersion: stable
 controlPlaneEndpoint: $IP_LB:6443
-apiServer:
-  extraArgs:
-    - name: watch-cache
-      value: "false"
 etcd:
   external:
     endpoints:
@@ -80,18 +77,17 @@ kubeadm init \
   --config /etc/kubernetes/kubeadm-config.conf \
   --upload-certs
 
-# CNI
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
 # followers
-kubeadm join 10.0.0.35:6443 --token xmb2wc.117mxigm1e4dw3ki \
-    --discovery-token-ca-cert-hash sha256:ad2bec2b4c294b44022ac6454454bb55593e9be325794bdf08f40b60688b30b3 \
-    --control-plane --certificate-key 74de487df0912bb7d2254e07eec2d879023d144040f98dc716b1abf452afa4c9 \
+kubeadm join 10.0.0.2:6443 --token 242ctb.yk8m0biafagkqsvm \
+        --discovery-token-ca-cert-hash sha256:faac60d1c0e23e545ed5b23f9bfa84ed4cf2f82ea0312ea9a6c7d6c73ae5e985 \
+        --control-plane --certificate-key b651815dab928c782c3154353f7ed15538b15b59e1980626cadbcd8de1b45e0b \
     --apiserver-advertise-address $HOST_IP
 
 # metrics
-kubeadm join 10.0.0.47:6443 --token 854z9r.l3wtxmhqyq37a59w \
-        --discovery-token-ca-cert-hash sha256:1ce06d7cb1207bb9c5442e182f2325d262adfa39c58bcc896fc455cb57c0968b
+kubeadm join 10.0.0.2:6443 --token 242ctb.yk8m0biafagkqsvm \
+        --discovery-token-ca-cert-hash sha256:faac60d1c0e23e545ed5b23f9bfa84ed4cf2f82ea0312ea9a6c7d6c73ae5e985
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml

@@ -15,11 +15,6 @@ resource "digitalocean_firewall" "turbokube" {
   }
   inbound_rule {
     protocol         = "tcp"
-    port_range       = "6443"
-    source_addresses = ["0.0.0.0/0", "::/0"]
-  }
-  inbound_rule {
-    protocol         = "tcp"
     port_range       = "22"
     source_addresses = [var.ip_address]
   }

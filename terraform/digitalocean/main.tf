@@ -37,23 +37,38 @@ variable "node_count" {
   default = {
     apiserver : 3
     etcd : 3
-    scheduler : 2
+    scheduler : 4
     worker : 8
+  }
+}
+
+variable "node_max" {
+  default = {
+    worker : 24
   }
 }
 
 # https://slugs.do-api.dev/
 variable "node_class" {
   default = {
-    admin : "s-2vcpu-4gb"
-    apiserver : "g-8vcpu-32gb-intel"
-    controller-manager : "s-4vcpu-16gb-amd"
+    admin : "s-2vcpu-4gb-intel"
+    apiserver : "g-4vcpu-16gb-intel"
     etcd : "g-4vcpu-16gb-intel"
-    metrics : "s-4vcpu-16gb-amd"
-    scheduler : "s-4vcpu-16gb-amd"
-    turbo : "s-4vcpu-16gb-amd"
-    worker : "s-4vcpu-16gb-amd"
+    metrics : "g-4vcpu-16gb-intel"
+    scheduler : "g-4vcpu-16gb-intel"
+    turbo : "g-4vcpu-16gb-intel"
+    worker : "m-2vcpu-16gb-intel"
   }
+  # default = {
+  #   admin : "s-2vcpu-4gb"
+  #   apiserver : "m3-8vcpu-64gb-intel"
+  #   controller-manager : "s-4vcpu-16gb-amd"
+  #   etcd : "so-8vcpu-64gb-intel"
+  #   metrics : "s-4vcpu-16gb-amd"
+  #   scheduler : "g-4vcpu-16gb-intel"
+  #   turbo : "s-4vcpu-16gb-amd"
+  #   worker : "s-4vcpu-16gb-amd"
+  # }
 }
 
 //                                                                      . .---:.::::                                    

@@ -1,10 +1,12 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.26
-export IP_ETCD_1=10.0.0.25
-export IP_ETCD_2=10.0.0.44
-export IP_LB=10.0.0.47
+export IP_ETCD_0=10.0.0.14
+export IP_ETCD_1=10.0.0.12
+export IP_ETCD_2=10.0.0.11
+export IP_LB=10.0.0.39
+
+export HOST_IP=$(ip addr show dev eth1 | grep 10.0 | tail -n 1 | awk '{print $2}' | sed 's/\/.*//')
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -17,10 +19,6 @@ apiVersion: kubeadm.k8s.io/v1beta4
 kind: ClusterConfiguration
 kubernetesVersion: stable
 controlPlaneEndpoint: $IP_LB:6443
-apiServer:
-  extraArgs:
-    - name: watch-cache
-      value: "false"
 etcd:
   external:
     endpoints:
@@ -32,6 +30,18 @@ etcd:
     keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key
 networking:
   podSubnet: 10.244.0.0/16
+controllerManager:
+  extraArgs:
+    - name: kube-api-qps
+      value: "16000"
+    - name: kube-api-burst
+      value: "24000"
+scheduler:
+  extraArgs:
+    - name: kube-api-qps
+      value: "16000"
+    - name: kube-api-burst
+      value: "24000"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/configure-nlb.service
@@ -61,17 +71,19 @@ kubeadm init \
   --config /etc/kubernetes/kubeadm-config.conf \
   --upload-certs
 
+kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+
 # control plane
-  kubeadm join 10.0.0.2:6443 --token tpbgnw.mph1m8tbtshg2s87 \
-        --discovery-token-ca-cert-hash sha256:8a88425a52558190f65b54e52062aa352b9a6b48443ae1e5f9fef4e5b0512f79 \
-        --control-plane --certificate-key 102ad9fef2df3d0b8536ee2bab3ccff74c56bcd43498b595fdc60cc0133f8ae6
+kubeadm join 10.0.0.39:6443 --token 9gpbbu.bi5pkp2wmvuzxi1q \
+        --discovery-token-ca-cert-hash sha256:720ca16e0644d65c26e2cc9f86d53b198a9969f81ee9f48e1a63422db506d29d \
+        --control-plane --certificate-key 5a57ec3e678289369a0471dcc488968c800744eb478579bd5fd5c151752cd1a6 \
+    --apiserver-advertise-address $HOST_IP
+
 
 # metrics
-kubeadm join 10.0.0.35:6443 --token 2exenb.eyly9wwmmc1tclo5 \
-        --discovery-token-ca-cert-hash sha256:6a348051710fefdd2c9ab146413cce76e9d40d8531560bb01caa1603841d2b28
+kubeadm join 10.0.0.39:6443 --token 9gpbbu.bi5pkp2wmvuzxi1q \
+        --discovery-token-ca-cert-hash sha256:720ca16e0644d65c26e2cc9f86d53b198a9969f81ee9f48e1a63422db506d29d
 
-# Add flannel for networking
-kubectl apply -f https://github.com/flannel-io/flannel/releases/latest/download/kube-flannel.yml
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml
