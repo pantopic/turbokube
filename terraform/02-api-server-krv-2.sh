@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.18
-export IP_ETCD_1=10.0.0.28
-export IP_ETCD_2=10.0.0.22
-export IP_LB=10.0.0.2
+export IP_ETCD_0=10.0.0.32
+export IP_ETCD_1=10.0.0.30
+export IP_ETCD_2=10.0.0.35
+export IP_LB=10.0.0.54
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
@@ -36,7 +36,7 @@ etcd:
     certFile: /etc/kubernetes/pki/apiserver-etcd-client.crt
     keyFile: /etc/kubernetes/pki/apiserver-etcd-client.key
 networking:
-  podSubnet: 10.244.0.0/16
+  podSubnet: 10.64.0.0/12
 controllerManager:
   extraArgs:
     - name: kube-api-qps
@@ -80,14 +80,14 @@ kubeadm init \
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
 # followers
-kubeadm join 10.0.0.2:6443 --token 242ctb.yk8m0biafagkqsvm \
-        --discovery-token-ca-cert-hash sha256:faac60d1c0e23e545ed5b23f9bfa84ed4cf2f82ea0312ea9a6c7d6c73ae5e985 \
-        --control-plane --certificate-key b651815dab928c782c3154353f7ed15538b15b59e1980626cadbcd8de1b45e0b \
+kubeadm join 10.0.0.54:6443 --token tgabzr.3ohh74cql70sp3r1 \
+        --discovery-token-ca-cert-hash sha256:45171a8ac631116122ad91713c81197f42a4d77b24b3e8acfad58f3d2fa80ac0 \
+        --control-plane --certificate-key 3035e83bc16b28864ab9d8e4fa179fc42e056d58fd1db5537590e1f4ab695b04 \
     --apiserver-advertise-address $HOST_IP
 
 # metrics
-kubeadm join 10.0.0.2:6443 --token 242ctb.yk8m0biafagkqsvm \
-        --discovery-token-ca-cert-hash sha256:faac60d1c0e23e545ed5b23f9bfa84ed4cf2f82ea0312ea9a6c7d6c73ae5e985
+kubeadm join 10.0.0.54:6443 --token tgabzr.3ohh74cql70sp3r1 \
+        --discovery-token-ca-cert-hash sha256:45171a8ac631116122ad91713c81197f42a4d77b24b3e8acfad58f3d2fa80ac0
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml

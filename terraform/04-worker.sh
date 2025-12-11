@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.50
+export IP_TURBO=10.0.0.31
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -21,7 +21,7 @@ controlPlaneEndpoint: $IP_TURBO:6443
 controllerManager:
   extraArgs:
     - name: node-cidr-mask-size
-      value: "21"
+      value: "20"
 dns: {}
 encryptionAlgorithm: RSA-2048
 etcd:
@@ -32,7 +32,7 @@ kind: ClusterConfiguration
 kubernetesVersion: v1.34.1
 networking:
   dnsDomain: cluster.local
-  podSubnet: 10.244.0.0/16
+  podSubnet: 10.128.0.0/12
   serviceSubnet: 10.96.0.0/12
 proxy: {}
 scheduler: {}

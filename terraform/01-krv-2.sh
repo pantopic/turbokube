@@ -4,16 +4,16 @@ set -e
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.18
-export IP_ETCD_1=10.0.0.28
-export IP_ETCD_2=10.0.0.22
+export IP_ETCD_0=10.0.0.32
+export IP_ETCD_1=10.0.0.30
+export IP_ETCD_2=10.0.0.35
 
 export APINAME0="apiserver-0"
 export APINAME1="apiserver-1"
 export APINAME2="apiserver-2"
-export IP_APISERVER_0=10.0.0.25
-export IP_APISERVER_1=10.0.0.29
-export IP_APISERVER_2=10.0.0.30
+export IP_APISERVER_0=10.0.0.28
+export IP_APISERVER_1=10.0.0.27
+export IP_APISERVER_2=10.0.0.26
 
 export KRV_TLS_CRT=/etc/kubernetes/pki/etcd/server.crt
 export KRV_TLS_KEY=/etc/kubernetes/pki/etcd/server.key
