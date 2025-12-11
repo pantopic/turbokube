@@ -147,3 +147,21 @@ Not surprises:
   - Performance was very good, maintaining > 100 pods/sec throughout the test
   - Next run:
     - Take krv to 8k nodes w/ configured infrastructure for new baseline
+
+2025-12-11T15-49-16Z_pcb_8k:
+  - Performance is virtually identical to etcd. This is great.
+  - Next run:
+    - Fix local watch termination
+
+2025-12-11T17-19-05Z_pcb_8k:
+  - Local watch termination made no difference.
+  - Performance is very consistent.
+  - Next run:
+    - What happens if we disable the watch cache?
+
+2025-12-11T18-31-52Z_pcb_no-cache:
+  - Well, that was awful.
+  - Next run:
+    - We now have a really good apples-to-apples comparison that can probably take us up to 16k nodes
+    - We could improve throughput by breaking out events into a second instance but that optimization isn't going anywhere
+    - Let's migrate krv to WASM and prove that performance is comparable

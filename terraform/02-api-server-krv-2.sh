@@ -49,6 +49,10 @@ scheduler:
       value: "16000"
     - name: kube-api-burst
       value: "24000"
+apiServer:
+  extraArgs:
+    - name: watch-cache
+      value: "false"
 EOF
 
 cat <<EOF | sudo tee /etc/systemd/system/configure-nlb.service
@@ -80,14 +84,14 @@ kubeadm init \
 kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
 
 # followers
-kubeadm join 10.0.0.54:6443 --token 4txlix.17ou0usgygidlkqc \
-        --discovery-token-ca-cert-hash sha256:7d6526082fa1c22ff7bd58a63d7f7b36a7756b5bfa22666889fc1abbbbeae867 \
-        --control-plane --certificate-key 2bbcd9ae323ddd71e74a24c0159a198d57691296f9c0607b799a3314cf11f764 \
+kubeadm join 10.0.0.54:6443 --token 00puvr.ftrfxeno8btylu8e \
+        --discovery-token-ca-cert-hash sha256:0554103abb342199f6c1725854428cd8352613b4218a471fc6be4c2b95e25263 \
+        --control-plane --certificate-key 2a77d832534a235ec5ccc78ec97f17e0640ab976eb39ece1b6be9071cbc31786 \
     --apiserver-advertise-address $HOST_IP
 
 # metrics
-kubeadm join 10.0.0.54:6443 --token tgabzr.3ohh74cql70sp3r1 \
-        --discovery-token-ca-cert-hash sha256:45171a8ac631116122ad91713c81197f42a4d77b24b3e8acfad58f3d2fa80ac0
+kubeadm join 10.0.0.54:6443 --token 00puvr.ftrfxeno8btylu8e \
+        --discovery-token-ca-cert-hash sha256:0554103abb342199f6c1725854428cd8352613b4218a471fc6be4c2b95e25263
 
 wget https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
 sed -i 's/--metric-resolution=15s/--metric-resolution=15s\n        - --kubelet-insecure-tls/' components.yaml

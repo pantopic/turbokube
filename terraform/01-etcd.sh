@@ -78,7 +78,7 @@ etcd:
         - name: initial-advertise-peer-urls
           value: https://${HOST}:2380
         - name: quota-backend-bytes
-          value: 8589934592
+          value: "8589934592"
 EOF
 done
 
@@ -115,7 +115,6 @@ scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_
 kubeadm init phase etcd local --config=/tmp/${IP_ETCD_0}/kubeadmcfg.yaml
 
 # etcd-1 /\ etcd-2
-mv pki /etc/kubernetes/
 kubeadm init phase etcd local --config=/etc/kubernetes/kubeadmcfg.yaml
 
 ETCDCTL_API=3 etcdctl \
