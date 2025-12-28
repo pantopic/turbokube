@@ -126,8 +126,8 @@ The system may eventually reach a point where it is completely saturated with le
 
 <img title="Etcd requests by operation type" alt="Etcd requests by operation type" src="results/2025-12-10T16-35-16Z_etcd_8k/Screenshot 2025-12-10 091032.png"/>
 
-However, Kubernetes seems to have a good priority system so the failure mode may look more like a recovery storm caused
-by undesired lease expiration as Kubernetes deprioritizes lease renewal requests.
+However, Kubernetes seems to have a good priority system so the ultimate failure mode may look more like a recovery
+storm caused by undesired lease expiration as Kubernetes deprioritizes lease renewal requests.
 
 ### 4. QPS Limits
 
@@ -138,7 +138,7 @@ clusters out of the box, this is likely the bottleneck.
 
 <img title="Pods scheduled" alt="Pods scheduled" src="results/2025-11-18T15-01-37Z/garbage.png"/>
 
-Turns out these jagged lines are produced by the QPS limiter, not the metric sample rate as was assumed.
+Turns out this jagged line is caused by the QPS limiter, not the metric sample rate as was originally assumed.
 
 ### 5. Container Network Interface
 
@@ -168,16 +168,17 @@ was released during the test period. Their test pre-provisions all nodes and the
 Kurrent. Presently, TurboKube can comfortably run about 400 vnodes per worker node with ram being the bottleneck. So if
 the 8k test runs on a bank of 24 worker nodes with 2 cpu and 16GB of ram each at $0.15/hr, we'd need 384 worker nodes to
 instantiate 128k vnodes to replicate Google's published results. Our droplet limit in DO is presently 100 so we'd either
-need to request another limit increase or vertically scale each node to 128GB of ram and provision 48 of them. A test of
-this size will probably cost us over $100 per run.
+need to request another limit increase or vertically scale each droplet to 128GB of ram and provision 48 of them. A
+test of this size will probably cost us over $100 per run.
 
-The other option would be to go back and re-evaluate KWOK which is presumably much more memory efficient since it runs
-multiple virtual kubelets in a single process rather than running each virtual kubelet in a dedicated container.
+The other option would be to go back and re-evaluate [KWOK](https://kwok.sigs.k8s.io/) which is presumably much more
+memory efficient since it runs multiple virtual kubelets in a single process rather than running each virtual kubelet
+in a dedicated container.
 
 In any event, we've proven performance parity of our etcd implementation at a scale of 8k nodes which is a good
-performance baseline. Work continues on maturing the etcd implementation and we'll return to discover new ceilings
-after the WASM migration is complete for our etcd implementation and we begin delving into asynchronous multi-shard
-lease management.
+performance baseline. Work continues on maturing our etcd implementation and we'll return to discover new ceilings
+after the WASM migration is complete for our etcd implementation and we can begin testing our proposed multi-shard
+approach to asynchronous lease management.
 
 ## Additional Findings
 
