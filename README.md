@@ -48,19 +48,6 @@ oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thru
 *TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes rather than real nodes,
 maximizing LCR (load to cost ratio).
 
-## Operation
-
-The infrastructure is provisioned using [terraform](terraform) and a tangled mess of manually applied shell scripts
-that will be difficult for anyone else to follow because I never bothered to learn Ansible.
-
-After the system is provisioned, load tests are run using [turboctl](turboctl) from the admin node which connects to
-both control planes at once to coordinate creation of virtual nodes and workloads scheduled upon them.
-
-```sh
-# [8k test] 4 schedulers | 1,024 namespaces | 8,192 nodes | 32,768 deployments | 262,144 pods
-> ./turboctl run basic -c 4 -n 1024
-```
-
 ## Experiment Variables
 
 - Size of control plane instances (vertical scale, cores and ram)
@@ -76,6 +63,19 @@ both control planes at once to coordinate creation of virtual nodes and workload
 2. Identify soft and hard failure points
 3. Publish a control plane instance size recommendation calculator
 4. Test performance of alternate etcd implementations
+
+## Operation
+
+The infrastructure is provisioned using [terraform](terraform) and a tangled mess of manually applied shell scripts
+that will be difficult for anyone else to follow because I never bothered to learn Ansible.
+
+After the system is provisioned, load tests are run using [turboctl](turboctl) from the admin node which connects to
+both control planes at once to coordinate creation of virtual nodes and workloads scheduled upon them.
+
+```sh
+# [8k test] 4 schedulers | 1,024 namespaces | 8,192 nodes | 32,768 deployments | 262,144 pods
+> ./turboctl run basic -c 4 -n 1024
+```
 
 ## Findings
 
