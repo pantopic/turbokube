@@ -33,7 +33,7 @@ TurboKube is designed to amplify the load on a Kubernetes control plane using vi
 <a href="https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.isolated.draw.io.png"><img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.isolated.draw.io.png"/></a>
 
 *Control Plane A* schedules <a href="https://virtual-kubelet.io/">Virtual Kubelet</a> containers as pods in an
-autoscaling pool of worker nodes. Each Virtual Kubelet joins *Control Plane B*, as a Kubernetes node.
+autoscaling pool of worker nodes. Each Virtual Kubelet joins *Control Plane B* as a Kubernetes node.
 
 *Control Plane B* schedules Pods to these Virtual Kubelets as if they were real nodes.
 
