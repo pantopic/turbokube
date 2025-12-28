@@ -147,8 +147,9 @@ a CNI (Container Network Interface). Recommend [Calico](https://docs.tigera.io/c
 
 ### 6. Alternate Etcd Implementations
 
-Even with a different Raft implementation (dragonboat) and a different storage engine (LMDB), our independent etcd
-implementation ([config-bus](https://github.com/pantopic/config-bus)) displays nearly identical performance to etcd in
+Even with a different Raft implementation ([dragonboat](https://github.com/lni/dragonboat)) and a different storage
+engine ([LMDB](https://www.symas.com/mdb)), our independent etcd implementation
+([config-bus](https://github.com/pantopic/config-bus)) displays nearly identical performance to etcd in
 the 8k test which, while heartening, suggests that the database is still not the bottleneck.
 
 <img title="Pods per second by node count" alt="Pods per second by node count" src="results/2025-12-11T15-49-16Z_pcb_8k/Pods per second by node count.png"/>
