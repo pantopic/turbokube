@@ -74,6 +74,19 @@ workload at all. I thought it would try to schedule the same number of pods to e
 all. It simply schedules each pod to a random node regardless of how many pods are assigned to each node. The balancing
 logic is driven entirely by resource requests so they are not optional.
 
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: turbokube
+        resources:
+          requests:
+            memory: 32Mi
+```
+
 ### 2. Sequential Scheduling
 
 Even if you create multiple schedulers and utilize them correctly, those schedulers will not be run in parallel
@@ -122,10 +135,13 @@ a CNI (Container Network Interface). Recommend [Calico](https://docs.tigera.io/c
 
 ### 7. Alternate Etcd Implementations
 
-Our independent etcd implementation ([config-bus](https://github.com/pantopic/config-bus)) displays nearly identical
-performance to etcd in the 8k test which is heartening but it suggests that etcd is still not the bottleneck.
+Even with a different Raft implementation (dragonboat) and a different storage engine (LMDB), our independent etcd
+implementation ([config-bus](https://github.com/pantopic/config-bus)) displays nearly identical performance to etcd in
+the 8k test which, while heartening, suggests that the database is still not the bottleneck.
 
 <img alt="Pods per second by node count" src="results/2025-12-11T15-49-16Z_pcb_8k/Pods per second by node count.png"/>
+
+The Kubernetes scheduler is the likely bottleneck.
 
 ### 8. Taking it Further
 
@@ -137,17 +153,19 @@ instantiate 128k vnodes to replicate Google's published results. Our droplet lim
 need to request another limit increase or vertically scale each node to 128GB of ram and provision 48 of them. A test of
 this size will probably cost us over $100 per run.
 
+## Appendix
+
+More detailed notes and graphs can be found in the [results](results) directory.
+
 ## Additional Findings
 
 During this process, we identified a few minor defects in Digital Ocean's new
 [Droplet Autoscaling](https://www.digitalocean.com/blog/droplet-autoscaling-now-available) feature. Those
 defects were reported to Digital Ocean through their support system and the defects were quickly reproduced and fixed
-by the Engineering Team at Digital Ocean. Big thank you to Digital Ocean for listening and responding to customer
-feedback, even a small customer like myself who's been running a $5 droplet on their platform for over 10 years.
+by the Engineering Team at Digital Ocean.
 
-## Appendix
-
-More detailed notes and graphs can be found in the [results](results) directory.
+Big thank you to Digital Ocean for listening and responding to customer feedback, even for small customers like myself
+who've been running $5 droplets on their platform for over 10 years.
 
 ## Adjacent Work
 
