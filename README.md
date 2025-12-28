@@ -105,6 +105,10 @@ The default QPS limits in the scheduler and controller manager constrain the sys
 remove this artificial bottleneck. For anyone experiencing throughput issues running small self-managed Kubernetes
 clusters out of the box, this is likely the bottleneck.
 
+<img alt="Pods scheduled" src="results/2025-11-18T15-01-37Z/garbage.png"/>
+
+Turns out these jagged lines are produced by the QPS limiter, not the metric sample rate as was assumed.
+
 ### 5. Watch Cache
 
 Disabling the watch cache is a bad idea. It does a lot of work.
