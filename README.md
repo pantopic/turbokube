@@ -115,16 +115,16 @@ configured, Kubernetes will always schedule one pod at a time no matter what. Th
 
 Lease renewal throughput grows linearly with the number of nodes (as suspected).
 
-<img alt="Etcd requests by resource type" src="results/2025-12-10T16-35-16Z_etcd_8k/Screenshot 2025-12-10 091041.png"/>
+<img title="Etcd requests by resource type" alt="Etcd requests by resource type" src="results/2025-12-10T16-35-16Z_etcd_8k/Screenshot 2025-12-10 091041.png"/>
 
 The percentage of work dedicated to lease maintenance increases with the number of nodes in the cluster, reducing
 available database throughput.
 
-<img alt="Percentage of Etcd requests dedicated to lease management" src="results/2025-12-10T16-35-16Z_etcd_8k/Screenshot 2025-12-10 091037.png"/>
+<img title="Percentage of Etcd requests dedicated to lease management" alt="Percentage of Etcd requests dedicated to lease management" src="results/2025-12-10T16-35-16Z_etcd_8k/Screenshot 2025-12-10 091037.png"/>
 
 The system may eventually reach a point where it is completely saturated with lease maintenance and can't do any real work.
 
-<img alt="Etcd requests by operation type" src="results/2025-12-10T16-35-16Z_etcd_8k/Screenshot 2025-12-10 091032.png"/>
+<img title="Etcd requests by operation type" alt="Etcd requests by operation type" src="results/2025-12-10T16-35-16Z_etcd_8k/Screenshot 2025-12-10 091032.png"/>
 
 However, Kubernetes seems to have a good priority system so the failure mode may look more like a recovery storm caused
 by undesired lease expiration as Kubernetes deprioritizes lease renewal requests.
@@ -136,7 +136,7 @@ The default QPS limits in the scheduler and controller manager constrain the sys
 remove this artificial bottleneck. For anyone experiencing throughput issues running small self-managed Kubernetes
 clusters out of the box, this is likely the bottleneck.
 
-<img alt="Pods scheduled" src="results/2025-11-18T15-01-37Z/garbage.png"/>
+<img title="Pods scheduled" alt="Pods scheduled" src="results/2025-11-18T15-01-37Z/garbage.png"/>
 
 Turns out these jagged lines are produced by the QPS limiter, not the metric sample rate as was assumed.
 
@@ -151,7 +151,7 @@ Even with a different Raft implementation (dragonboat) and a different storage e
 implementation ([config-bus](https://github.com/pantopic/config-bus)) displays nearly identical performance to etcd in
 the 8k test which, while heartening, suggests that the database is still not the bottleneck.
 
-<img alt="Pods per second by node count" src="results/2025-12-11T15-49-16Z_pcb_8k/Pods per second by node count.png"/>
+<img title="Pods per second by node count" alt="Pods per second by node count" src="results/2025-12-11T15-49-16Z_pcb_8k/Pods per second by node count.png"/>
 
 The Kubernetes scheduler is the likely bottleneck.
 
@@ -159,7 +159,7 @@ The Kubernetes scheduler is the likely bottleneck.
 
 Disabling the watch cache is a really bad idea. It does a lot of work.
 
-<img alt="Pods per second by node count" src="results/2025-12-11T18-31-52Z_pcb_no-cache/Pods per second by node count.png"/>
+<img title="Pods per second by node count" alt="Pods per second by node count" src="results/2025-12-11T18-31-52Z_pcb_no-cache/Pods per second by node count.png"/>
 
 ### 8. Taking it Further
 
