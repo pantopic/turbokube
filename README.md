@@ -82,6 +82,8 @@ both control planes at once to coordinate creation of virtual nodes and workload
 About $300 was spent in infrastructure costs with Digital Ocean to run a series of tests over the course of several
 weeks between November 15th and December 12th, 2025 with bottlenecks identified and mitigated along the way.
 
+Findings are summarized here. More detailed notes and graphs can be found in the [results](results) directory.
+
 ### 1. Resource Requests
 
 If you don't include resource requests in your pod spec, the kubernetes scheduler won't attempt to balance the
@@ -138,18 +140,12 @@ clusters out of the box, this is likely the bottleneck.
 
 Turns out these jagged lines are produced by the QPS limiter, not the metric sample rate as was assumed.
 
-### 5. Watch Cache
-
-Disabling the watch cache is a bad idea. It does a lot of work.
-
-<img alt="Pods per second by node count" src="results/2025-12-11T18-31-52Z_pcb_no-cache/Pods per second by node count.png"/>
-
-### 6. Container Network Interface
+### 5. Container Network Interface
 
 PodCidr management is a going concern at these scales. In this respect, Calico is a lot more flexible than Flannel as
 a CNI (Container Network Interface). Recommend [Calico](https://docs.tigera.io/calico/latest/about/).
 
-### 7. Alternate Etcd Implementations
+### 6. Alternate Etcd Implementations
 
 Even with a different Raft implementation (dragonboat) and a different storage engine (LMDB), our independent etcd
 implementation ([config-bus](https://github.com/pantopic/config-bus)) displays nearly identical performance to etcd in
@@ -158,6 +154,12 @@ the 8k test which, while heartening, suggests that the database is still not the
 <img alt="Pods per second by node count" src="results/2025-12-11T15-49-16Z_pcb_8k/Pods per second by node count.png"/>
 
 The Kubernetes scheduler is the likely bottleneck.
+
+### 7. Watch Cache
+
+Disabling the watch cache is a really bad idea. It does a lot of work.
+
+<img alt="Pods per second by node count" src="results/2025-12-11T18-31-52Z_pcb_no-cache/Pods per second by node count.png"/>
 
 ### 8. Taking it Further
 
@@ -176,10 +178,6 @@ In any event, we've proven performance parity of our etcd implementation at a sc
 performance baseline. Work continues on maturing the etcd implementation and we'll return to discover new ceilings
 after the WASM migration is complete for our etcd implementation and we begin delving into asynchronous multi-shard
 lease management.
-
-## Appendix
-
-More detailed notes and graphs can be found in the [results](results) directory.
 
 ## Additional Findings
 
