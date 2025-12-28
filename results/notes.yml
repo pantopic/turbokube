@@ -163,5 +163,8 @@ Not surprises:
   - Well, that was awful.
   - Next run:
     - We now have a really good apples-to-apples comparison that can probably take us up to 16k nodes
-    - We could improve throughput by breaking out events into a second instance but that optimization isn't going anywhere
-    - Let's migrate krv to WASM and prove that performance is comparable
+    - We could improve throughput by breaking out events into a second instance 
+    - But parallel event storage is likely to have identical benefits for both etcd and pcb
+    - We could finish async lease expiration 
+    - But I'd rather front-load other risks while the software is good enough before making it better
+    - Let's migrate pcb to WASM and prove that performance is still comparable
