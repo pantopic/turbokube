@@ -32,19 +32,34 @@ TurboKube is designed to amplify the load on a Kubernetes control plane using vi
 
 <a href="https://app.diagrams.net/#Uhttps://raw.githubusercontent.com/pantopic/turbokube/refs/heads/main/junk/turbokube.isolated.draw.io.png"><img alt="Architectural diagram of TurboKube" title="Click to open on draw.io" src="junk/turbokube.isolated.draw.io.png"/></a>
 
-*Control Plane A* schedules <a href="https://virtual-kubelet.io/">Virtual Kubelet</a> containers as pods in an autoscaling pool of
-worker nodes. Each Virtual Kubelet operates a mock provider (TurboKube). Those Virtual Kubelets connect to
-*Control Plane B*, joining the cluster pretending to be real virtual machines.
+*Control Plane A* schedules <a href="https://virtual-kubelet.io/">Virtual Kubelet</a> containers as pods in an
+autoscaling pool of worker nodes. Each Virtual Kubelet joins *Control Plane B*, as a Kubernetes node.
 
-*Control Plane B* schedules Pods to these Virtual Kubelets. The pods scheduled to the Virtual Kubelets are real to
-*Cluster B* but "fake" to *Cluster A* because it knows that the pods don't execute anything in any real sense. The
-mock provider doesn't have a container runtime in which to run the containers in the pod spec. Instead, it simulates
-the behavior of a running container including health checks, metrics, etc.
+*Control Plane B* schedules Pods to these Virtual Kubelets as if they were real nodes.
+
+## Why Turbo?
+
+A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke,
+increasing horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
+
+A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel a turbine, forcing more fuel and
+oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
+
+*TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes rather than real nodes,
+maximizing LCR (load to cost ratio).
+
+## Operation
 
 The infrastructure is provisioned using [terraform](terraform) and a tangled mess of manually applied shell scripts
-that will be difficult for anyone else to follow because I never learned how to use Ansible. After the
-system is provisioned, load tests are run using [turboctl](turboctl) from the admin node which connects to both control
-planes at once to coordinate creation of virtual nodes and workloads scheduled upon them.
+that will be difficult for anyone else to follow because I never bothered to learn Ansible.
+
+After the system is provisioned, load tests are run using [turboctl](turboctl) from the admin node which connects to
+both control planes at once to coordinate creation of virtual nodes and workloads scheduled upon them.
+
+```sh
+# [8k test] 4 schedulers | 1,024 namespaces | 8,192 nodes | 32,768 deployments | 262,144 pods
+> ./turboctl run basic -c 4 -n 1024
+```
 
 ## Experiment Variables
 
@@ -70,9 +85,8 @@ weeks between November 15th and December 12th, 2025 with bottlenecks identified 
 ### 1. Resource Requests
 
 If you don't include resource requests in your pod spec, the kubernetes scheduler won't attempt to balance the
-workload at all. I thought it would try to schedule the same number of pods to each node but that's not how it works at
-all. It simply schedules each pod to a random node regardless of how many pods are assigned to each node. The balancing
-logic is driven entirely by resource requests so they are not optional.
+workload. I thought it would try to schedule the same number of pods to each node but that's not how it works at all.
+It simply schedules each pod to a random node regardless of how many pods are assigned to each node.
 
 ```yaml
 apiVersion: apps/v1
@@ -86,6 +100,8 @@ spec:
           requests:
             memory: 32Mi
 ```
+
+The balancing logic in the Kubernetes scheduler is driven entirely by resource requests so they are not optional.
 
 ### 2. Sequential Scheduling
 
@@ -147,11 +163,19 @@ The Kubernetes scheduler is the likely bottleneck.
 
 Google's [130k blog post](https://cloud.google.com/blog/products/containers-kubernetes/how-we-built-a-130000-node-gke-cluster)
 was released during the test period. Their test pre-provisions all nodes and then schedules 1 pod per node using
-Kurrent. Presently, TurboKube can comfortably run about 333 vnodes per worker node with ram being the bottleneck. So if
+Kurrent. Presently, TurboKube can comfortably run about 400 vnodes per worker node with ram being the bottleneck. So if
 the 8k test runs on a bank of 24 worker nodes with 2 cpu and 16GB of ram each at $0.15/hr, we'd need 384 worker nodes to
 instantiate 128k vnodes to replicate Google's published results. Our droplet limit in DO is presently 100 so we'd either
 need to request another limit increase or vertically scale each node to 128GB of ram and provision 48 of them. A test of
 this size will probably cost us over $100 per run.
+
+The other option would be to go back and re-evaluate KWOK which is presumably much more memory efficient since it runs
+multiple virtual kubelets in a single process rather than running each virtual kubelet in a dedicated container.
+
+In any event, we've proven performance parity of our etcd implementation at a scale of 8k nodes which is a good
+performance baseline. Work continues on maturing the etcd implementation and we'll return to discover new ceilings
+after the WASM migration is complete for our etcd implementation and we begin delving into asynchronous multi-shard
+lease management.
 
 ## Appendix
 
@@ -160,12 +184,12 @@ More detailed notes and graphs can be found in the [results](results) directory.
 ## Additional Findings
 
 During this process, we identified a few minor defects in Digital Ocean's new
-[Droplet Autoscaling](https://www.digitalocean.com/blog/droplet-autoscaling-now-available) feature. Those
-defects were reported to Digital Ocean through their support system and the defects were quickly reproduced and fixed
-by the Engineering Team at Digital Ocean.
+[Droplet Autoscaling](https://www.digitalocean.com/blog/droplet-autoscaling-now-available?refcode=a16ca694958a&utm_campaign=Referral_Invite&utm_medium=Referral_Program&utm_source=badge)
+feature. Those defects were reported to Digital Ocean through their support system and the defects were quickly
+reproduced and fixed by the Engineering Team at Digital Ocean.
 
-Big thank you to Digital Ocean for listening and responding to customer feedback, even for small customers like myself
-who've been running $5 droplets on their platform for over 10 years.
+Big thank you to Digital Ocean for listening and responding to customer feedback, even for a small customer like myself
+who's been running $5 droplets on the platform for over 10 years.
 
 ## Adjacent Work
 
@@ -199,14 +223,3 @@ things, having multiple redundant testing frameworks with slightly different app
 thing. [SimKube](https://github.com/acrlabs/simkube) has a number of interesting features that might be valuable, but
 we don't have any large scale production traces to replay. Better to let those experts run their own independent tools
 to validate the results of our tests for corroboration if required.
-
-## Why Turbo?
-
-A *turbocharger* in a car works by compressing air entering the engine so that more fuel can be burnt on every stroke,
-increasing horsepower without adding more cylinders, maximizing PWR (power to weight ratio).
-
-A *turbopump* in a rocket engine works by pre-burning fuel and oxidizer to impel a turbine, forcing more fuel and
-oxidizer into the main combustion chamber at a faster rate, maximizing TWR (thrust to weight ratio).
-
-*TurboKube* is designed to amplify the load on a Kubernetes control plane using virtual nodes, making Kubernetes
-control plane load testing faster and cheaper.
