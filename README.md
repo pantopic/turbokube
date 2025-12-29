@@ -140,7 +140,7 @@ settings, this is likely your bottleneck.
 
 Turns out this jagged line is not a metric sample rate artifact like we originally assumed. It is in fact a feature of
 the QPS limiter enabled by default in Kubernetes. These limits must be [increased](/terraform/02-api-server-krv-2.sh#L40-L51)
-significantly (100x) in order to remove this artificial bottleneck.
+significantly (100x) to remove this artificial bottleneck.
 
 ### 5. Container Network Interface
 
