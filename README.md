@@ -230,7 +230,6 @@ thing. [SimKube](https://github.com/acrlabs/simkube) has a number of interesting
 we don't have any large scale production traces to replay. Better to let those experts run their own independent tools
 to validate the results of our tests for corroboration if required.
 
-## Fin
+## Thank you for reading
 
-Thank you for reading. Please enjoy this [Synthwave track](https://www.youtube.com/watch?v=wGGOYpRFUfg) I discovered
-recently as a gesture of my appreciation.
+Please enjoy [this synthwave track](https://www.youtube.com/watch?v=wGGOYpRFUfg) as a gesture of our appreciation.
