@@ -139,7 +139,7 @@ settings, this is likely your bottleneck.
 <img title="Pods scheduled" alt="Pods scheduled" src="results/2025-11-18T15-01-37Z/garbage.png"/>
 
 Turns out this jagged line is not a metric sample rate artifact like we originally assumed. It is in fact a feature of
-the QPS limiter enabled by default in Kubernetes. These limits must be [increased](/terraform/02-api-server-krv-2.sh#L40-L51) 
+the QPS limiter enabled by default in Kubernetes. These limits must be [increased](/terraform/02-api-server-krv-2.sh#L40-L51)
 significantly (100x) in order to remove this artificial bottleneck.
 
 ### 5. Container Network Interface
@@ -184,7 +184,7 @@ in a dedicated container.
 In any event, we've proven performance parity of our etcd implementation at a scale of 8k nodes (well beyond the
 published maximum cluster size recommended for Kubernetes) which is a good baseline. Work continues on maturing our
 etcd implementation and we'll return to discover new ceilings after the WASM migration is complete for our etcd
-implementation and we can begin testing our proposed multi-shard approach to asynchronous lease management 
+implementation and we can begin testing our proposed multi-shard approach to asynchronous lease management
 ([wip](https://github.com/kevburnsjr/tla-plus/tree/main/pantopic/config-bus)).
 
 ## Additional Findings
@@ -194,8 +194,8 @@ During this process, we identified a few minor defects in Digital Ocean's new
 feature. Those defects were reported to Digital Ocean through their support system and the defects were quickly
 reproduced and fixed by the Engineering Team at Digital Ocean.
 
-Big thank you to Digital Ocean for listening and responding quickly to customer feedback, even for a small customer
-like myself who's been running $5 droplets on the platform for over 10 years.
+Big thank you to Digital Ocean for listening and responding quickly to customer feedback, even for small customers
+like us who've been running $5 droplets on the platform for over 10 years.
 
 ## Adjacent Work
 
@@ -211,7 +211,7 @@ like myself who's been running $5 droplets on the platform for over 10 years.
 Some of these tools (like [kube-burner](https://github.com/kube-burner/kube-burner)) might be a good fit
 except that it can be hard to know precisely what is going on under the hood. I could read all 8,600 lines of code to
 understand it completely and hope that its behavior matches my use case but it seems like all we're doing is applying
-some templated manifest files to a cluster in a loop. I'd rather just build something simple for myself that's tailored
+templated manifests to a cluster in a loop. I'd rather just build something simple for myself that's tailored
 specifically to my project's goals so that it's easier for other people to comprehend.
 
 ### 2. Simplicity
