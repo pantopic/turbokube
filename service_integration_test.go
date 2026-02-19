@@ -416,6 +416,7 @@ func setupCluster(t *testing.T) {
 		hostModGrpcServer  = wazero_grpc_server.New()
 		hostModPipe        = wazero_pipe.New()
 		hostModShardClient = wazero_shard_client.New(
+			agents[0],
 			wazero_shard_client.WithNamespace(`default`),
 			wazero_shard_client.WithResource(`pcb`),
 		)
@@ -447,7 +448,7 @@ func setupCluster(t *testing.T) {
 		if ctx, err = hostModGrpcServer.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
-		if ctx, err = hostModShardClient.InitContext(ctx, mod, agents[0]); err != nil {
+		if ctx, err = hostModShardClient.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
 	})

@@ -37,8 +37,7 @@ func main() {
 		zongzi.WithAddrRaft(fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortRaft)),
 		zongzi.WithAddrApi(fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortZongzi)),
 		zongzi.WithHostMemoryLimit(zongzi.HostMemory256),
-		zongzi.WithRaftEventListener(ctrl),
-	)
+		zongzi.WithRaftEventListener(ctrl))
 	if err != nil {
 		panic(err)
 	}

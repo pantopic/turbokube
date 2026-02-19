@@ -1,6 +1,6 @@
 module github.com/pantopic/config-bus
 
-go 1.25.5
+go 1.25.7
 
 require (
 	github.com/PowerDNS/lmdb-go v1.9.3

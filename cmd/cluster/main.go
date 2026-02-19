@@ -29,7 +29,6 @@ import (
 	"github.com/pantopic/wazero-shard-client/host"
 
 	"github.com/pantopic/config-bus"
-	"github.com/pantopic/config-bus/internal"
 )
 
 //go:embed service\-grpc\.wasm
@@ -40,7 +39,6 @@ func main() {
 	var cfg = getConfig()
 	var ctx = context.Background()
 	var log = slog.Default()
-	var apiAddr = fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortApi)
 	var ctrl = pcb.NewController(ctx, log)
 	agent, err := zongzi.NewAgent(cfg.ClusterName, strings.Split(cfg.HostPeers, ","),
 		zongzi.WithDirRaft(cfg.Dir+"/raft"),
@@ -50,8 +48,7 @@ func main() {
 		zongzi.WithAddrRaft(fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortRaft)),
 		zongzi.WithAddrApi(fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortZongzi)),
 		zongzi.WithHostMemoryLimit(zongzi.HostMemory256),
-		zongzi.WithRaftEventListener(ctrl),
-	)
+		zongzi.WithRaftEventListener(ctrl))
 	if err != nil {
 		panic(err)
 	}
@@ -95,18 +92,22 @@ func main() {
 	}
 	var grpcServer = grpc.NewServer(opts...)
 
-	// WASM gRPC services
+	// Create Runtime
 	runtime := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtime)
+
+	// Create Runtime Extensions
 	var (
 		hostModGlobal      = wazero_global.New()
 		hostModGrpc        = wazero_grpc_server.New()
 		hostModPipe        = wazero_pipe.New()
-		hostModShardClient = wazero_shard_client.New(
+		hostModShardClient = wazero_shard_client.New(agent,
 			wazero_shard_client.WithNamespace(`default`),
 			wazero_shard_client.WithResource(`pcb`),
 		)
 	)
+
+	// Register Runtime Extensions
 	if err = hostModGlobal.Register(ctx, runtime); err != nil {
 		panic(err)
 	}
@@ -119,6 +120,8 @@ func main() {
 	if err = hostModShardClient.Register(ctx, runtime); err != nil {
 		panic(err)
 	}
+
+	// Create Service Module Instance Pool
 	pool, err := wazeropool.New(ctx, runtime, wasmServiceGrpc)
 	if err != nil {
 		panic(err)
@@ -133,23 +136,16 @@ func main() {
 		if ctx, err = hostModGrpc.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
-		if ctx, err = hostModShardClient.InitContext(ctx, mod, agent); err != nil {
+		if ctx, err = hostModShardClient.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
 	})
 	if err = hostModGrpc.RegisterServices(ctx, grpcServer, pool,
+		hostModGlobal.ContextCopy,
 		hostModShardClient.ContextCopy,
 		hostModPipe.ContextCopy); err != nil {
 		panic(err)
 	}
-
-	// Native gRPC services
-	client := agent.Client(shard.ID, zongzi.WithWriteToLeader())
-	// internal.RegisterKVServer(grpcServer, pcb.NewServiceKv(client))
-	internal.RegisterWatchServer(grpcServer, pcb.NewServiceWatch(client))
-	// internal.RegisterLeaseServer(grpcServer, pcb.NewServiceLease(client))
-	internal.RegisterMaintenanceServer(grpcServer, pcb.NewServiceMaintenance(client))
-	internal.RegisterClusterServer(grpcServer, pcb.NewServiceCluster(client, apiAddr))
 
 	// Run gRPC and HTTP servers
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
