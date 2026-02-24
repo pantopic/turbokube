@@ -17,8 +17,8 @@ package main
 import (
 	"errors"
 
-	"github.com/pantopic/config-bus/module/storage-kv/codes"
-	"github.com/pantopic/config-bus/module/storage-kv/status"
+	"github.com/pantopic/wazero-grpc-server/sdk-go/codes"
+	"github.com/pantopic/wazero-grpc-server/sdk-go/status"
 )
 
 // Added

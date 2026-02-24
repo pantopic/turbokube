@@ -16,6 +16,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PowerDNS/lmdb-go/lmdb"
 	"github.com/benbjohnson/clock"
 	"github.com/logbn/zongzi"
 	"github.com/stretchr/testify/assert"
@@ -26,9 +27,12 @@ import (
 
 	"github.com/pantopic/wazero-global/host"
 	"github.com/pantopic/wazero-grpc-server/host"
+	"github.com/pantopic/wazero-lmdb/host"
 	"github.com/pantopic/wazero-pipe/host"
 	"github.com/pantopic/wazero-pool"
+	"github.com/pantopic/wazero-range-watch/host"
 	"github.com/pantopic/wazero-shard-client/host"
+	"github.com/pantopic/wazero-state-machine/host"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -56,6 +60,9 @@ var (
 
 //go:embed cmd/cluster/service\-grpc\.wasm
 var wasmServiceGrpc []byte
+
+//go:embed cmd/cluster/storage\-kv\.wasm
+var wasmStorageKv []byte
 
 func TestService(t *testing.T) {
 	if parity {
@@ -253,7 +260,7 @@ func setupPcb(t *testing.T) {
 	svcMaintenance = NewServiceMaintenance(client)
 }
 
-// Run integration tests against bootstrapped pcb cluster instance
+// Run integration tests against bootstrapped pcb cluster instance(s)
 func setupCluster(t *testing.T) {
 	logLevel := new(slog.LevelVar)
 	if debug {
@@ -268,7 +275,7 @@ func setupCluster(t *testing.T) {
 	var (
 		agents    = make([]*zongzi.Agent, 3)
 		nonvoting = make([]*zongzi.Agent, 3)
-		dir       = "/tmp/pcb/test"
+		dir       = "/tmp/pcb/test-cluster"
 		host      = "127.0.0.1"
 		port      = 19000
 		peers     = []string{
@@ -291,6 +298,59 @@ func setupCluster(t *testing.T) {
 	}
 	var ctrl, ctrl2 []*controller
 	var shard zongzi.Shard
+	// Wazero Storage Runtime
+	runtimeStorage := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
+	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorage)
+	var (
+		hostModStateMachine = wazero_state_machine.New()
+		hostModLMDB         = wazero_lmdb.New()
+		hostModRangeWatch   = wazero_range_watch.New()
+	)
+	if err = hostModStateMachine.Register(ctx, runtimeStorage); err != nil {
+		panic(err)
+	}
+	if err = hostModLMDB.Register(ctx, runtimeStorage); err != nil {
+		panic(err)
+	}
+	if err = hostModRangeWatch.Register(ctx, runtimeStorage); err != nil {
+		panic(err)
+	}
+	poolStorageKv, err := wazeropool.New(ctx, runtimeStorage, wasmStorageKv,
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)))
+	if err != nil {
+		panic(err)
+	}
+	poolStorageKv.Run(func(mod api.Module) {
+		if ctx, err = hostModStateMachine.InitContext(ctx, mod); err != nil {
+			panic(err)
+		}
+		if ctx, err = hostModLMDB.InitContext(ctx, mod); err != nil {
+			panic(err)
+		}
+		if ctx, err = hostModRangeWatch.InitContext(ctx, mod); err != nil {
+			panic(err)
+		}
+	})
+	poolFactoryStorage := func(shardID uint64) wazeropool.Instance {
+		return poolStorageKv
+	}
+	createLmdbEnv := func(dir string) *lmdb.Env {
+		err = os.MkdirAll(dir, 0700)
+		if err != nil {
+			panic(err)
+		}
+		env, err := lmdb.NewEnv()
+		if err != nil {
+			panic(err)
+		}
+		env.SetMaxDBs(255)
+		env.SetMapSize(int64(64 << 30)) // 64 GiB
+		env.SetMaxReaders(1 << 16)      // 64k readers
+		if err = env.Open(dir+`/data.mdb`, uint(lmdbEnvFlags), 0700); err != nil {
+			panic(err)
+		}
+		return env
+	}
 	for i := range len(agents) {
 		ctrl = append(ctrl, &controller{ctx: ctx, log: log, clock: clk, isLeader: map[uint64]bool{}})
 		dir := fmt.Sprintf("%s/%03d", dir, i)
@@ -305,8 +365,13 @@ func setupCluster(t *testing.T) {
 		); err != nil {
 			panic(err)
 		}
-		// TODO - Replace statemachine w/ wasm statemachine
-		agents[i].StateMachineRegister(Uri, NewStateMachineFactory(log, dir+"/data"))
+		agents[i].StateMachineRegister(Uri, wazero_state_machine.FactoryPersistent(
+			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
+			zongzi.GetLogger(`statemachine`),
+			poolFactoryStorage,
+			wazero_lmdb.ContextCopy,
+			wazero_range_watch.ContextCopy,
+		))
 		go func() {
 			if err = agents[i].Start(ctx); err != nil {
 				panic(err)
@@ -336,8 +401,13 @@ func setupCluster(t *testing.T) {
 		); err != nil {
 			panic(err)
 		}
-		// TODO - Replace statemachine w/ wasm statemachine
-		nonvoting[i].StateMachineRegister(Uri, NewStateMachineFactory(log, dir+"/data"))
+		nonvoting[i].StateMachineRegister(Uri, wazero_state_machine.FactoryPersistent(
+			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
+			zongzi.GetLogger(`statemachine`),
+			poolFactoryStorage,
+			wazero_lmdb.ContextCopy,
+			wazero_range_watch.ContextCopy,
+		))
 		go func() {
 			if err = nonvoting[i].Start(ctx); err != nil {
 				panic(err)
@@ -408,9 +478,9 @@ func setupCluster(t *testing.T) {
 	}
 	var grpcServer = grpc.NewServer(opts...)
 
-	// WASM gRPC services
-	runtime := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtime)
+	// Wazero Service Runtime
+	runtimeService := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
+	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeService)
 	var (
 		hostModGlobal      = wazero_global.New()
 		hostModGrpcServer  = wazero_grpc_server.New()
@@ -421,24 +491,24 @@ func setupCluster(t *testing.T) {
 			wazero_shard_client.WithResource(`pcb`),
 		)
 	)
-	if err = hostModGlobal.Register(ctx, runtime); err != nil {
+	if err = hostModGlobal.Register(ctx, runtimeService); err != nil {
 		panic(err)
 	}
-	if err = hostModPipe.Register(ctx, runtime); err != nil {
+	if err = hostModPipe.Register(ctx, runtimeService); err != nil {
 		panic(err)
 	}
-	if err = hostModShardClient.Register(ctx, runtime); err != nil {
+	if err = hostModShardClient.Register(ctx, runtimeService); err != nil {
 		panic(err)
 	}
-	if err = hostModGrpcServer.Register(ctx, runtime); err != nil {
+	if err = hostModGrpcServer.Register(ctx, runtimeService); err != nil {
 		panic(err)
 	}
-	pool, err := wazeropool.New(ctx, runtime, wasmServiceGrpc, wazeropool.WithModuleConfig(wazero.NewModuleConfig().
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeService, wasmServiceGrpc, wazeropool.WithModuleConfig(wazero.NewModuleConfig().
 		WithStdout(os.Stdout)))
 	if err != nil {
 		panic(err)
 	}
-	pool.Run(func(mod api.Module) {
+	poolServiceGrpc.Run(func(mod api.Module) {
 		if ctx, err = hostModGlobal.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
@@ -452,7 +522,7 @@ func setupCluster(t *testing.T) {
 			panic(err)
 		}
 	})
-	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, pool,
+	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc,
 		hostModGlobal.ContextCopy,
 		hostModPipe.ContextCopy,
 		hostModShardClient.ContextCopy,

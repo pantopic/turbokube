@@ -8,16 +8,16 @@ import (
 )
 
 var (
-	dbMeta  = dbMetaImpl{db{`meta`, 1}}
-	dbStats = dbStatsImpl{db{`stats`, 2}}
+	dbMeta  = dbMetaImpl{db{`meta`, 2}}
+	dbStats = dbStatsImpl{db{`stats`, 3}}
 	kvStore = kvStoreImpl{
-		rev: db{`revision`, 3},
-		evt: db{`event`, 4},
-		val: db{`value`, 5},
+		rev: db{`revision`, 4},
+		evt: db{`event`, 5},
+		val: db{`value`, 6},
 	}
-	dbLease    = dbLeaseImpl{db{`lease`, 6}}
-	dbLeaseExp = dbLeaseExpImpl{db{`lease_exp`, 7}}
-	dbLeaseKey = dbLeaseKeyImpl{db{`lease_key`, 8}}
+	dbLease    = dbLeaseImpl{db{`lease`, 7}}
+	dbLeaseExp = dbLeaseExpImpl{db{`lease_exp`, 8}}
+	dbLeaseKey = dbLeaseKeyImpl{db{`lease_key`, 9}}
 )
 
 type db struct {

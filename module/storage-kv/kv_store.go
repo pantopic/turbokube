@@ -15,8 +15,8 @@ type kvStoreImpl struct {
 }
 
 func (db kvStoreImpl) init(txn *lmdb.Txn) {
-	db.evt.open(txn)
 	db.rev.open(txn)
+	db.evt.open(txn)
 	db.val.open(txn)
 }
 

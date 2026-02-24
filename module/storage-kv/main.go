@@ -28,7 +28,7 @@ func main() {
 }
 
 func open() (index uint64) {
-	lmdb.Update(func(txn *lmdb.Txn) (err error) {
+	if err := lmdb.Update(func(txn *lmdb.Txn) (err error) {
 		index = dbMeta.init(txn)
 		dbStats.init(txn)
 		kvStore.init(txn)
@@ -36,7 +36,9 @@ func open() (index uint64) {
 		dbLeaseExp.init(txn)
 		dbLeaseKey.init(txn)
 		return nil
-	})
+	}); err != nil {
+		panic(err)
+	}
 	return
 }
 
@@ -56,6 +58,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		if err != nil {
 			panic(err)
 		}
+		newRev = rev
 	}
 	switch cmd[len(cmd)-1] {
 	case CMD_KV_PUT:
@@ -90,6 +93,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			data = []byte(err.Error())
 			return
 		} else if err != nil {
+			println(`err 1: ` + err.Error())
 			panic(err)
 		}
 		if len(affected) > 0 {
@@ -98,6 +102,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		res.Header = responseHeader(newRev)
 		data, err = res.MarshalVT()
 		if err != nil {
+			println(`err 2: ` + err.Error())
 			panic(err)
 		}
 		value = val
@@ -335,6 +340,7 @@ func finish() {
 	}
 	rangewatch.Emit(newRev, keys)
 	keys = keys[:0]
+	txn = nil
 }
 
 func read(query []byte) (value uint64, data []byte) {
