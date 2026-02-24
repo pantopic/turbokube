@@ -17,7 +17,7 @@ const (
 var (
 	txn      *lmdb.Txn
 	epoch    uint64
-	rev      uint64
+	oldRev   uint64
 	newRev   uint64
 	newIndex uint64
 	keys     [][]byte
@@ -45,6 +45,7 @@ func open() (index uint64) {
 func update(index uint64, cmd []byte) (value uint64, data []byte) {
 	newIndex = index
 	var err error
+	var rev uint64
 	if txn == nil {
 		txn, err = lmdb.BeginTxn(nil, 0)
 		if err != nil {
@@ -59,6 +60,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			panic(err)
 		}
 		newRev = rev
+		oldRev = rev
 	}
 	switch cmd[len(cmd)-1] {
 	case CMD_KV_PUT:
@@ -327,7 +329,7 @@ func finish() {
 	if err = dbMeta.setIndex(txn, newIndex); err != nil {
 		panic(err)
 	}
-	if newRev > rev {
+	if newRev > oldRev {
 		err = dbMeta.setRevision(txn, newRev)
 		if err != nil {
 			panic(err)
