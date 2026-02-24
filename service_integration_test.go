@@ -678,7 +678,7 @@ func testUpdate(t *testing.T) {
 		require.Nil(t, err, err)
 		assert.NotNil(t, resp)
 		assert.Greater(t, resp.Header.Revision, rev)
-		assert.Equal(t, resp.PrevKv.Value, put.Value)
+		assert.Equal(t, put.Value, resp.PrevKv.Value)
 	})
 	t.Run("ignore-value", func(t *testing.T) {
 		resp, err := svcKv.Put(ctx, &internal.PutRequest{

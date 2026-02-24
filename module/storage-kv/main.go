@@ -93,7 +93,6 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			data = []byte(err.Error())
 			return
 		} else if err != nil {
-			println(`err 1: ` + err.Error())
 			panic(err)
 		}
 		if len(affected) > 0 {
@@ -102,7 +101,6 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		res.Header = responseHeader(newRev)
 		data, err = res.MarshalVT()
 		if err != nil {
-			println(`err 2: ` + err.Error())
 			panic(err)
 		}
 		value = val
@@ -461,7 +459,7 @@ func read(query []byte) (value uint64, data []byte) {
 }
 
 func cmdPut(
-	txn *lmdb.Txn, index, subrev, epoch uint64,
+	txn *lmdb.Txn, rev, subrev, epoch uint64,
 	req *internal.PutRequest,
 ) (res *internal.PutResponse, val uint64, affected [][]byte, err error) {
 	res = &internal.PutResponse{}
@@ -490,7 +488,7 @@ func cmdPut(
 }
 
 func cmdDeleteRange(
-	txn *lmdb.Txn, index, subrev, epoch uint64,
+	txn *lmdb.Txn, rev, subrev, epoch uint64,
 	req *internal.DeleteRangeRequest,
 ) (res *internal.DeleteRangeResponse, keys [][]byte, err error) {
 	res = &internal.DeleteRangeResponse{}
@@ -520,7 +518,7 @@ func cmdDeleteRange(
 }
 
 func txnOps(
-	txn *lmdb.Txn, index, epoch uint64,
+	txn *lmdb.Txn, rev, epoch uint64,
 	ops []*internal.RequestOp,
 ) (res []*internal.ResponseOp, keys [][]byte, err error) {
 	err = txn.Sub(func(txn *lmdb.Txn) (err error) {
@@ -657,7 +655,7 @@ func cmdLeaseGrant(
 }
 
 func cmdLeaseRevoke(
-	txn *lmdb.Txn, index, epoch, id uint64,
+	txn *lmdb.Txn, rev, epoch, id uint64,
 ) (keys [][]byte, val uint64, err error) {
 	var item lease
 	if item, err = dbLease.get(txn, uint64(id)); err != nil {
@@ -745,7 +743,7 @@ func cmdLeaseKeepAliveBatch(
 }
 
 func queryRange(
-	txn *lmdb.Txn, index uint64,
+	txn *lmdb.Txn, rev uint64,
 	req *internal.RangeRequest,
 ) (res *internal.RangeResponse, err error) {
 	res = &internal.RangeResponse{
