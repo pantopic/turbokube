@@ -3,6 +3,8 @@ package main
 import (
 	"fmt"
 	"time"
+
+	"github.com/pantopic/wazero-global/sdk-go"
 )
 
 const (
@@ -71,13 +73,13 @@ var (
 	// Full count is used by Kubernetes in at least one place (api server storage) but only because More is missing.
 	// See https://github.com/kubernetes/kubernetes/blob/e85c72d4177fba224cb1baa1b5abfb5980e6d867/staging/src/k8s.io/apiserver/pkg/storage/etcd3/store.go#L762
 	// Enabled by default for parity.
-	PCB_RANGE_COUNT_FULL = true
+	PCB_RANGE_COUNT_FULL = global.NewBool(`PCB_RANGE_COUNT_FULL`, true)
 
 	// PCB_RANGE_COUNT_FAKE determines whether to return a count value 1 greater than the number of results
 	// when there are more results in a range query. This should be sufficient to trick Kubernetes into functioning
 	// correctly without incurring the cost of scanning the entire key range to generate a count for each range request.
 	// Disabled by default for parity.
-	PCB_RANGE_COUNT_FAKE = false
+	PCB_RANGE_COUNT_FAKE = global.NewBool(`PCB_RANGE_COUNT_FAKE`, false)
 
 	// PCB_RANGE_COUNT_FILTER_CORRECT determines whether to apply filters to the result count. This is a bug in etcd
 	// that they don't intend to fix. Min/max mod/created rev are not used by Kubernetes so parity is unimportant.
@@ -94,7 +96,7 @@ var (
 
 	// PCB_TXN_MULTI_WRITE_ENABLED determines whether to allow multiple writes to a single key during a transaction.
 	// Disabled by default for parity.
-	PCB_TXN_MULTI_WRITE_ENABLED = false
+	PCB_TXN_MULTI_WRITE_ENABLED = global.NewBool(`PCB_TXN_MULTI_WRITE_ENABLED`, false)
 
 	// PCB_WATCH_ID_ZERO_INDEX determines whether to start watch IDs at 0 rather than 1. Starting at 0 is bad API design
 	// because it confuses the zero value with the empty state. Sending an explicit watchID in a create request will
@@ -128,24 +130,6 @@ var (
 	PCB_BATCH_LEASE_RENEWAL_LIMIT    = 1000
 	PCB_BATCH_LEASE_RENEWAL_INTERVAL = 500 * time.Millisecond
 )
-
-var flagName = map[*bool]string{
-	&PCB_RANGE_COUNT_FULL:           "PCB_RANGE_COUNT_FULL",
-	&PCB_RANGE_COUNT_FAKE:           "PCB_RANGE_COUNT_FAKE",
-	&PCB_RANGE_COUNT_FILTER_CORRECT: "PCB_RANGE_COUNT_FILTER_CORRECT",
-	&PCB_PATCH_ENABLED:              "PCB_PATCH_ENABLED",
-	&PCB_COMPRESSION_ENABLED:        "PCB_COMPRESSION_ENABLED",
-	&PCB_TXN_MULTI_WRITE_ENABLED:    "PCB_TXN_MULTI_WRITE_ENABLED",
-	&PCB_WATCH_ID_ZERO_INDEX:        "PCB_WATCH_ID_ZERO_INDEX",
-	&PCB_READ_LOCAL:                 "PCB_READ_LOCAL",
-	&PCB_BATCH_LEASE_RENEWAL:        "PCB_BATCH_LEASE_RENEWAL",
-}
-
-var flagNameInt = map[*int]string{
-	&PCB_TXN_OPS_MAX:               "PCB_TXN_OPS_MAX",
-	&PCB_RESPONSE_SIZE_MAX:         "PCB_RESPONSE_SIZE_MAX",
-	&PCB_BATCH_LEASE_RENEWAL_LIMIT: "PCB_BATCH_LEASE_RENEWAL_LIMIT",
-}
 
 var (
 	ErrChecksumInvalid = fmt.Errorf(`Checksum invalid`)

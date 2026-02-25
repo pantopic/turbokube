@@ -134,6 +134,7 @@ func (kr keyrev) invert() keyrev {
 	return math.MaxUint64 - kr
 }
 
+// Plain revision number without subrevision or flags
 func (kr keyrev) upper() uint64 {
 	return uint64(kr >> 12)
 }

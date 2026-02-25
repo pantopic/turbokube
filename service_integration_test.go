@@ -302,10 +302,14 @@ func setupCluster(t *testing.T) {
 	runtimeStorage := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorage)
 	var (
+		hostModGlobal       = wazero_global.New()
 		hostModStateMachine = wazero_state_machine.New()
 		hostModLMDB         = wazero_lmdb.New()
 		hostModRangeWatch   = wazero_range_watch.New()
 	)
+	if err = hostModGlobal.Register(ctx, runtimeStorage); err != nil {
+		panic(err)
+	}
 	if err = hostModStateMachine.Register(ctx, runtimeStorage); err != nil {
 		panic(err)
 	}
@@ -321,6 +325,9 @@ func setupCluster(t *testing.T) {
 		panic(err)
 	}
 	poolStorageKv.Run(func(mod api.Module) {
+		if ctx, err = hostModGlobal.InitContext(ctx, mod); err != nil {
+			panic(err)
+		}
 		if ctx, err = hostModStateMachine.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
@@ -369,6 +376,7 @@ func setupCluster(t *testing.T) {
 			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
 			zongzi.GetLogger(`statemachine`),
 			poolFactoryStorage,
+			hostModGlobal.ContextCopy,
 			wazero_lmdb.ContextCopy,
 			wazero_range_watch.ContextCopy,
 		))
@@ -405,6 +413,7 @@ func setupCluster(t *testing.T) {
 			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
 			zongzi.GetLogger(`statemachine`),
 			poolFactoryStorage,
+			hostModGlobal.ContextCopy,
 			wazero_lmdb.ContextCopy,
 			wazero_range_watch.ContextCopy,
 		))
@@ -482,7 +491,6 @@ func setupCluster(t *testing.T) {
 	runtimeService := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeService)
 	var (
-		hostModGlobal      = wazero_global.New()
 		hostModGrpcServer  = wazero_grpc_server.New()
 		hostModPipe        = wazero_pipe.New()
 		hostModShardClient = wazero_shard_client.New(
@@ -779,8 +787,8 @@ func testRange(t *testing.T) {
 	var revs []int64
 	for i := range 100 {
 		resp, err := svcKv.Put(ctx, &internal.PutRequest{
-			Key:   []byte(fmt.Sprintf(`test-range-%03d`, i)),
-			Value: []byte(fmt.Sprintf(`value-range-%03d`, i)),
+			Key:   fmt.Appendf(nil, `test-range-%03d`, i),
+			Value: fmt.Appendf(nil, `value-range-%03d`, i),
 		})
 		revs = append(revs, resp.Header.Revision)
 		require.Nil(t, err, err)

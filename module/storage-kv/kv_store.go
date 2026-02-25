@@ -74,7 +74,7 @@ func (db kvStoreImpl) put(
 		}
 		return
 	}
-	if krec.rev.upper() == rev && !PCB_TXN_MULTI_WRITE_ENABLED {
+	if krec.rev.upper() == rev && !PCB_TXN_MULTI_WRITE_ENABLED() {
 		err = ErrGRPCDuplicateKey
 		return
 	}
@@ -158,7 +158,7 @@ func (db kvStoreImpl) getRange(
 		rev = krec.rev
 		if !countOnly && limit > 0 && len(items) == int(limit) {
 			more = true
-			if !PCB_RANGE_COUNT_FULL && !PCB_RANGE_COUNT_FAKE {
+			if !PCB_RANGE_COUNT_FULL() && !PCB_RANGE_COUNT_FAKE() {
 				return
 			}
 			countOnly = true
@@ -216,7 +216,7 @@ func (db kvStoreImpl) getRange(
 					goto next
 				}
 				items = append(items, item)
-			} else if PCB_RANGE_COUNT_FAKE {
+			} else if PCB_RANGE_COUNT_FAKE() {
 				break
 			}
 		}
@@ -258,7 +258,7 @@ func (db kvStoreImpl) deleteRange(txn *lmdb.Txn, rev, subrev, epoch uint64, key,
 		prev, err = prev.FromBytes(k, v)
 		if !prev.rev.isdel() {
 			tombstone = newkeyrev(rev, subrev, true)
-			if prev.rev.upper() == rev && !PCB_TXN_MULTI_WRITE_ENABLED {
+			if prev.rev.upper() == rev && !PCB_TXN_MULTI_WRITE_ENABLED() {
 				err = ErrGRPCDuplicateKey
 				return
 			}
