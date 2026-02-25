@@ -8,25 +8,26 @@ import (
 )
 
 var (
-	dbMeta  = dbMetaImpl{db{`meta`, 2}}
-	dbStats = dbStatsImpl{db{`stats`, 3}}
+	dbMeta  = dbMetaImpl{db{`meta`, 2, lmdb.Create}}
+	dbStats = dbStatsImpl{db{`stats`, 3, lmdb.Create}}
 	kvStore = kvStoreImpl{
-		rev: db{`revision`, 4},
-		evt: db{`event`, 5},
-		val: db{`value`, 6},
+		rev: db{`revision`, 4, lmdb.Create | lmdb.DupSort},
+		evt: db{`event`, 5, lmdb.Create | lmdb.DupSort},
+		val: db{`value`, 6, lmdb.Create},
 	}
-	dbLease    = dbLeaseImpl{db{`lease`, 7}}
-	dbLeaseExp = dbLeaseExpImpl{db{`lease_exp`, 8}}
-	dbLeaseKey = dbLeaseKeyImpl{db{`lease_key`, 9}}
+	dbLease    = dbLeaseImpl{db{`lease`, 7, lmdb.Create}}
+	dbLeaseExp = dbLeaseExpImpl{db{`lease_exp`, 8, lmdb.Create}}
+	dbLeaseKey = dbLeaseKeyImpl{db{`lease_key`, 9, lmdb.Create}}
 )
 
 type db struct {
-	name string
-	i    lmdb.DBI
+	name  string
+	i     lmdb.DBI
+	flags uint32
 }
 
 func (db db) open(txn *lmdb.Txn) {
-	i, err := txn.OpenDBI(db.name, lmdb.Create)
+	i, err := txn.OpenDBI(db.name, db.flags)
 	if err != nil {
 		panic(err)
 	}
