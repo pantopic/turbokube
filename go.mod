@@ -10,6 +10,7 @@ require (
 	github.com/kevburnsjr/batchy v0.0.1
 	github.com/logbn/byteinterval v0.0.2
 	github.com/logbn/zongzi v0.0.21
+	github.com/pantopic/wazero-atomic/host v0.0.3
 	github.com/pantopic/wazero-global/host v0.0.2
 	github.com/pantopic/wazero-grpc-server/host v0.0.11
 	github.com/pantopic/wazero-lmdb/host v0.0.9
@@ -17,6 +18,7 @@ require (
 	github.com/pantopic/wazero-pool v0.0.6
 	github.com/pantopic/wazero-range-watch/host v0.0.4
 	github.com/pantopic/wazero-shard-client/host v0.0.1
+	github.com/pantopic/wazero-small-cache/host v0.0.0-20260301181200-6f83cf2ea5a0
 	github.com/pantopic/wazero-state-machine/host v0.0.0-20260219170559-27e006e77545
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.10.0

@@ -3,8 +3,10 @@ package main
 import (
 	"bytes"
 
+	"github.com/pantopic/wazero-atomic/sdk-go"
 	"github.com/pantopic/wazero-lmdb/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
+	"github.com/pantopic/wazero-small-cache/sdk-go"
 	"github.com/pantopic/wazero-state-machine/sdk-go"
 
 	internal "github.com/pantopic/config-bus/module/storage-kv/internal"
@@ -13,18 +15,30 @@ import (
 const (
 	codeNotFound uint64 = 5
 )
+const (
+	ATOMIC_UINT64_WATCH_ID = iota
+)
+const (
+	SMALL_CACHE_WATCH_CREATE_REQ = iota
+)
 
 var (
-	txn      *lmdb.Txn
-	epoch    uint64
-	oldRev   uint64
-	newRev   uint64
-	newIndex uint64
-	keys     [][]byte
+	txn        *lmdb.Txn
+	epoch      uint64
+	oldRev     uint64
+	newRev     uint64
+	newIndex   uint64
+	keys       [][]byte
+	watchID    *atomic.Uint64
+	watchCache *small_cache.Local
 )
 
 func main() {
 	statemachine.RegisterPersistent(open, update, finish, read)
+	statemachine.Streamable(streamOpen, streamRecv, streamClosed)
+	range_watch.Receive(rangeWatchRecv)
+	watchID = atomic.NewUint64(ATOMIC_UINT64_WATCH_ID)
+	watchCache = small_cache.NewLocal(SMALL_CACHE_WATCH_CREATE_REQ)
 }
 
 func open() (index uint64) {
@@ -338,7 +352,7 @@ func finish() {
 	if err := txn.Commit(); err != nil {
 		panic(err)
 	}
-	rangewatch.Emit(newRev, keys)
+	range_watch.Emit(newRev, keys)
 	keys = keys[:0]
 	txn = nil
 }

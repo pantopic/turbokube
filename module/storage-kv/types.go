@@ -4,7 +4,12 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/aperturerobotics/protobuf-go-lite"
 	"github.com/pantopic/wazero-global/sdk-go"
+)
+
+type (
+	Message protobuf_go_lite.Message
 )
 
 const (

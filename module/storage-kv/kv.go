@@ -102,15 +102,20 @@ func (kv kv) FromBytes(revKey, buf, next []byte, noval bool) (kv, error) {
 	return kv, err
 }
 
-func (kv kv) ToProto() *internal.KeyValue {
-	return &internal.KeyValue{
-		CreateRevision: int64(kv.created),
-		ModRevision:    int64(kv.rev.upper()),
-		Version:        int64(kv.version),
-		Lease:          int64(kv.lease),
-		Key:            kv.key,
-		Value:          kv.val,
+func (kv kv) ToProto(target ...*internal.KeyValue) (res *internal.KeyValue) {
+	if len(target) > 0 && target[0] != nil {
+		res = target[0]
+		res.Reset()
+	} else {
+		res = &internal.KeyValue{}
 	}
+	res.CreateRevision = int64(kv.created)
+	res.ModRevision = int64(kv.rev.upper())
+	res.Version = int64(kv.version)
+	res.Lease = int64(kv.lease)
+	res.Key = kv.key
+	res.Value = kv.val
+	return
 }
 
 const (
