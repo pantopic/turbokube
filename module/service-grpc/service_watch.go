@@ -89,7 +89,6 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				if err = evt.UnmarshalVT(data[9:]); err != nil {
 					panic(err)
 				}
-				println(`EVENT ` + string(evt.Kv.Key))
 				var sz = len(evt.Kv.Key) + len(evt.Kv.Value) + sizeMetaKeyValue + sizeMetaEvent
 				if evt.PrevKv != nil {
 					sz += len(evt.PrevKv.Key) + len(evt.PrevKv.Value) + sizeMetaKeyValue

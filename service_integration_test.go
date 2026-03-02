@@ -7,7 +7,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"log"
 	"log/slog"
 	"math/rand"
 	"net"
@@ -2451,7 +2450,9 @@ func testWatch(t *testing.T) {
 				_, err = svcKv.Put(ctx, req)
 			})
 			require.Nil(t, err, err)
-			res = <-s.resChan
+			timeout(t, time.Second, func() {
+				res = <-s.resChan
+			})
 			assert.Equal(t, watchID, res.WatchId, res)
 			assert.False(t, res.Created)
 			assert.False(t, res.Canceled)
@@ -2462,7 +2463,9 @@ func testWatch(t *testing.T) {
 			assert.Equal(t, req.Key, res.Events[0].Kv.Key)
 			assert.Equal(t, res.Header.Revision, res.Events[0].Kv.ModRevision)
 			s.cancel(watchID)
-			res = <-s.resChan
+			timeout(t, time.Second, func() {
+				res = <-s.resChan
+			})
 			require.Equal(t, watchID, res.WatchId)
 			require.False(t, res.Created)
 			require.True(t, res.Canceled)
@@ -2530,11 +2533,11 @@ func testWatch(t *testing.T) {
 					Key:   fmt.Appendf(nil, `test-watch-alert-%03d`, i),
 					Value: fmt.Appendf(nil, `test-watch-alert-value-%03d`, i),
 				}
-				var res *internal.PutResponse
+				// var res *internal.PutResponse
 				timeout(t, time.Second, func() {
-					res, err = svcKv.Put(ctx, req)
+					_, err = svcKv.Put(ctx, req)
 				})
-				log.Printf("%s %d", string(req.Key), res.Header.Revision)
+				// log.Printf("%s %d", string(req.Key), res.Header.Revision)
 				require.Nil(t, err, err)
 			}
 			for j := 0; j < 10; {
@@ -2546,7 +2549,7 @@ func testWatch(t *testing.T) {
 				assert.False(t, res.Canceled)
 				require.Greater(t, len(res.Events), 0, res)
 				for i := range res.Events {
-					println(string(res.Events[i].Kv.Key))
+					// println(string(res.Events[i].Kv.Key))
 					assert.Equal(t, internal.Event_PUT, res.Events[i].Type)
 					assert.Nil(t, res.Events[i].PrevKv)
 					assert.Equal(t, fmt.Sprintf(`test-watch-alert-%03d`, j), string(res.Events[i].Kv.Key))

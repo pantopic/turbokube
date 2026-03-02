@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
-	"strconv"
 
 	"github.com/pantopic/wazero-lmdb/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
@@ -20,18 +19,16 @@ var (
 )
 
 func rangeWatchRecv(watchIdBytes []byte, rev uint64) {
-	println("rangeWatchRecv: " + strconv.Itoa(int(rev)))
 	watchID := binary.BigEndian.Uint64(watchIdBytes)
 	n := watchRev.Load(watchID)
 	if rev < n {
-		println(`Skip ` + strconv.Itoa(int(n)))
 		return
 	}
 	b := watchCache.Get(watchIdBytes)
 	if len(b) == 0 {
-		println("Watch cache not found")
 		return
 	}
+	watchCreateRequest.Reset()
 	err := watchCreateRequest.UnmarshalVT(b)
 	if err != nil {
 		panic("Watch request malformed")
@@ -40,7 +37,6 @@ func rangeWatchRecv(watchIdBytes []byte, rev uint64) {
 	if err != nil {
 		panic("Error reading events: " + err.Error())
 	}
-	println(`Sent ` + strconv.Itoa(int(sent)) + `  ` + strconv.Itoa(int(rev)))
 	watchRev.Store(watchID, rev)
 	if sent == 0 && watchCreateRequest.ProgressNotify {
 		sendCodeHeader(uint64(watchCreateRequest.WatchId), WatchMessageType_NOTIFY, rev)
