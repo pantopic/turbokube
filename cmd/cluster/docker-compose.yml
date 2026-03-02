@@ -10,7 +10,7 @@ x-variables:
       - pcb
     volumes:
       - type: tmpfs
-        target: /var/lib/pcb-cluster
+        target: /var/lib/pantopic/config-bus
         tmpfs:
           mode: 01777
 

@@ -23,7 +23,7 @@ type config struct {
 func getConfig() config {
 	cfg := config{
 		ClusterName: "pcb",
-		Dir:         "/var/lib/pcb-cluster",
+		Dir:         "/var/lib/pantopic/config-bus",
 		HostName:    "pcb-0",
 		HostPeers:   "pcb-0:17003,pcb-1:17003,pcb-2:17003",
 		PortApi:     19000,
@@ -39,7 +39,7 @@ func getConfig() config {
 
 func (c config) GetHostTags() (tags []string) {
 	tags = []string{}
-	for _, t := range strings.Split(c.HostTags, ",") {
+	for t := range strings.SplitSeq(c.HostTags, ",") {
 		t = strings.TrimSpace(t)
 		if len(t) == 0 {
 			continue
