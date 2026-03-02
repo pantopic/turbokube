@@ -16,29 +16,36 @@ const (
 	codeNotFound uint64 = 5
 )
 const (
-	ATOMIC_UINT64_WATCH_ID = iota
+	ATOMIC_UINT64_SET_GLOBAL = iota
+	ATOMIC_UINT64_SET_WATCH_REV
+)
+const (
+	ATOMIC_UINT64_GLOBAL_WATCH_ID = iota
 )
 const (
 	SMALL_CACHE_WATCH_CREATE_REQ = iota
 )
 
 var (
-	txn        *lmdb.Txn
 	epoch      uint64
-	oldRev     uint64
-	newRev     uint64
-	newIndex   uint64
 	keys       [][]byte
-	watchID    *atomic.Uint64
+	newIndex   uint64
+	newRev     uint64
+	oldRev     uint64
+	txn        *lmdb.Txn
 	watchCache *small_cache.Local
+	watchID    *atomic.Uint64
+	watchRev   *atomic.Uint64Set
 )
 
 func main() {
 	statemachine.RegisterPersistent(open, update, finish, read)
 	statemachine.Streamable(streamOpen, streamRecv, streamClosed)
 	range_watch.Receive(rangeWatchRecv)
-	watchID = atomic.NewUint64(ATOMIC_UINT64_WATCH_ID)
 	watchCache = small_cache.NewLocal(SMALL_CACHE_WATCH_CREATE_REQ)
+	watchID = atomic.NewUint64Set(ATOMIC_UINT64_SET_GLOBAL).
+		Find(ATOMIC_UINT64_GLOBAL_WATCH_ID)
+	watchRev = atomic.NewUint64Set(ATOMIC_UINT64_SET_WATCH_REV)
 }
 
 func open() (index uint64) {
@@ -352,7 +359,9 @@ func finish() {
 	if err := txn.Commit(); err != nil {
 		panic(err)
 	}
-	range_watch.Emit(newRev, keys)
+	if newRev > oldRev {
+		range_watch.Emit(oldRev, keys)
+	}
 	keys = keys[:0]
 	txn = nil
 }

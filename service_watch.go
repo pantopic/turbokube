@@ -196,7 +196,7 @@ func (s *serviceWatch) watch(
 					resp.Fragment = true
 				}
 				s.addTerm(resp.Header)
-				resp.Header.Revision = int64(binary.LittleEndian.Uint64(res.Data[1:9]))
+				resp.Header.Revision = int64(binary.BigEndian.Uint64(res.Data[1:9]))
 				if err = s.watchResp(server, resp); err != nil {
 					slog.Error("Error sending response")
 					return

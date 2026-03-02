@@ -28,12 +28,12 @@ func watchSendErr(code codes.Code, err error) {
 }
 
 func pipeWatchSend(val uint64, data []byte) {
-	b := binary.LittleEndian.AppendUint64(data, val)
+	b := binary.BigEndian.AppendUint64(data, val)
 	pipeWatch.Send(b)
 }
 
 func pipeWatchDecode(msg []byte) (val uint64, data []byte) {
-	val = binary.LittleEndian.Uint64(msg[len(msg)-8:])
+	val = binary.BigEndian.Uint64(msg[len(msg)-8:])
 	data = msg[:len(msg)-8]
 	return
 }
@@ -89,6 +89,7 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				if err = evt.UnmarshalVT(data[9:]); err != nil {
 					panic(err)
 				}
+				println(`EVENT ` + string(evt.Kv.Key))
 				var sz = len(evt.Kv.Key) + len(evt.Kv.Value) + sizeMetaKeyValue + sizeMetaEvent
 				if evt.PrevKv != nil {
 					sz += len(evt.PrevKv.Key) + len(evt.PrevKv.Value) + sizeMetaKeyValue
@@ -109,7 +110,7 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				if response[id].Header.Revision == evt.Kv.ModRevision {
 					response[id].Fragment = true
 				}
-				response[id].Header.Revision = int64(binary.LittleEndian.Uint64(data[1:9]))
+				response[id].Header.Revision = int64(binary.BigEndian.Uint64(data[1:9]))
 				if data, err = response[id].MarshalVT(); err != nil {
 					panic(err)
 				}

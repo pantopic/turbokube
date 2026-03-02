@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"strconv"
 
 	"github.com/pantopic/wazero-lmdb/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
@@ -18,9 +19,17 @@ var (
 	watchCreateRequest  = &internal.WatchCreateRequest{}
 )
 
-func rangeWatchRecv(watchID []byte, rev uint64) {
-	b := watchCache.Get(watchID)
+func rangeWatchRecv(watchIdBytes []byte, rev uint64) {
+	println("rangeWatchRecv: " + strconv.Itoa(int(rev)))
+	watchID := binary.BigEndian.Uint64(watchIdBytes)
+	n := watchRev.Load(watchID)
+	if rev < n {
+		println(`Skip ` + strconv.Itoa(int(n)))
+		return
+	}
+	b := watchCache.Get(watchIdBytes)
 	if len(b) == 0 {
+		println("Watch cache not found")
 		return
 	}
 	err := watchCreateRequest.UnmarshalVT(b)
@@ -31,6 +40,8 @@ func rangeWatchRecv(watchID []byte, rev uint64) {
 	if err != nil {
 		panic("Error reading events: " + err.Error())
 	}
+	println(`Sent ` + strconv.Itoa(int(sent)) + `  ` + strconv.Itoa(int(rev)))
+	watchRev.Store(watchID, rev)
 	if sent == 0 && watchCreateRequest.ProgressNotify {
 		sendCodeHeader(uint64(watchCreateRequest.WatchId), WatchMessageType_NOTIFY, rev)
 	}
@@ -51,9 +62,11 @@ func streamRecv(data []byte) {
 	case *internal.WatchRequest_CancelRequest:
 		req := ut.CancelRequest
 		statemachine.StreamSend(uint64(req.WatchId), []byte{WatchMessageType_CANCELED})
-		watchIdBytes := binary.LittleEndian.AppendUint64([]byte(nil), uint64(req.WatchId))
+		watchIdBytes := binary.BigEndian.AppendUint64([]byte(nil), uint64(req.WatchId))
 		range_watch.Stop(watchIdBytes)
 		watchCache.Del(watchIdBytes)
+		watchID := binary.BigEndian.Uint64(watchIdBytes)
+		watchRev.Del(watchID)
 	case *internal.WatchRequest_ProgressRequest:
 		var rev uint64
 		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
@@ -69,7 +82,7 @@ func streamRecv(data []byte) {
 		var minWatchId uint64
 		var minWatchIdBytes = watchCache.Min()
 		if len(minWatchIdBytes) == 8 {
-			minWatchId = binary.LittleEndian.Uint64(minWatchIdBytes)
+			minWatchId = binary.BigEndian.Uint64(minWatchIdBytes)
 		}
 		sendCodeHeader(minWatchId, WatchMessageType_NOTIFY, rev)
 	}
@@ -83,9 +96,6 @@ func watchScan(req *internal.WatchCreateRequest, since uint64) (rev uint64, sent
 	err = lmdb.View(func(txn *lmdb.Txn) (err error) {
 		rev, err = dbMeta.getRevision(txn)
 		if err != nil {
-			return
-		}
-		if since == 0 {
 			return
 		}
 		for evt := range kvStore.scan(txn, since) {
@@ -131,14 +141,31 @@ func watchScan(req *internal.WatchCreateRequest, since uint64) (rev uint64, sent
 		}
 		return
 	})
-	since = rev + 1
 	return
 }
 
 func watchStart(req *internal.WatchCreateRequest) (err error) {
 	var since = uint64(req.StartRevision)
 	var min uint64
-	if err = lmdb.View(func(txn *lmdb.Txn) (err error) {
+	var watchIdBytes = make([]byte, 8)
+	if req.WatchId == 0 {
+		for {
+			req.WatchId = int64(watchID.Add(1))
+			binary.BigEndian.PutUint64(watchIdBytes, uint64(req.WatchId))
+			err = range_watch.Reserve(watchIdBytes)
+			if err == nil {
+				break
+			}
+		}
+	} else {
+		binary.BigEndian.PutUint64(watchIdBytes, uint64(req.WatchId))
+		err = range_watch.Reserve(watchIdBytes)
+		if err != nil {
+			statemachine.StreamSend(1, append([]byte(nil), WatchMessageType_ERR_EXISTS))
+			return
+		}
+	}
+	err = lmdb.View(func(txn *lmdb.Txn) (err error) {
 		if min, err = dbMeta.getRevisionMin(txn); err != nil {
 			return
 		}
@@ -146,57 +173,35 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 			err = ErrGRPCCompacted
 		}
 		return
-	}); err != nil {
-		return
-	}
+	})
 	if err == ErrGRPCCompacted {
-		data := []byte{WatchMessageType_ERR_COMPACTED}
-		_, err = responseHeader(min).MarshalToVT(data[1:])
-		if err != nil {
-			panic(err)
-		}
-		statemachine.StreamSend(uint64(req.WatchId), data)
+		sendCodeHeader(uint64(req.WatchId), WatchMessageType_ERR_COMPACTED, min)
 		return
 	} else if err != nil {
 		panic("Error checking min revision: " + err.Error())
 	}
-	var watchIdBytes = make([]byte, 8)
-	if req.WatchId == 0 {
-		for {
-			req.WatchId = int64(watchID.Add(1))
-			binary.LittleEndian.PutUint64(watchIdBytes, uint64(req.WatchId))
-			err = range_watch.Reserve(watchIdBytes)
-			if err == nil {
-				break
-			}
-		}
-	} else {
-		binary.LittleEndian.PutUint64(watchIdBytes, uint64(req.WatchId))
-		err = range_watch.Reserve(watchIdBytes)
-		if err != nil {
-			statemachine.StreamSend(1, append([]byte(nil), WatchMessageType_ERR_EXISTS))
-			return
-		}
-	}
 	sendCodeHeader(uint64(req.WatchId), WatchMessageType_INIT, 0)
 	var rev uint64
-	if rev, _, err = watchScan(req, since); err != nil {
-		panic("Error in event scan 1: " + err.Error())
+	if since > 0 {
+		if rev, _, err = watchScan(req, since); err != nil {
+			panic("Error in event scan 1: " + err.Error())
+		}
 	}
 	if err = range_watch.Open(watchIdBytes, req.Key, req.RangeEnd); err != nil {
 		panic("Error starting range watch: " + err.Error())
 	}
-	if rev, _, err = watchScan(req, rev+1); err != nil {
-		panic("Error in event scan 2: " + err.Error())
+	if since > 0 {
+		if rev, _, err = watchScan(req, rev+1); err != nil {
+			panic("Error in event scan 2: " + err.Error())
+		}
 	}
 	b, err := req.MarshalVT()
 	if err != nil {
 		panic("Error marshaling watch create request: " + err.Error())
 	}
-	if watchCache.Put(watchIdBytes, b); err != nil {
-		panic("Error caching watch create request: " + err.Error())
-	}
-	if err = range_watch.Start(watchIdBytes, rev); err != nil {
+	watchRev.Store(uint64(req.WatchId), rev)
+	watchCache.Put(watchIdBytes, b)
+	if err = range_watch.Start(watchIdBytes); err != nil {
 		panic("Error starting range watch: " + err.Error())
 	}
 	return
@@ -215,8 +220,8 @@ func sendCodeHeader(val uint64, code byte, rev uint64) {
 
 func sendCodeRevMsg(val uint64, code byte, rev uint64, msg Message) {
 	data := make([]byte, 1+8+msg.SizeVT())
-	data[0] = WatchMessageType_EVENT
-	binary.LittleEndian.PutUint64(data[1:9], rev)
+	data[0] = code
+	binary.BigEndian.PutUint64(data[1:9], rev)
 	if _, err := msg.MarshalToSizedBufferVT(data[9:]); err != nil {
 		panic("Error serializing event kv: " + err.Error())
 	}
@@ -224,5 +229,5 @@ func sendCodeRevMsg(val uint64, code byte, rev uint64, msg Message) {
 }
 
 func streamClosed() {
-	println(`wasm stream closed`)
+	// println(`wasm stream closed`)
 }

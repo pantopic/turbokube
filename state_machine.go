@@ -620,7 +620,7 @@ func (sm *stateMachine) watch(ctx context.Context, req *internal.WatchCreateRequ
 				}
 				res := zongzi.GetResult()
 				res.Data = append(res.Data, WatchMessageType_EVENT)
-				res.Data = binary.LittleEndian.AppendUint64(res.Data, rev)
+				res.Data = binary.BigEndian.AppendUint64(res.Data, rev)
 				if res.Data, err = sm.proto.MarshalAppend(res.Data, resp); err != nil {
 					sm.log.Error("Error serializing event kv", "err", err)
 					return

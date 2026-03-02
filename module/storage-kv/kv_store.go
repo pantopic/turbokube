@@ -513,8 +513,7 @@ func (db kvStoreImpl) scan(txn *lmdb.Txn, revision uint64) iter.Seq[kvEvent] {
 		defer cur.Close()
 		for !lmdb.IsNotFound(err) {
 			if err != nil {
-				// log err
-				break
+				panic(err)
 			}
 			evt, err = db.evtFromBytes(k, v)
 			if err != nil {
