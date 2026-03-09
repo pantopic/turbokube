@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"strconv"
 
 	"github.com/pantopic/wazero-lmdb/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
@@ -21,11 +22,9 @@ var (
 func rangeWatchRecv(watchIdBytes []byte, rev uint64) {
 	watchID := binary.BigEndian.Uint64(watchIdBytes)
 	n := watchRev.Load(watchID)
-	if rev < n {
-		return
-	}
 	b := watchCache.Get(watchIdBytes)
 	if len(b) == 0 {
+		println(`watchCache not found: ` + strconv.Itoa(int(watchID)))
 		return
 	}
 	watchCreateRequest.Reset()
@@ -33,7 +32,11 @@ func rangeWatchRecv(watchIdBytes []byte, rev uint64) {
 	if err != nil {
 		panic("Watch request malformed")
 	}
-	rev, sent, err := watchScan(watchCreateRequest, rev+1)
+	rev, sent, err := watchScan(watchCreateRequest, n+1)
+	println(`rangeWatchRecv: ` +
+		strconv.Itoa(int(watchID)) + `: ` +
+		strconv.Itoa(int(n)) + ` (` +
+		strconv.Itoa(int(sent)) + `)`)
 	if err != nil {
 		panic("Error reading events: " + err.Error())
 	}
@@ -57,12 +60,12 @@ func streamRecv(data []byte) {
 		watchStart(ut.CreateRequest)
 	case *internal.WatchRequest_CancelRequest:
 		req := ut.CancelRequest
-		statemachine.StreamSend(uint64(req.WatchId), []byte{WatchMessageType_CANCELED})
+		println(`watchCancel: ` + strconv.Itoa(int(req.WatchId)))
 		watchIdBytes := binary.BigEndian.AppendUint64([]byte(nil), uint64(req.WatchId))
 		range_watch.Stop(watchIdBytes)
 		watchCache.Del(watchIdBytes)
-		watchID := binary.BigEndian.Uint64(watchIdBytes)
-		watchRev.Del(watchID)
+		watchRev.Del(uint64(req.WatchId))
+		statemachine.StreamSend(uint64(req.WatchId), []byte{WatchMessageType_CANCELED})
 	case *internal.WatchRequest_ProgressRequest:
 		var rev uint64
 		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
@@ -73,13 +76,14 @@ func streamRecv(data []byte) {
 			return
 		})
 		if err != nil {
-			panic(`Unable to retrieve databse revision: ` + err.Error())
+			panic(`Unable to retrieve database revision: ` + err.Error())
 		}
 		var minWatchId uint64
 		var minWatchIdBytes = watchCache.Min()
 		if len(minWatchIdBytes) == 8 {
 			minWatchId = binary.BigEndian.Uint64(minWatchIdBytes)
 		}
+		println(`watchProgress: ` + strconv.Itoa(int(minWatchId)) + ` ` + strconv.Itoa(int(rev)))
 		sendCodeHeader(minWatchId, WatchMessageType_NOTIFY, rev)
 	}
 }
@@ -92,6 +96,9 @@ func watchScan(req *internal.WatchCreateRequest, since uint64) (rev uint64, sent
 	err = lmdb.View(func(txn *lmdb.Txn) (err error) {
 		rev, err = dbMeta.getRevision(txn)
 		if err != nil {
+			return
+		}
+		if since == 0 {
 			return
 		}
 		for evt := range kvStore.scan(txn, since) {
@@ -132,11 +139,11 @@ func watchScan(req *internal.WatchCreateRequest, since uint64) (rev uint64, sent
 			sendCodeRevMsg(uint64(req.WatchId), WatchMessageType_EVENT, rev, eventResponse)
 			sent++
 		}
-		if sent > 0 {
-			sendCodeHeader(uint64(req.WatchId), WatchMessageType_SYNC, rev)
-		}
 		return
 	})
+	if sent > 0 {
+		sendCodeHeader(uint64(req.WatchId), WatchMessageType_SYNC, rev)
+	}
 	return
 }
 
@@ -170,6 +177,12 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 		}
 		return
 	})
+
+	println(`watchStart: ` +
+		strconv.Itoa(int(req.StartRevision)) + ` ` +
+		strconv.Itoa(int(req.WatchId)) + ` ` +
+		string(req.Key) + ` - ` +
+		string(req.RangeEnd))
 	if err == ErrGRPCCompacted {
 		sendCodeHeader(uint64(req.WatchId), WatchMessageType_ERR_COMPACTED, min)
 		return
@@ -178,18 +191,14 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 	}
 	sendCodeHeader(uint64(req.WatchId), WatchMessageType_INIT, 0)
 	var rev uint64
-	if since > 0 {
-		if rev, _, err = watchScan(req, since); err != nil {
-			panic("Error in event scan 1: " + err.Error())
-		}
+	if rev, _, err = watchScan(req, since); err != nil {
+		panic("Error in event scan 1: " + err.Error())
 	}
 	if err = range_watch.Open(watchIdBytes, req.Key, req.RangeEnd); err != nil {
 		panic("Error starting range watch: " + err.Error())
 	}
-	if since > 0 {
-		if rev, _, err = watchScan(req, rev+1); err != nil {
-			panic("Error in event scan 2: " + err.Error())
-		}
+	if rev, _, err = watchScan(req, rev+1); err != nil {
+		panic("Error in event scan 2: " + err.Error())
 	}
 	b, err := req.MarshalVT()
 	if err != nil {

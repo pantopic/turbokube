@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"errors"
 	"time"
 
 	"github.com/aperturerobotics/protobuf-go-lite"
@@ -137,13 +137,13 @@ var (
 )
 
 var (
-	ErrChecksumInvalid = fmt.Errorf(`Checksum invalid`)
-	ErrChecksumMissing = fmt.Errorf(`Checksum missing`)
-	ErrValueInvalid    = fmt.Errorf(`Value invalid`)
-	ErrPatchInvalid    = fmt.Errorf(`Patch invalid (missing next?)`)
-	ErrKeyInvalid      = fmt.Errorf(`Key invalid`)
-	ErrKeyMissing      = fmt.Errorf(`Key missing`)
-	ErrLeaseKeyInvalid = fmt.Errorf(`Lease key invalid`)
-	ErrNotFound        = fmt.Errorf(`Not found`)
-	ErrTermExpired     = fmt.Errorf(`Term expired`)
+	ErrChecksumInvalid = errors.New(`Checksum invalid`)
+	ErrChecksumMissing = errors.New(`Checksum missing`)
+	ErrValueInvalid    = errors.New(`Value invalid`)
+	ErrPatchInvalid    = errors.New(`Patch invalid (missing next?)`)
+	ErrKeyInvalid      = errors.New(`Key invalid`)
+	ErrKeyMissing      = errors.New(`Key missing`)
+	ErrLeaseKeyInvalid = errors.New(`Lease key invalid`)
+	ErrNotFound        = errors.New(`Not found`)
+	ErrTermExpired     = errors.New(`Term expired`)
 )

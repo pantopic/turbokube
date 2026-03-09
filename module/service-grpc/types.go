@@ -1,8 +1,6 @@
 package main
 
 import (
-	"math"
-
 	"github.com/pantopic/wazero-global/sdk-go"
 )
 
@@ -59,5 +57,5 @@ const (
 )
 
 const (
-	WATCH_ID_ERROR = (math.MaxUint64 / 2) + 1 // 0x8000000000000000
+	WATCH_ID_ERROR uint64 = 1 << 63 // 0x8000000000000000
 )

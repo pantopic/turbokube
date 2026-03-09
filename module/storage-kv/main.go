@@ -43,8 +43,7 @@ func main() {
 	statemachine.Streamable(streamOpen, streamRecv, streamClosed)
 	range_watch.Receive(rangeWatchRecv)
 	watchCache = small_cache.NewLocal(SMALL_CACHE_WATCH_CREATE_REQ)
-	watchID = atomic.NewUint64Set(ATOMIC_UINT64_SET_GLOBAL).
-		Find(ATOMIC_UINT64_GLOBAL_WATCH_ID)
+	watchID = atomic.NewUint64Set(ATOMIC_UINT64_SET_GLOBAL).Find(ATOMIC_UINT64_GLOBAL_WATCH_ID)
 	watchRev = atomic.NewUint64Set(ATOMIC_UINT64_SET_WATCH_REV)
 }
 
@@ -185,6 +184,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		var success bool
 		success, err = txnCompare(txn, req.Compare)
 		if err != nil {
+			println(`txn compare fail`)
 			return
 		}
 		var res = &internal.TxnResponse{
@@ -196,9 +196,6 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		} else {
 			res.Responses, affected, err = txnOps(txn, newRev+1, epoch, req.Failure)
 		}
-		if len(affected) > 0 {
-			newRev++
-		}
 		if err == ErrGRPCDuplicateKey ||
 			err == ErrGRPCKeyTooLong ||
 			err == ErrGRPCEmptyKey {
@@ -207,6 +204,9 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		} else if err != nil {
 			return
 		} else {
+			if len(affected) > 0 {
+				newRev++
+			}
 			res.Header = responseHeader(newRev)
 			data, err = res.MarshalVT()
 			if err != nil {
@@ -360,7 +360,7 @@ func finish() {
 		panic(err)
 	}
 	if newRev > oldRev {
-		range_watch.Emit(oldRev, keys)
+		range_watch.Emit(oldRev+1, keys)
 	}
 	keys = keys[:0]
 	txn = nil
@@ -490,6 +490,7 @@ func cmdPut(
 	res = &internal.PutResponse{}
 	prev, _, _, err := kvStore.put(txn, rev, subrev, uint64(req.Lease), epoch, req.Key, req.Value, req.IgnoreValue, req.IgnoreLease)
 	if err != nil {
+		println(`put err ` + err.Error())
 		return
 	}
 	if !req.IgnoreLease && int64(prev.lease) != req.Lease {

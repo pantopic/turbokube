@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"iter"
+	"strconv"
 
 	"github.com/pantopic/wazero-grpc-server/sdk-go"
 	"github.com/pantopic/wazero-grpc-server/sdk-go/codes"
@@ -72,6 +73,7 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 			switch data[0] {
 			case WatchMessageType_INIT:
 				watchResp.Reset()
+				respHeader.Reset()
 				if err = respHeader.UnmarshalVT(data[1:]); err != nil {
 					panic(err)
 				}
@@ -113,6 +115,11 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				if data, err = response[id].MarshalVT(); err != nil {
 					panic(err)
 				}
+				for _, e := range response[id].Events {
+					println(`evt ` +
+						strconv.Itoa(int(response[id].Header.Revision)) + ` ` +
+						string(e.Kv.Key))
+				}
 				if !yield(data) {
 					return
 				}
@@ -125,12 +132,18 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				response[id].Events = append(response[id].Events, evt)
 				size[id] = sz + sizeMetaWatchResponse + sizeMetaHeader
 			case WatchMessageType_SYNC:
+				response[id].Header.Reset()
 				if err = response[id].Header.UnmarshalVT(data[1:]); err != nil {
 					panic(err)
 				}
 				if len(response[id].Events) > 0 {
 					if data, err = response[id].MarshalVT(); err != nil {
 						panic(err)
+					}
+					for _, e := range response[id].Events {
+						println(`evt ` +
+							strconv.Itoa(int(response[id].Header.Revision)) + ` ` +
+							string(e.Kv.Key))
 					}
 					if !yield(data) {
 						return
@@ -143,6 +156,7 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				}
 			case WatchMessageType_NOTIFY:
 				watchResp.Reset()
+				respHeader.Reset()
 				if err = respHeader.UnmarshalVT(data[1:]); err != nil {
 					panic(err)
 				}
@@ -151,6 +165,12 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				if data, err = watchResp.MarshalVT(); err != nil {
 					panic(err)
 				}
+				println(`notify ` +
+					strconv.Itoa(int(id)) + ` ` +
+					strconv.Itoa(int(respHeader.Revision)) + ` ` +
+					strconv.Itoa(int(respHeader.ClusterId)) + ` ` +
+					strconv.Itoa(int(respHeader.MemberId)) + ` ` +
+					strconv.Itoa(int(respHeader.RaftTerm)))
 				if !yield(data) {
 					return
 				}

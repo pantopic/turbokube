@@ -572,7 +572,7 @@ func (sm *stateMachine) watch(ctx context.Context, req *internal.WatchCreateRequ
 	for _, f := range req.Filters {
 		filtered[uint8(f)] = true
 	}
-	scan := func() (rev uint64, sent int, err error) {
+	scan := func(since uint64) (rev uint64, sent int, err error) {
 		err = sm.env.View(func(txn *lmdb.Txn) (err error) {
 			rev, err = sm.dbMeta.getRevision(txn)
 			if err != nil {
@@ -642,7 +642,6 @@ func (sm *stateMachine) watch(ctx context.Context, req *internal.WatchCreateRequ
 			}
 			return
 		})
-		since = rev + 1
 		return
 	}
 	// Send INIT
@@ -657,7 +656,7 @@ func (sm *stateMachine) watch(ctx context.Context, req *internal.WatchCreateRequ
 	result <- res
 	var rev uint64
 	// Event scan 1
-	if rev, _, err = scan(); err != nil {
+	if rev, _, err = scan(since); err != nil {
 		sm.log.Error("Error scanning", "err", err)
 		return
 	}
@@ -668,7 +667,7 @@ func (sm *stateMachine) watch(ctx context.Context, req *internal.WatchCreateRequ
 		sm.log.Warn(`Invalid watch range`, `Key`, string(req.Key), `RangeEnd`, string(req.RangeEnd))
 	}
 	// Event scan 2
-	if rev, _, err = scan(); err != nil {
+	if rev, _, err = scan(rev + 1); err != nil {
 		sm.log.Error("Error scanning", "err", err)
 		return
 	}
@@ -696,7 +695,7 @@ func (sm *stateMachine) watch(ctx context.Context, req *internal.WatchCreateRequ
 					sm.log.Debug("Watch Alert Skip", "rev", rev, "alertRev", alertRev)
 					continue
 				}
-				rev, sent, err = scan()
+				rev, sent, err = scan(rev + 1)
 				if err != nil {
 					sm.log.Error("Error reading events", "err", err)
 					return
