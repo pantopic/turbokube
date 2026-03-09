@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-export IP_TURBO=10.0.0.36
+export IP_TURBO=10.0.0.16
 
 cat <<EOF | sudo tee /etc/kubernetes/kubeadm-config.conf
 apiVersion: kubeadm.k8s.io/v1beta4
@@ -29,7 +29,6 @@ etcd:
     dataDir: /var/lib/etcd
 imageRepository: registry.k8s.io
 kind: ClusterConfiguration
-kubernetesVersion: v1.34.1
 networking:
   dnsDomain: cluster.local
   podSubnet: 10.128.0.0/12
@@ -62,4 +61,3 @@ kubectl get node | grep none | awk '{print \$1}' | xargs kubectl describe node |
 EOF
 chmod +x wa.sh
 watch ./wa.sh
-

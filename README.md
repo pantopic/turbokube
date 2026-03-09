@@ -138,7 +138,7 @@ settings, this is likely your bottleneck.
 
 <img title="Pods scheduled" alt="Pods scheduled" src="results/2025-11-18T15-01-37Z/garbage.png"/>
 
-Turns out this jagged line is not a metric sample rate artifact like we originally assumed. It is in fact a feature of
+Turns out this jagged line is _not_ a metric sample rate artifact like we originally assumed. It is in fact a feature of
 the QPS limiter enabled by default in Kubernetes. These limits must be [increased](/terraform/02-api-server-krv-2.sh#L40-L51)
 significantly (100x) to remove this artificial bottleneck.
 
