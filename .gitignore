@@ -1,4 +1,5 @@
 /standalone
 _data
 _dist
+_logs
 *.wasm

@@ -196,6 +196,9 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		} else {
 			res.Responses, affected, err = txnOps(txn, newRev+1, epoch, req.Failure)
 		}
+		if len(affected) > 0 {
+			newRev++
+		}
 		if err == ErrGRPCDuplicateKey ||
 			err == ErrGRPCKeyTooLong ||
 			err == ErrGRPCEmptyKey {
@@ -204,9 +207,6 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		} else if err != nil {
 			return
 		} else {
-			if len(affected) > 0 {
-				newRev++
-			}
 			res.Header = responseHeader(newRev)
 			data, err = res.MarshalVT()
 			if err != nil {
@@ -549,9 +549,9 @@ func txnOps(
 ) (res []*internal.ResponseOp, keys [][]byte, err error) {
 	err = txn.Sub(func(txn *lmdb.Txn) (err error) {
 		for i, op := range ops {
-			switch op.Request.(type) {
+			switch req := op.Request.(type) {
 			case *internal.RequestOp_RequestPut:
-				putReq := op.Request.(*internal.RequestOp_RequestPut).RequestPut
+				putReq := req.RequestPut
 				putRes, _, affected, err := cmdPut(txn, rev, uint64(i), epoch, putReq)
 				if err != nil {
 					return err
@@ -563,7 +563,7 @@ func txnOps(
 				})
 				keys = append(keys, affected...)
 			case *internal.RequestOp_RequestDeleteRange:
-				delReq := op.Request.(*internal.RequestOp_RequestDeleteRange).RequestDeleteRange
+				delReq := req.RequestDeleteRange
 				delRes, affected, err := cmdDeleteRange(txn, rev, uint64(i), epoch, delReq)
 				if err != nil {
 					return err
@@ -575,7 +575,7 @@ func txnOps(
 				})
 				keys = append(keys, affected...)
 			case *internal.RequestOp_RequestRange:
-				rangeReq := op.Request.(*internal.RequestOp_RequestRange).RequestRange
+				rangeReq := req.RequestRange
 				rangeRes, err := queryRange(txn, rev, rangeReq)
 				if err != nil {
 					return err

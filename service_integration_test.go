@@ -2057,7 +2057,7 @@ func testController(t *testing.T) {
 			})
 			require.Nil(t, err, err)
 		}
-		resp, err := svcLease.LeaseGrant(ctx, &internal.LeaseGrantRequest{TTL: 3})
+		resp, err := svcLease.LeaseGrant(ctx, &internal.LeaseGrantRequest{TTL: 2})
 		require.Nil(t, err, err)
 		leaseID := resp.ID
 		resp2, err = svcLease.LeaseLeases(ctx, &internal.LeaseLeasesRequest{})

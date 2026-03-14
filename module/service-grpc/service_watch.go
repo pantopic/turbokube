@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"errors"
 	"iter"
-	"strconv"
 
 	"github.com/pantopic/wazero-grpc-server/sdk-go"
 	"github.com/pantopic/wazero-grpc-server/sdk-go/codes"
@@ -67,6 +66,7 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 			}
 			id, data := pipeWatchDecode(msg)
 			if id == WATCH_ID_ERROR {
+				println(`watch err ` + string(data))
 				err = errors.New(string(data))
 				return
 			}
@@ -115,11 +115,6 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				if data, err = response[id].MarshalVT(); err != nil {
 					panic(err)
 				}
-				for _, e := range response[id].Events {
-					println(`evt ` +
-						strconv.Itoa(int(response[id].Header.Revision)) + ` ` +
-						string(e.Kv.Key))
-				}
 				if !yield(data) {
 					return
 				}
@@ -140,11 +135,6 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 					if data, err = response[id].MarshalVT(); err != nil {
 						panic(err)
 					}
-					for _, e := range response[id].Events {
-						println(`evt ` +
-							strconv.Itoa(int(response[id].Header.Revision)) + ` ` +
-							string(e.Kv.Key))
-					}
 					if !yield(data) {
 						return
 					}
@@ -153,6 +143,7 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 					response[id].Reset()
 					response[id].Header = h
 					response[id].WatchId = int64(id)
+					size[id] = sizeMetaWatchResponse + sizeMetaHeader
 				}
 			case WatchMessageType_NOTIFY:
 				watchResp.Reset()
@@ -165,12 +156,6 @@ func watchSend() (out iter.Seq[[]byte], err error) {
 				if data, err = watchResp.MarshalVT(); err != nil {
 					panic(err)
 				}
-				println(`notify ` +
-					strconv.Itoa(int(id)) + ` ` +
-					strconv.Itoa(int(respHeader.Revision)) + ` ` +
-					strconv.Itoa(int(respHeader.ClusterId)) + ` ` +
-					strconv.Itoa(int(respHeader.MemberId)) + ` ` +
-					strconv.Itoa(int(respHeader.RaftTerm)))
 				if !yield(data) {
 					return
 				}

@@ -17,11 +17,16 @@ var (
 	eventKvResponse     = &internal.KeyValue{}
 	eventResponse       = &internal.Event{}
 	watchCreateRequest  = &internal.WatchCreateRequest{}
+	watchRequest        = &internal.WatchRequest{}
 )
 
-func rangeWatchRecv(watchIdBytes []byte, rev uint64) {
+func rangeWatchRecv(watchIdBytes []byte, alertRev uint64) {
 	watchID := binary.BigEndian.Uint64(watchIdBytes)
-	n := watchRev.Load(watchID)
+	rev := watchRev.Load(watchID)
+	if alertRev <= rev {
+		// Skip scan for alerts received between Watch start and Event scan 2
+		return
+	}
 	b := watchCache.Get(watchIdBytes)
 	if len(b) == 0 {
 		println(`watchCache not found: ` + strconv.Itoa(int(watchID)))
@@ -32,11 +37,7 @@ func rangeWatchRecv(watchIdBytes []byte, rev uint64) {
 	if err != nil {
 		panic("Watch request malformed")
 	}
-	rev, sent, err := watchScan(watchCreateRequest, n+1)
-	println(`rangeWatchRecv: ` +
-		strconv.Itoa(int(watchID)) + `: ` +
-		strconv.Itoa(int(n)) + ` (` +
-		strconv.Itoa(int(sent)) + `)`)
+	rev, sent, err := watchScan(watchCreateRequest, rev+1)
 	if err != nil {
 		panic("Error reading events: " + err.Error())
 	}
@@ -51,16 +52,15 @@ func streamOpen() {
 }
 
 func streamRecv(data []byte) {
-	req := &internal.WatchRequest{}
-	if err := req.UnmarshalVT(data); err != nil {
+	watchRequest.Reset()
+	if err := watchRequest.UnmarshalVT(data); err != nil {
 		panic(`Invalid command: ` + string(data))
 	}
-	switch ut := req.RequestUnion.(type) {
+	switch ut := watchRequest.RequestUnion.(type) {
 	case *internal.WatchRequest_CreateRequest:
 		watchStart(ut.CreateRequest)
 	case *internal.WatchRequest_CancelRequest:
 		req := ut.CancelRequest
-		println(`watchCancel: ` + strconv.Itoa(int(req.WatchId)))
 		watchIdBytes := binary.BigEndian.AppendUint64([]byte(nil), uint64(req.WatchId))
 		range_watch.Stop(watchIdBytes)
 		watchCache.Del(watchIdBytes)
@@ -83,7 +83,6 @@ func streamRecv(data []byte) {
 		if len(minWatchIdBytes) == 8 {
 			minWatchId = binary.BigEndian.Uint64(minWatchIdBytes)
 		}
-		println(`watchProgress: ` + strconv.Itoa(int(minWatchId)) + ` ` + strconv.Itoa(int(rev)))
 		sendCodeHeader(minWatchId, WatchMessageType_NOTIFY, rev)
 	}
 }
@@ -177,12 +176,6 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 		}
 		return
 	})
-
-	println(`watchStart: ` +
-		strconv.Itoa(int(req.StartRevision)) + ` ` +
-		strconv.Itoa(int(req.WatchId)) + ` ` +
-		string(req.Key) + ` - ` +
-		string(req.RangeEnd))
 	if err == ErrGRPCCompacted {
 		sendCodeHeader(uint64(req.WatchId), WatchMessageType_ERR_COMPACTED, min)
 		return
@@ -190,14 +183,15 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 		panic("Error checking min revision: " + err.Error())
 	}
 	sendCodeHeader(uint64(req.WatchId), WatchMessageType_INIT, 0)
-	var rev uint64
-	if rev, _, err = watchScan(req, since); err != nil {
+	rev, _, err := watchScan(req, since)
+	if err != nil {
 		panic("Error in event scan 1: " + err.Error())
 	}
 	if err = range_watch.Open(watchIdBytes, req.Key, req.RangeEnd); err != nil {
 		panic("Error starting range watch: " + err.Error())
 	}
-	if rev, _, err = watchScan(req, rev+1); err != nil {
+	rev, _, err = watchScan(req, rev+1)
+	if err != nil {
 		panic("Error in event scan 2: " + err.Error())
 	}
 	b, err := req.MarshalVT()

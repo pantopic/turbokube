@@ -36,6 +36,14 @@ scp:
 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@apiserver-1:/usr/bin/pcb
 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@apiserver-2:/usr/bin/pcb
 
+scp-0:
+	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@etcd-0:/usr/bin/pcb
+
+get-logs:
+	@scp -o "StrictHostKeyChecking=accept-new" root@etcd-0:~/nohup.out ./_logs/pcb.etcd-0.log
+	@scp -o "StrictHostKeyChecking=accept-new" root@etcd-1:~/nohup.out ./_logs/pcb.etcd-1.log
+	@scp -o "StrictHostKeyChecking=accept-new" root@etcd-2:~/nohup.out ./_logs/pcb.etcd-2.log
+
 cover:
 	@mkdir -p _dist
 	@go test -coverprofile=_dist/coverage.out -v
