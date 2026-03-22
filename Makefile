@@ -52,6 +52,12 @@ cover:
 cloc:
 	@cloc . --exclude-dir=_example,_dist,internal --exclude-ext=pb.go
 
+cloc-native:
+	@cloc . --exclude-dir=_example,_dist,internal,module --exclude-ext=pb.go
+
+cloc-wasm:
+	@cloc ./module --exclude-dir=_example,_dist,internal,patch --exclude-ext=pb.go
+
 gen:
 	@protoc internal/*.proto \
 		--go_out=internal \

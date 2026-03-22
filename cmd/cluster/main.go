@@ -97,7 +97,8 @@ func main() {
 			panic(err)
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
-			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)))
+			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+			wazeropool.WithLimit(256))
 		if err != nil {
 			panic(err)
 		}
@@ -201,8 +202,9 @@ func main() {
 	if err = hostModShardClient.Register(ctx, runtimeServiceGrpc); err != nil {
 		panic(err)
 	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc, wazeropool.WithModuleConfig(wazero.NewModuleConfig().
-		WithStdout(os.Stdout)))
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithLimit(256))
 	if err != nil {
 		panic(err)
 	}
