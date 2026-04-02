@@ -98,7 +98,7 @@ func main() {
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
-			wazeropool.WithLimit(256))
+			wazeropool.WithLimit(512))
 		if err != nil {
 			panic(err)
 		}
@@ -139,6 +139,17 @@ func main() {
 			hostModStateMachine.ContextCopy,
 			wazeropool.ContextCopy,
 		))
+		go func() {
+			for {
+				time.Sleep(5 * time.Second)
+				if stats := poolStorageKv.Stats(); stats.Total > 0 {
+					log.Info("poolStorageKv.Stats", "total", stats.Total,
+						"avgMemSize", stats.MemSize/stats.Total, "memMax", stats.MemMax, "memMin", stats.MemMin,
+						"active", stats.Active/stats.Total, "actMax", stats.ActMax, "actMin", stats.ActMin,
+					)
+				}
+			}
+		}()
 	}
 	if err = agent.Start(ctx); err != nil {
 		panic(err)
@@ -232,6 +243,17 @@ func main() {
 	); err != nil {
 		panic(err)
 	}
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			if stats := poolServiceGrpc.Stats(); stats.Total > 0 {
+				log.Info("poolServiceGrpc.Stats", "total", stats.Total,
+					"avgMemSize", stats.MemSize/stats.Total, "memMax", stats.MemMax, "memMin", stats.MemMin,
+					"active", stats.Active/stats.Total, "actMax", stats.ActMax, "actMin", stats.ActMin,
+				)
+			}
+		}
+	}()
 
 	// Run gRPC and HTTP servers
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
