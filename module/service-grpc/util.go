@@ -1,10 +1,20 @@
 package main
 
 import (
+	"github.com/pantopic/wazero-grpc-server/sdk-go"
 	"github.com/pantopic/wazero-grpc-server/sdk-go/codes"
 	"github.com/pantopic/wazero-grpc-server/sdk-go/status"
 	"github.com/pantopic/wazero-shard-client/sdk-go"
 )
+
+func autoSend(out []byte, err error) error {
+	if err == nil {
+		grpc_server.Send(out)
+	} else if grpcErr, ok := err.(*status.Error); ok {
+		grpc_server.SendErr(grpcErr.Code(), []byte(grpcErr.Message()))
+	}
+	return err
+}
 
 func grpcError(val uint64, out []byte, err error) ([]byte, error) {
 	if err == nil && val != 1 {

@@ -1,8 +1,6 @@
 package main
 
 import (
-	"iter"
-
 	"github.com/pantopic/wazero-grpc-server/sdk-go"
 	"github.com/pantopic/wazero-grpc-server/sdk-go/codes"
 	"github.com/pantopic/wazero-grpc-server/sdk-go/status"
@@ -27,52 +25,59 @@ func serviceMaintenanceInit() {
 		Unary(`Defragment`, maintenanceDefragment).
 		Unary(`Hash`, maintenanceHash).
 		Unary(`HashKV`, maintenanceHashKV).
-		ServerStream(`Snapshot`, maintenanceSnapshot).
+		ServerStream(`Snapshot`, maintenanceSnapshotOpen, maintenanceSnapshotClose).
 		Unary(`MoveLeader`, maintenanceMoveLeader).
 		Unary(`Downgrade`, maintenanceDowngrade)
 }
 
-func maintenanceAlarm(in []byte) (out []byte, err error) {
+func maintenanceAlarm(in []byte) (err error) {
 	return
 }
 
-func maintenanceStatus(in []byte) (out []byte, err error) {
-	out, err = grpcError(kvShard().Read(append(in, QUERY_HEADER), false))
+func maintenanceStatus(in []byte) (err error) {
+	out, err := grpcError(kvShard().Read(append(in, QUERY_HEADER), false))
 	if err != nil {
 		return
 	}
 	err = statusResp.Header.UnmarshalVT(out)
 	if err != nil {
-		return []byte(err.Error()), status.New(codes.Unknown, err.Error()).Err()
+		return status.New(codes.Unknown, err.Error()).Err()
 	}
 	statusResp.Leader = statusResp.Header.MemberId
 	statusResp.RaftIndex = uint64(statusResp.Header.Revision)
 	statusResp.RaftTerm = 1
 	statusResp.RaftAppliedIndex = uint64(statusResp.Header.Revision)
-	return statusResp.MarshalVT()
+	out, err = statusResp.MarshalVT()
+	if err != nil {
+		return
+	}
+	return grpc_server.Send(out)
 }
 
-func maintenanceDefragment(in []byte) (out []byte, err error) {
+func maintenanceDefragment(in []byte) (err error) {
 	return
 }
 
-func maintenanceHash(in []byte) (out []byte, err error) {
+func maintenanceHash(in []byte) (err error) {
 	return
 }
 
-func maintenanceHashKV(in []byte) (out []byte, err error) {
+func maintenanceHashKV(in []byte) (err error) {
 	return
 }
 
-func maintenanceSnapshot(in []byte) (out iter.Seq[[]byte], err error) {
-	out = func(yield func([]byte) bool) {}
+func maintenanceSnapshotOpen(in []byte) (err error) {
 	return
 }
 
-func maintenanceMoveLeader(in []byte) (out []byte, err error) {
+func maintenanceSnapshotClose() (err error) {
 	return
 }
 
-func maintenanceDowngrade(in []byte) (out []byte, err error) {
+func maintenanceMoveLeader(in []byte) (err error) {
+	return
+}
+
+func maintenanceDowngrade(in []byte) (err error) {
 	return
 }
