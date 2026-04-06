@@ -57,7 +57,7 @@ func open() (index uint64) {
 		dbLeaseKey.init(txn)
 		return nil
 	}); err != nil {
-		panic(err)
+		panic(`Unable to open env ` + err.Error())
 	}
 	return
 }
@@ -69,15 +69,15 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 	if txn == nil {
 		txn, err = lmdb.BeginTxn(nil, 0)
 		if err != nil {
-			panic(err)
+			panic(`Unable to open txn: ` + err.Error())
 		}
 		epoch, err = dbMeta.getEpoch(txn)
 		if err != nil {
-			panic(err)
+			panic(`Unable to get epoch: ` + err.Error())
 		}
 		rev, err = dbMeta.getRevision(txn)
 		if err != nil {
-			panic(err)
+			panic(`Unable to get revision: ` + err.Error())
 		}
 		newRev = rev
 		oldRev = rev
@@ -115,7 +115,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			data = []byte(err.Error())
 			return
 		} else if err != nil {
-			panic(err)
+			panic(`Unable to put: ` + err.Error())
 		}
 		if len(affected) > 0 {
 			newRev++
@@ -123,7 +123,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		res.Header = responseHeader(newRev)
 		data, err = res.MarshalVT()
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 		value = val
 		keys = append(keys, affected...)
@@ -135,7 +135,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		resDel, affected, err := cmdDeleteRange(txn, newRev+1, 0, epoch, req)
 		if err != nil {
-			panic(err)
+			panic(`Unable to delete range: ` + err.Error())
 		}
 		if len(affected) > 0 {
 			newRev++
@@ -143,7 +143,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		resDel.Header = responseHeader(newRev)
 		data, err = resDel.MarshalVT()
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 		value = 1
 		keys = append(keys, affected...)
@@ -210,7 +210,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			res.Header = responseHeader(newRev)
 			data, err = res.MarshalVT()
 			if err != nil {
-				panic(err)
+				panic(`Unable to marshal response: ` + err.Error())
 			}
 			value = 1
 			keys = append(keys, affected...)
@@ -223,13 +223,13 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		res, val, err := cmdLeaseGrant(txn, epoch, req)
 		if err != nil {
-			panic(err)
+			panic(`Unable to grant lease: ` + err.Error())
 		}
 		res.Header = responseHeader(newRev)
 		data, err = res.MarshalVT()
 		value = val
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 	case CMD_LEASE_REVOKE:
 		var req = &internal.LeaseRevokeRequest{}
@@ -239,7 +239,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		affected, val, err := cmdLeaseRevoke(txn, newRev+1, epoch, uint64(req.ID))
 		if err != nil {
-			panic(err)
+			panic(`Unable to revoke lease: ` + err.Error())
 		}
 		if len(affected) > 0 {
 			newRev++
@@ -248,7 +248,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			Header: responseHeader(newRev),
 		}).MarshalVT()
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 		value = val
 		keys = append(keys, affected...)
@@ -260,12 +260,12 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		res, val, err := cmdLeaseKeepAlive(txn, epoch, req)
 		if err != nil {
-			panic(err)
+			panic(`Unable to keep lease alive: ` + err.Error())
 		}
 		res.Header = responseHeader(newRev)
 		data, err = res.MarshalVT()
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 		value = val
 	case CMD_LEASE_KEEP_ALIVE_BATCH:
@@ -276,12 +276,12 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		res, val, err := cmdLeaseKeepAliveBatch(txn, epoch, req)
 		if err != nil {
-			panic(err)
+			panic(`Unable to keep lease alive batch: ` + err.Error())
 		}
 		res.Header = responseHeader(newRev)
 		data, err = res.MarshalVT()
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 		value = val
 	case CMD_INTERNAL_TICK:
@@ -292,7 +292,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		term, err := dbMeta.getTerm(txn)
 		if err != nil {
-			panic(err)
+			panic(`Unable to get term: ` + err.Error())
 		}
 		if term > req.Term {
 			data = []byte(ErrTermExpired.Error())
@@ -300,12 +300,12 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		epoch++
 		if err = dbMeta.setEpoch(txn, epoch); err != nil {
-			panic(err)
+			panic(`Unable to set epoch: ` + err.Error())
 		}
 		for id := range dbLeaseExp.scan(txn, epoch) {
 			affected, _, err := cmdLeaseRevoke(txn, newRev+1, epoch, id)
 			if err != nil {
-				panic(err)
+				panic(`Unable to revoke lease: ` + err.Error())
 			}
 			if len(affected) > 0 {
 				newRev++
@@ -316,7 +316,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			Epoch: epoch,
 		}).MarshalVT()
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 		value = index
 	case CMD_INTERNAL_TERM:
@@ -327,18 +327,18 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		}
 		term, err := dbMeta.getTerm(txn)
 		if err != nil {
-			panic(err)
+			panic(`Unable to get term: ` + err.Error())
 		}
 		if term > req.Term {
 			data = []byte(ErrTermExpired.Error())
 			return
 		}
 		if err = dbMeta.setTerm(txn, req.Term); err != nil {
-			panic(err)
+			panic(`Unable to set term: ` + err.Error())
 		}
 		data, err = (&internal.TermResponse{}).MarshalVT()
 		if err != nil {
-			panic(err)
+			panic(`Unable to marshal response: ` + err.Error())
 		}
 		value = index
 	}
@@ -348,19 +348,19 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 func finish() {
 	var err error
 	if err = dbMeta.setIndex(txn, newIndex); err != nil {
-		panic(err)
+		panic(`Unable to set index: ` + err.Error())
 	}
 	if newRev > oldRev {
 		err = dbMeta.setRevision(txn, newRev)
 		if err != nil {
-			panic(err)
+			panic(`Unable to set revision: ` + err.Error())
 		}
 	}
 	if err := txn.Commit(); err != nil {
-		panic(err)
+		panic(`Unable to commit transaction: ` + err.Error())
 	}
 	if newRev > oldRev {
-		range_watch.Emit(oldRev+1, keys)
+		range_watch.Emit(oldRev, keys)
 	}
 	keys = keys[:0]
 	txn = nil

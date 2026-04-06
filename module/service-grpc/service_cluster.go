@@ -26,31 +26,36 @@ func serviceClusterInit() {
 		Unary(`MemberPromote`, clusterMemberPromote)
 }
 
-func clusterMemberAdd(in []byte) (out []byte, err error) {
+func clusterMemberAdd(in []byte) (err error) {
 	return
 }
 
-func clusterMemberRemove(in []byte) (out []byte, err error) {
+func clusterMemberRemove(in []byte) (err error) {
 	return
 }
 
-func clusterMemberUpdate(in []byte) (out []byte, err error) {
+func clusterMemberUpdate(in []byte) (err error) {
 	return
 }
 
-func clusterMemberList(in []byte) (out []byte, err error) {
-	out, err = grpcError(kvShard().Read(append(in, QUERY_HEADER), false))
+func clusterMemberList(in []byte) (err error) {
+	out, err := grpcError(kvShard().Read(append(in, QUERY_HEADER), false))
 	if err != nil {
 		return
 	}
 	err = memberListResp.Header.UnmarshalVT(out)
 	if err != nil {
-		return []byte(err.Error()), status.New(codes.Unknown, err.Error()).Err()
+		return status.New(codes.Unknown, err.Error()).Err()
 	}
 	memberListResp.Members[0].ID = memberListResp.Header.MemberId
-	return memberListResp.MarshalVT()
+	out, err = memberListResp.MarshalVT()
+	if err != nil {
+		return
+	}
+	grpc_server.Send(out)
+	return
 }
 
-func clusterMemberPromote(in []byte) (out []byte, err error) {
+func clusterMemberPromote(in []byte) (err error) {
 	return
 }

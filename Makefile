@@ -90,6 +90,6 @@ wasm-service-grpc:
 	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=conservative -scheduler=none -o ../../cmd/cluster/service-grpc.wasm -no-debug
 wasm-service-grpc-dev:
 	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=conservative -scheduler=none -o ../../cmd/cluster/service-grpc.dev.wasm
-wasm: wasm-storage-kv wasm-service-grpc
 wasm-dev: wasm-storage-kv-dev wasm-service-grpc-dev
-wasm-all: wasm wasm-dev
+wasm-prod: wasm-storage-kv wasm-service-grpc
+wasm: wasm-dev wasm-prod

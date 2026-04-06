@@ -3,7 +3,6 @@ package main
 import (
 	"github.com/pantopic/wazero-grpc-server/sdk-go"
 	"github.com/pantopic/wazero-grpc-server/sdk-go/codes"
-	"github.com/pantopic/wazero-grpc-server/sdk-go/status"
 
 	internal "github.com/pantopic/config-bus/module/service-grpc/internal"
 )
@@ -22,31 +21,27 @@ func serviceKvInit() {
 		Unary(`Compact`, kvCompact)
 }
 
-func kvRange(in []byte) (out []byte, err error) {
+func kvRange(in []byte) (err error) {
 	err = rangeRequest.UnmarshalVT(in)
 	if err != nil {
-		return []byte(err.Error()), status.New(codes.InvalidArgument, err.Error()).Err()
+		grpc_server.SendErr(codes.InvalidArgument, []byte(err.Error()))
+		return
 	}
-	return grpcError(kvShard().
-		Read(append(in, QUERY_KV_RANGE), rangeRequest.Serializable))
+	return autoSend(grpcError(kvShard().Read(append(in, QUERY_KV_RANGE), rangeRequest.Serializable)))
 }
 
-func kvPut(in []byte) (out []byte, err error) {
-	return grpcError(kvShard().
-		Apply(append(in, CMD_KV_PUT)))
+func kvPut(in []byte) (err error) {
+	return autoSend(grpcError(kvShard().Apply(append(in, CMD_KV_PUT))))
 }
 
-func kvDeleteRange(in []byte) (out []byte, err error) {
-	return grpcError(kvShard().
-		Apply(append(in, CMD_KV_DELETE_RANGE)))
+func kvDeleteRange(in []byte) (err error) {
+	return autoSend(grpcError(kvShard().Apply(append(in, CMD_KV_DELETE_RANGE))))
 }
 
-func kvTxn(in []byte) (out []byte, err error) {
-	return grpcError(kvShard().
-		Apply(append(in, CMD_KV_TXN)))
+func kvTxn(in []byte) (err error) {
+	return autoSend(grpcError(kvShard().Apply(append(in, CMD_KV_TXN))))
 }
 
-func kvCompact(in []byte) (out []byte, err error) {
-	return grpcError(kvShard().
-		Apply(append(in, CMD_KV_COMPACT)))
+func kvCompact(in []byte) (err error) {
+	return autoSend(grpcError(kvShard().Apply(append(in, CMD_KV_COMPACT))))
 }

@@ -24,10 +24,10 @@ import (
 	"google.golang.org/grpc/keepalive"
 
 	"github.com/pantopic/wazero-atomic/host"
+	"github.com/pantopic/wazero-buffer-pool/host"
 	"github.com/pantopic/wazero-global/host"
 	"github.com/pantopic/wazero-grpc-server/host"
 	"github.com/pantopic/wazero-lmdb/host"
-	"github.com/pantopic/wazero-pipe/host"
 	"github.com/pantopic/wazero-pool"
 	"github.com/pantopic/wazero-range-watch/host"
 	"github.com/pantopic/wazero-shard-client/host"
@@ -139,6 +139,17 @@ func main() {
 			hostModStateMachine.ContextCopy,
 			wazeropool.ContextCopy,
 		))
+		go func() {
+			for {
+				time.Sleep(5 * time.Second)
+				if stats := poolStorageKv.Stats(); stats.Total > 0 {
+					log.Info("poolStorageKv.Stats", "total", stats.Total,
+						"avgMemSize", stats.MemSize/stats.Total, "memMax", stats.MemMax, "memMin", stats.MemMin,
+						"active", stats.Active/stats.Total, "actMax", stats.ActMax, "actMin", stats.ActMin,
+					)
+				}
+			}
+		}()
 	}
 	if err = agent.Start(ctx); err != nil {
 		panic(err)
@@ -184,7 +195,7 @@ func main() {
 	var (
 		hostModGlobal      = wazero_global.New()
 		hostModGrpcServer  = wazero_grpc_server.New()
-		hostModPipe        = wazero_pipe.New()
+		hostModBufferPool  = wazero_buffer_pool.New()
 		hostModShardClient = wazero_shard_client.New(agent,
 			wazero_shard_client.WithNamespace(`default`),
 			wazero_shard_client.WithResource(`pcb`),
@@ -196,7 +207,7 @@ func main() {
 	if err = hostModGrpcServer.Register(ctx, runtimeServiceGrpc); err != nil {
 		panic(err)
 	}
-	if err = hostModPipe.Register(ctx, runtimeServiceGrpc); err != nil {
+	if err = hostModBufferPool.Register(ctx, runtimeServiceGrpc); err != nil {
 		panic(err)
 	}
 	if err = hostModShardClient.Register(ctx, runtimeServiceGrpc); err != nil {
@@ -213,7 +224,7 @@ func main() {
 		if ctx, err = hostModGlobal.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
-		if ctx, err = hostModPipe.InitContext(ctx, mod); err != nil {
+		if ctx, err = hostModBufferPool.InitContext(ctx, mod); err != nil {
 			panic(err)
 		}
 		if ctx, err = hostModGrpcServer.InitContext(ctx, mod); err != nil {
@@ -226,12 +237,23 @@ func main() {
 	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc,
 		hostModGlobal.ContextCopy,
 		hostModGrpcServer.ContextCopy,
-		hostModPipe.ContextCopy,
+		hostModBufferPool.ContextCopy,
 		hostModShardClient.ContextCopy,
 		wazeropool.ContextCopy,
 	); err != nil {
 		panic(err)
 	}
+	go func() {
+		for {
+			time.Sleep(5 * time.Second)
+			if stats := poolServiceGrpc.Stats(); stats.Total > 0 {
+				log.Info("poolServiceGrpc.Stats", "total", stats.Total,
+					"avgMemSize", stats.MemSize/stats.Total, "memMax", stats.MemMax, "memMin", stats.MemMin,
+					"active", stats.Active/stats.Total, "actMax", stats.ActMax, "actMin", stats.ActMin,
+				)
+			}
+		}
+	}()
 
 	// Run gRPC and HTTP servers
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))

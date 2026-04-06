@@ -23,10 +23,6 @@ var (
 func rangeWatchRecv(watchIdBytes []byte, alertRev uint64) {
 	watchID := binary.BigEndian.Uint64(watchIdBytes)
 	rev := watchRev.Load(watchID)
-	if alertRev <= rev {
-		// Skip scan for alerts received between Watch start and Event scan 2
-		return
-	}
 	b := watchCache.Get(watchIdBytes)
 	if len(b) == 0 {
 		println(`watchCache not found: ` + strconv.Itoa(int(watchID)))
@@ -37,7 +33,8 @@ func rangeWatchRecv(watchIdBytes []byte, alertRev uint64) {
 	if err != nil {
 		panic("Watch request malformed")
 	}
-	rev, sent, err := watchScan(watchCreateRequest, rev+1)
+	rev, sent, err := watchScan(watchCreateRequest, max(rev, alertRev)+1)
+	// println(sent)
 	if err != nil {
 		panic("Error reading events: " + err.Error())
 	}
@@ -220,7 +217,7 @@ func sendCodeHeader(val uint64, code byte, rev uint64) {
 func sendCodeRevMsg(val uint64, code byte, rev uint64, msg Message) {
 	data := make([]byte, 1+8+msg.SizeVT())
 	data[0] = code
-	binary.BigEndian.PutUint64(data[1:9], rev)
+	binary.BigEndian.PutUint64(data[1:], rev)
 	if _, err := msg.MarshalToSizedBufferVT(data[9:]); err != nil {
 		panic("Error serializing event kv: " + err.Error())
 	}
