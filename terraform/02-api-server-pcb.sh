@@ -1,9 +1,9 @@
 #!/bin/bash
 set -e
 
-export IP_ETCD_0=10.0.0.18
-export IP_ETCD_1=10.0.0.23
-export IP_ETCD_2=10.0.0.22
+export IP_ETCD_0=10.0.0.19
+export IP_ETCD_1=10.0.0.21
+export IP_ETCD_2=10.0.0.3
 export IP_LB=10.0.0.2
 
 export HOST_IP=$(ip addr show dev eth1 | grep 10.0 | tail -n 1 | awk '{print $2}' | sed 's/\/.*//')

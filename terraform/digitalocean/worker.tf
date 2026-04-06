@@ -4,7 +4,7 @@
 #   vpc_uuid = digitalocean_vpc.turbokube.id
 #   tags     = ["turbokube"]
 
-#   image     = "ubuntu-22-04-x64"
+#   image     = "ubuntu-24-04-x64"
 #   size      = var.node_class.turbo
 #   ssh_keys  = [var.ssh_key]
 #   user_data = file("setup.sh")
@@ -24,7 +24,7 @@
 #     vpc_uuid = digitalocean_vpc.turbokube.id
 #     tags     = ["turbokube"]
 
-#     image              = "ubuntu-22-04-x64"
+#     image              = "ubuntu-24-04-x64"
 #     size               = var.node_class.worker
 #     ssh_keys           = [var.ssh_key]
 #     with_droplet_agent = true

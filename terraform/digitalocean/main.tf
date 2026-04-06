@@ -35,7 +35,7 @@ resource "digitalocean_tag" "apiserver" {
 
 variable "node_count" {
   default = {
-    apiserver : 3
+    apiserver : 1
     etcd : 3
     scheduler : 4
     worker : 4

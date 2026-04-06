@@ -4,7 +4,7 @@
 #   vpc_uuid = digitalocean_vpc.turbokube.id
 #   tags     = ["turbokube"]
 
-#   image     = "ubuntu-22-04-x64"
+#   image     = "ubuntu-24-04-x64"
 #   size      = var.node_class.admin
 #   ssh_keys  = [var.ssh_key]
 #   user_data = file("setup.sh")
