@@ -98,7 +98,7 @@ func main() {
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
-			wazeropool.WithLimit(512))
+			wazeropool.WithLimit(256))
 		if err != nil {
 			panic(err)
 		}
