@@ -1,4 +1,4 @@
-FROM debian:stable-slim as standalone
+FROM debian:stable-slim AS standalone
 
 COPY _dist/standalone .
 

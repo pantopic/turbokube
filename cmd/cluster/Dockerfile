@@ -1,4 +1,4 @@
-FROM debian:stable-slim as cluster
+FROM debian:stable-slim AS cluster
 
 COPY _dist/cluster .
 
