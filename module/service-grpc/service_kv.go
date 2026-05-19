@@ -12,15 +12,6 @@ var (
 	shardNameKv  = []byte(`kv`)
 )
 
-func serviceKvInit() {
-	grpc_server.NewService(`etcdserverpb.KV`).
-		Unary(`Range`, kvRange).
-		Unary(`Put`, kvPut).
-		Unary(`DeleteRange`, kvDeleteRange).
-		Unary(`Txn`, kvTxn).
-		Unary(`Compact`, kvCompact)
-}
-
 func kvRange(in []byte) (err error) {
 	err = rangeRequest.UnmarshalVT(in)
 	if err != nil {

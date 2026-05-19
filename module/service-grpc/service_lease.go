@@ -1,18 +1,5 @@
 package main
 
-import (
-	"github.com/pantopic/wazero-grpc-server/sdk-go"
-)
-
-func serviceLeaseInit() {
-	grpc_server.NewService(`etcdserverpb.Lease`).
-		Unary(`LeaseGrant`, leaseGrant).
-		Unary(`LeaseRevoke`, leaseRevoke).
-		BidirectionalStream(`LeaseKeepAlive`, leaseKeepaliveOpen, leaseKeepaliveRecv, leaseKeepaliveClose).
-		Unary(`LeaseLeases`, leaseLeases).
-		Unary(`LeaseTimeToLive`, leaseTimeToLive)
-}
-
 func leaseGrant(in []byte) (err error) {
 	return autoSend(grpcError(kvShard().Apply(append(in, CMD_LEASE_GRANT))))
 }

@@ -16,22 +16,18 @@ var (
 		IsLearner:   false,
 		Header:      &internal.ResponseHeader{},
 	}
+	alarmResp = &internal.AlarmResponse{
+		Header: &internal.ResponseHeader{},
+	}
 )
 
-func serviceMaintenanceInit() {
-	grpc_server.NewService(`etcdserverpb.Maintenance`).
-		Unary(`Alarm`, maintenanceAlarm).
-		Unary(`Status`, maintenanceStatus).
-		Unary(`Defragment`, maintenanceDefragment).
-		Unary(`Hash`, maintenanceHash).
-		Unary(`HashKV`, maintenanceHashKV).
-		ServerStream(`Snapshot`, maintenanceSnapshotOpen, maintenanceSnapshotClose).
-		Unary(`MoveLeader`, maintenanceMoveLeader).
-		Unary(`Downgrade`, maintenanceDowngrade)
-}
-
 func maintenanceAlarm(in []byte) (err error) {
-	return
+	// out, err := alarmResp.MarshalVT()
+	// if err != nil {
+	// 	return
+	// }
+	// return grpc_server.Send(out)
+	return grpc_server.Send(nil)
 }
 
 func maintenanceStatus(in []byte) (err error) {
@@ -55,29 +51,29 @@ func maintenanceStatus(in []byte) (err error) {
 }
 
 func maintenanceDefragment(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func maintenanceHash(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func maintenanceHashKV(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func maintenanceSnapshotOpen(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func maintenanceSnapshotClose() (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func maintenanceMoveLeader(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func maintenanceDowngrade(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }

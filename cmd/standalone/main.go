@@ -82,6 +82,8 @@ func main() {
 	internal.RegisterLeaseServer(grpcServer, pcb.NewServiceLease(client))
 	internal.RegisterMaintenanceServer(grpcServer, pcb.NewServiceMaintenance(client))
 	internal.RegisterClusterServer(grpcServer, pcb.NewServiceCluster(client, apiAddr))
+
+	// Run gRPC and HTTP servers
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
 	if err != nil {
 		panic(err)

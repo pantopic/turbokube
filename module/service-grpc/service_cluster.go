@@ -10,32 +10,21 @@ import (
 
 var (
 	memberListResp = &internal.MemberListResponse{
-		Header: &internal.ResponseHeader{},
-		Members: []*internal.Member{
-			&internal.Member{},
-		},
+		Header:  &internal.ResponseHeader{},
+		Members: []*internal.Member{{}},
 	}
 )
 
-func serviceClusterInit() {
-	grpc_server.NewService(`etcdserverpb.Cluster`).
-		Unary(`MemberAdd`, clusterMemberAdd).
-		Unary(`MemberRemove`, clusterMemberRemove).
-		Unary(`MemberUpdate`, clusterMemberUpdate).
-		Unary(`MemberList`, clusterMemberList).
-		Unary(`MemberPromote`, clusterMemberPromote)
-}
-
 func clusterMemberAdd(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func clusterMemberRemove(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func clusterMemberUpdate(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }
 
 func clusterMemberList(in []byte) (err error) {
@@ -57,5 +46,5 @@ func clusterMemberList(in []byte) (err error) {
 }
 
 func clusterMemberPromote(in []byte) (err error) {
-	return
+	return grpc_server.Send(nil)
 }

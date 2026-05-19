@@ -12,6 +12,8 @@ func autoSend(out []byte, err error) error {
 		grpc_server.Send(out)
 	} else if grpcErr, ok := err.(*status.Error); ok {
 		grpc_server.SendErr(grpcErr.Code(), []byte(grpcErr.Message()))
+	} else {
+		panic(err.Error())
 	}
 	return err
 }

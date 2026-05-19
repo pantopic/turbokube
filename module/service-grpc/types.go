@@ -34,15 +34,7 @@ var (
 
 	// PCB_RESPONSE_SIZE_MAX sets the maximum request and response size.
 	// Matches etcd by default.
-	PCB_RESPONSE_SIZE_MAX = global.NewUint64(`PCB_RESPONSE_SIZE_MAX`, 10<<20)
-)
-
-const (
-	// grpc overhead costs for calculating PCB_RESPONSE_SIZE_MAX
-	sizeMetaKeyValue      = 256
-	sizeMetaEvent         = 256
-	sizeMetaHeader        = 256
-	sizeMetaWatchResponse = 256
+	PCB_RESPONSE_SIZE_MAX = global.NewUint64(`PCB_RESPONSE_SIZE_MAX`, 10<<20) // 10 MiB
 )
 
 const (

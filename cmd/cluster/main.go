@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -47,6 +48,18 @@ var wasmServiceGrpc []byte
 //go:embed storage\-kv\.wasm
 var wasmStorageKv []byte
 
+type extStorage interface {
+	wazero_state_machine.ContextCopier
+	Register(context.Context, wazero.Runtime) error
+	InitContext(context.Context, api.Module) (context.Context, error)
+}
+
+type extService interface {
+	wazero_grpc_server.ContextCopier
+	Register(context.Context, wazero.Runtime) error
+	InitContext(context.Context, api.Module) (context.Context, error)
+}
+
 func main() {
 	zongzi.SetLogLevel(zongzi.LogLevelInfo)
 	var cfg = getConfig()
@@ -65,87 +78,58 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	hostModGlobal := wazero_global.New()
 	if !PCB_STATE_MACHINE_WASM {
 		agent.StateMachineRegister(pcb.Uri, pcb.NewStateMachineFactory(log, cfg.Dir+"/data"))
 	} else {
 		runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 		wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
-		var (
-			hostModAtomic       = wazero_atomic.New()
-			hostModGlobal       = wazero_global.New()
-			hostModLMDB         = wazero_lmdb.New()
-			hostModRangeWatch   = wazero_range_watch.New()
-			hostModSmallCache   = wazero_small_cache.New()
-			hostModStateMachine = wazero_state_machine.New()
-		)
-		if err = hostModAtomic.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
+		hostModLMDB := wazero_lmdb.New()
+		storageExtensions := []extStorage{
+			hostModLMDB,
+			hostModGlobal,
+			wazero_atomic.New(),
+			wazero_range_watch.New(),
+			wazero_small_cache.New(),
+			wazero_state_machine.New(),
 		}
-		if err = hostModGlobal.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
-		}
-		if err = hostModStateMachine.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
-		}
-		if err = hostModLMDB.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
-		}
-		if err = hostModRangeWatch.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
-		}
-		if err = hostModSmallCache.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
+		var storageContextCopiers []wazero_state_machine.ContextCopier
+		for _, m := range storageExtensions {
+			if err = m.Register(ctx, runtimeStorageKv); err != nil {
+				panic(err)
+			}
+			storageContextCopiers = append(storageContextCopiers, wazero_state_machine.ContextCopier(m))
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
-			wazeropool.WithLimit(256))
+			wazeropool.WithLimit(runtime.NumCPU()))
 		if err != nil {
 			panic(err)
 		}
 		ctx = wazeropool.ContextSet(ctx, poolStorageKv)
 		poolStorageKv.Run(func(mod api.Module) {
-			if ctx, err = hostModAtomic.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-			if ctx, err = hostModGlobal.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-			if ctx, err = hostModStateMachine.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-			if ctx, err = hostModLMDB.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-			if ctx, err = hostModRangeWatch.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-			if ctx, err = hostModSmallCache.InitContext(ctx, mod); err != nil {
-				panic(err)
+			for _, m := range storageExtensions {
+				if ctx, err = m.InitContext(ctx, mod); err != nil {
+					panic(err)
+				}
 			}
 		})
 		poolFactoryStorage := func(shardID uint64) wazeropool.Instance {
 			return poolStorageKv
 		}
 		ctx = hostModLMDB.RegisterEnv(ctx, getEnv(cfg))
-		agent.StateMachineRegister(pcb.Uri, wazero_state_machine.FactoryPersistent(
-			ctx,
+		agent.StateMachineRegister(pcb.Uri, wazero_state_machine.FactoryPersistent(ctx,
 			zongzi.GetLogger(`statemachine`),
 			poolFactoryStorage,
-			hostModAtomic.ContextCopy,
-			hostModGlobal.ContextCopy,
-			hostModLMDB.ContextCopy,
-			hostModRangeWatch.ContextCopy,
-			hostModSmallCache.ContextCopy,
-			hostModStateMachine.ContextCopy,
-			wazeropool.ContextCopy,
+			storageContextCopiers...,
 		))
 		go func() {
 			for {
 				time.Sleep(5 * time.Second)
-				if stats := poolStorageKv.Stats(); stats.Total > 0 {
+				if stats := poolStorageKv.Stats(); stats.Active > 0 {
 					log.Info("poolStorageKv.Stats", "total", stats.Total,
-						"avgMemSize", stats.MemSize/stats.Total, "memMax", stats.MemMax, "memMin", stats.MemMin,
-						"active", stats.Active/stats.Total, "actMax", stats.ActMax, "actMin", stats.ActMin,
+						"avgMemSize", stats.MemSize/max(stats.Total, 1), "memMax", stats.MemMax, "memMin", stats.MemMin,
+						"active", stats.Active/max(stats.Total, 1), "actMax", stats.ActMax, "actMin", stats.ActMin,
 					)
 				}
 			}
@@ -192,64 +176,47 @@ func main() {
 	// Create Runtime
 	runtimeServiceGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeServiceGrpc)
-	var (
-		hostModGlobal      = wazero_global.New()
-		hostModGrpcServer  = wazero_grpc_server.New()
-		hostModBufferPool  = wazero_buffer_pool.New()
-		hostModShardClient = wazero_shard_client.New(agent,
+	hostModGrpcServer := wazero_grpc_server.New()
+	serviceExtensions := []extService{
+		hostModGlobal,
+		hostModGrpcServer,
+		wazero_buffer_pool.New(),
+		wazero_shard_client.New(agent,
 			wazero_shard_client.WithNamespace(`default`),
 			wazero_shard_client.WithResource(`pcb`),
-		)
-	)
-	if err = hostModGlobal.Register(ctx, runtimeServiceGrpc); err != nil {
-		panic(err)
+		),
 	}
-	if err = hostModGrpcServer.Register(ctx, runtimeServiceGrpc); err != nil {
-		panic(err)
-	}
-	if err = hostModBufferPool.Register(ctx, runtimeServiceGrpc); err != nil {
-		panic(err)
-	}
-	if err = hostModShardClient.Register(ctx, runtimeServiceGrpc); err != nil {
-		panic(err)
+	var serviceContextCopiers []wazero_grpc_server.ContextCopier
+	for _, m := range serviceExtensions {
+		if err = m.Register(ctx, runtimeServiceGrpc); err != nil {
+			panic(err)
+		}
+		serviceContextCopiers = append(serviceContextCopiers, wazero_grpc_server.ContextCopier(m))
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
-		wazeropool.WithLimit(256))
+		wazeropool.WithLimit(runtime.NumCPU()))
 	if err != nil {
 		panic(err)
 	}
 	ctx = wazeropool.ContextSet(ctx, poolServiceGrpc)
 	poolServiceGrpc.Run(func(mod api.Module) {
-		if ctx, err = hostModGlobal.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModBufferPool.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModGrpcServer.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModShardClient.InitContext(ctx, mod); err != nil {
-			panic(err)
+		for _, m := range serviceExtensions {
+			if ctx, err = m.InitContext(ctx, mod); err != nil {
+				panic(err)
+			}
 		}
 	})
-	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc,
-		hostModGlobal.ContextCopy,
-		hostModGrpcServer.ContextCopy,
-		hostModBufferPool.ContextCopy,
-		hostModShardClient.ContextCopy,
-		wazeropool.ContextCopy,
-	); err != nil {
+	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, serviceContextCopiers...); err != nil {
 		panic(err)
 	}
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)
-			if stats := poolServiceGrpc.Stats(); stats.Total > 0 {
+			if stats := poolServiceGrpc.Stats(); stats.Active > 0 {
 				log.Info("poolServiceGrpc.Stats", "total", stats.Total,
-					"avgMemSize", stats.MemSize/stats.Total, "memMax", stats.MemMax, "memMin", stats.MemMin,
-					"active", stats.Active/stats.Total, "actMax", stats.ActMax, "actMin", stats.ActMin,
+					"avgMemSize", stats.MemSize/max(stats.Total, 1), "memMax", stats.MemMax, "memMin", stats.MemMin,
+					"active", stats.Active/max(stats.Total, 1), "actMax", stats.ActMax, "actMin", stats.ActMin,
 				)
 			}
 		}
@@ -265,6 +232,7 @@ func main() {
 	httpListener := m.Match(cmux.Any())
 	go func() {
 		if err = grpcServer.Serve(grpcListener); err != nil {
+			println(`AASDASDASDASSD`)
 			panic(err)
 		}
 	}()

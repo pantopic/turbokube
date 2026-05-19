@@ -11,6 +11,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -262,6 +263,18 @@ func setupPcb(t *testing.T) {
 	svcMaintenance = NewServiceMaintenance(client)
 }
 
+type extStorage interface {
+	wazero_state_machine.ContextCopier
+	Register(context.Context, wazero.Runtime) error
+	InitContext(context.Context, api.Module) (context.Context, error)
+}
+
+type extService interface {
+	wazero_grpc_server.ContextCopier
+	Register(context.Context, wazero.Runtime) error
+	InitContext(context.Context, api.Module) (context.Context, error)
+}
+
 // Run integration tests against bootstrapped pcb cluster instance(s)
 func setupCluster(t *testing.T) {
 	logLevel := new(slog.LevelVar)
@@ -300,59 +313,39 @@ func setupCluster(t *testing.T) {
 	}
 	var ctrl, ctrl2 []*controller
 	var shard zongzi.Shard
+
 	// Wazero Storage Runtime
-	runtimeStorage := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorage)
-	var (
-		hostModAtomic       = wazero_atomic.New()
-		hostModGlobal       = wazero_global.New()
-		hostModLMDB         = wazero_lmdb.New()
-		hostModRangeWatch   = wazero_range_watch.New()
-		hostModSmallCache   = wazero_small_cache.New()
-		hostModStateMachine = wazero_state_machine.New()
-	)
-	if err = hostModAtomic.Register(ctx, runtimeStorage); err != nil {
-		panic(err)
+	runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
+	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
+	hostModLMDB := wazero_lmdb.New()
+	hostModGlobal := wazero_global.New()
+	storageExtensions := []extStorage{
+		hostModLMDB,
+		hostModGlobal,
+		wazero_atomic.New(),
+		wazero_range_watch.New(),
+		wazero_small_cache.New(),
+		wazero_state_machine.New(),
 	}
-	if err = hostModGlobal.Register(ctx, runtimeStorage); err != nil {
-		panic(err)
+	var storageContextCopiers []wazero_state_machine.ContextCopier
+	for _, m := range storageExtensions {
+		if err = m.Register(ctx, runtimeStorageKv); err != nil {
+			panic(err)
+		}
+		storageContextCopiers = append(storageContextCopiers, wazero_state_machine.ContextCopier(m))
 	}
-	if err = hostModStateMachine.Register(ctx, runtimeStorage); err != nil {
-		panic(err)
-	}
-	if err = hostModLMDB.Register(ctx, runtimeStorage); err != nil {
-		panic(err)
-	}
-	if err = hostModRangeWatch.Register(ctx, runtimeStorage); err != nil {
-		panic(err)
-	}
-	if err = hostModSmallCache.Register(ctx, runtimeStorage); err != nil {
-		panic(err)
-	}
-	poolStorageKv, err := wazeropool.New(ctx, runtimeStorage, wasmStorageKv,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)))
+	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithLimit(runtime.NumCPU()))
 	if err != nil {
 		panic(err)
 	}
 	ctx = wazeropool.ContextSet(ctx, poolStorageKv)
 	poolStorageKv.Run(func(mod api.Module) {
-		if ctx, err = hostModAtomic.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModGlobal.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModStateMachine.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModLMDB.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModRangeWatch.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModSmallCache.InitContext(ctx, mod); err != nil {
-			panic(err)
+		for _, m := range storageExtensions {
+			if ctx, err = m.InitContext(ctx, mod); err != nil {
+				panic(err)
+			}
 		}
 	})
 	poolFactoryStorage := func(shardID uint64) wazeropool.Instance {
@@ -393,13 +386,7 @@ func setupCluster(t *testing.T) {
 			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
 			zongzi.GetLogger(`statemachine`),
 			poolFactoryStorage,
-			hostModAtomic.ContextCopy,
-			hostModGlobal.ContextCopy,
-			hostModSmallCache.ContextCopy,
-			hostModStateMachine.ContextCopy,
-			hostModLMDB.ContextCopy,
-			hostModRangeWatch.ContextCopy,
-			wazeropool.ContextCopy,
+			storageContextCopiers...,
 		))
 		go func() {
 			if err = agents[i].Start(ctx); err != nil {
@@ -434,13 +421,7 @@ func setupCluster(t *testing.T) {
 			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
 			zongzi.GetLogger(`statemachine`),
 			poolFactoryStorage,
-			hostModAtomic.ContextCopy,
-			hostModGlobal.ContextCopy,
-			hostModSmallCache.ContextCopy,
-			hostModStateMachine.ContextCopy,
-			hostModLMDB.ContextCopy,
-			hostModRangeWatch.ContextCopy,
-			wazeropool.ContextCopy,
+			storageContextCopiers...,
 		))
 		go func() {
 			if err = nonvoting[i].Start(ctx); err != nil {
@@ -513,56 +494,40 @@ func setupCluster(t *testing.T) {
 	var grpcServer = grpc.NewServer(opts...)
 
 	// Wazero Service Runtime
-	runtimeService := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeService)
-	var (
-		hostModGrpcServer  = wazero_grpc_server.New()
-		hostModBufferPool  = wazero_buffer_pool.New()
-		hostModShardClient = wazero_shard_client.New(
-			agents[0],
+	runtimeServiceGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
+	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeServiceGrpc)
+	hostModGrpcServer := wazero_grpc_server.New()
+	serviceExtensions := []extService{
+		hostModGlobal,
+		hostModGrpcServer,
+		wazero_buffer_pool.New(),
+		wazero_shard_client.New(agents[0],
 			wazero_shard_client.WithNamespace(`default`),
 			wazero_shard_client.WithResource(`pcb`),
-		)
-	)
-	if err = hostModGlobal.Register(ctx, runtimeService); err != nil {
-		panic(err)
+		),
 	}
-	if err = hostModBufferPool.Register(ctx, runtimeService); err != nil {
-		panic(err)
+	var serviceContextCopiers []wazero_grpc_server.ContextCopier
+	for _, m := range serviceExtensions {
+		if err = m.Register(ctx, runtimeServiceGrpc); err != nil {
+			panic(err)
+		}
+		serviceContextCopiers = append(serviceContextCopiers, wazero_grpc_server.ContextCopier(m))
 	}
-	if err = hostModShardClient.Register(ctx, runtimeService); err != nil {
-		panic(err)
-	}
-	if err = hostModGrpcServer.Register(ctx, runtimeService); err != nil {
-		panic(err)
-	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeService, wasmServiceGrpc, wazeropool.WithModuleConfig(wazero.NewModuleConfig().
-		WithStdout(os.Stdout)))
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithLimit(runtime.NumCPU()))
 	if err != nil {
 		panic(err)
 	}
 	ctx = wazeropool.ContextSet(ctx, poolServiceGrpc)
 	poolServiceGrpc.Run(func(mod api.Module) {
-		if ctx, err = hostModGlobal.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModBufferPool.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModGrpcServer.InitContext(ctx, mod); err != nil {
-			panic(err)
-		}
-		if ctx, err = hostModShardClient.InitContext(ctx, mod); err != nil {
-			panic(err)
+		for _, m := range serviceExtensions {
+			if ctx, err = m.InitContext(ctx, mod); err != nil {
+				panic(err)
+			}
 		}
 	})
-	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc,
-		hostModGlobal.ContextCopy,
-		hostModGrpcServer.ContextCopy,
-		hostModBufferPool.ContextCopy,
-		hostModShardClient.ContextCopy,
-		wazeropool.ContextCopy,
-	); err != nil {
+	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, serviceContextCopiers...); err != nil {
 		panic(err)
 	}
 	globalSet = hostModGlobal.Set
@@ -2759,6 +2724,10 @@ func testMaintenance(t *testing.T) {
 			assert.Equal(t, "3.6.5", resp.Version)
 		}
 		assert.GreaterOrEqual(t, resp.RaftIndex, uint64(resp.Header.Revision))
+	})
+	t.Run("alarm", func(t *testing.T) {
+		_, err := svcMaintenance.Alarm(ctx, &internal.AlarmRequest{})
+		require.Nil(t, err, err)
 	})
 }
 

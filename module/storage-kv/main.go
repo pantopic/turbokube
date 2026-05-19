@@ -33,19 +33,18 @@ var (
 	newRev     uint64
 	oldRev     uint64
 	txn        *lmdb.Txn
-	watchCache *small_cache.Local
-	watchID    *atomic.Uint64
-	watchRev   *atomic.Uint64Set
+	watchCache = small_cache.NewLocal(SMALL_CACHE_WATCH_CREATE_REQ)
+	watchID    = atomic.NewUint64Set(ATOMIC_UINT64_SET_GLOBAL).Find(ATOMIC_UINT64_GLOBAL_WATCH_ID)
+	watchRev   = atomic.NewUint64Set(ATOMIC_UINT64_SET_WATCH_REV)
 )
 
-func main() {
-	statemachine.RegisterPersistent(open, update, finish, read)
-	statemachine.Streamable(streamOpen, streamRecv, streamClosed)
+func init() {
+	statemachine.Persistent(open, update, finish, read)
+	statemachine.Streaming(streamOpen, streamRecv, streamClosed)
 	range_watch.Receive(rangeWatchRecv)
-	watchCache = small_cache.NewLocal(SMALL_CACHE_WATCH_CREATE_REQ)
-	watchID = atomic.NewUint64Set(ATOMIC_UINT64_SET_GLOBAL).Find(ATOMIC_UINT64_GLOBAL_WATCH_ID)
-	watchRev = atomic.NewUint64Set(ATOMIC_UINT64_SET_WATCH_REV)
 }
+
+func main() {}
 
 func open() (index uint64) {
 	if err := lmdb.Update(func(txn *lmdb.Txn) (err error) {

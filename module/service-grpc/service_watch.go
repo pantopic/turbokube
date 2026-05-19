@@ -4,28 +4,10 @@ import (
 	"encoding/binary"
 	"errors"
 
-	"github.com/pantopic/wazero-buffer-pool/sdk-go"
 	"github.com/pantopic/wazero-grpc-server/sdk-go"
-	"github.com/pantopic/wazero-shard-client/sdk-go"
 
 	internal "github.com/pantopic/config-bus/module/service-grpc/internal"
 )
-
-const (
-	BUFFER_POOL_ID_WATCH_EVENT = iota
-)
-
-var (
-	watchEventBufferSet buffer_pool.MultiValueSet
-)
-
-func serviceWatchInit() {
-	watchEventBufferSet = buffer_pool.NewMultiValueSet(BUFFER_POOL_ID_WATCH_EVENT,
-		buffer_pool.WithSizeLimit(PCB_RESPONSE_SIZE_MAX()))
-	grpc_server.NewService(`etcdserverpb.Watch`).
-		BidirectionalStream(`Watch`, watchOpen, watchRecv, watchClose)
-	shard_client.RegisterStreamRecv(shardRecv)
-}
 
 func shardRecv(_, _ []byte, data []byte, id uint64) {
 	var err error
@@ -47,10 +29,9 @@ func shardRecv(_, _ []byte, data []byte, id uint64) {
 		if data, err = watchResp.MarshalVT(); err != nil {
 			panic(`Unable to marshal watch response: ` + err.Error())
 		}
-		// init bufferpool
 		grpc_server.Send(data)
 	case WatchMessageType_EVENT:
-		events := watchEventBufferSet.Find(id)
+		events := bufferPoolWatchEvent.Find(id)
 		if events.Append(data[1:]) {
 			return
 		}
@@ -63,7 +44,6 @@ func shardRecv(_, _ []byte, data []byte, id uint64) {
 			evt := &internal.Event{}
 			lastRev = binary.BigEndian.Uint64(b[:8])
 			if err = evt.UnmarshalVT(b[8:]); err != nil {
-				println(len(b))
 				panic(`Unable to unmarshal event: ` + err.Error())
 			}
 			resp.Events = append(resp.Events, evt)
@@ -83,7 +63,7 @@ func shardRecv(_, _ []byte, data []byte, id uint64) {
 			panic(`Failed to append watch event after reset`)
 		}
 	case WatchMessageType_SYNC:
-		events := watchEventBufferSet.Find(id)
+		events := bufferPoolWatchEvent.Find(id)
 		resp := &internal.WatchResponse{
 			Header:  &internal.ResponseHeader{},
 			WatchId: int64(id),
@@ -93,7 +73,6 @@ func shardRecv(_, _ []byte, data []byte, id uint64) {
 		}
 		for b := range events.Iter() {
 			evt := &internal.Event{}
-			println(len(b))
 			if err = evt.UnmarshalVT(b[8:]); err != nil {
 				panic(`Unable to unmarshal event in sync: ` + err.Error())
 			}
@@ -123,7 +102,6 @@ func shardRecv(_, _ []byte, data []byte, id uint64) {
 		if data, err = watchResp.MarshalVT(); err != nil {
 			panic(`Unable to marshal watch response: ` + err.Error())
 		}
-		// delete bufferpool
 		grpc_server.Send(data)
 	case WatchMessageType_ERR_EXISTS:
 		watchResp.Reset()
