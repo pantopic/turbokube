@@ -5,13 +5,13 @@ export APINAME0="apiserver-0"
 # export APINAME1="apiserver-1"
 # export APINAME2="apiserver-2"
 export IP_APISERVER_0=10.0.0.20
-# export IP_APISERVER_1=10.0.0.20
-# export IP_APISERVER_2=10.0.0.21
+# export IP_APISERVER_1=10.0.0.19
+# export IP_APISERVER_2=10.0.0.18
 
 export NAME0="etcd-0"
 export NAME1="etcd-1"
 export NAME2="etcd-2"
-export IP_ETCD_0=10.0.0.19
+export IP_ETCD_0=10.0.0.4
 export IP_ETCD_1=10.0.0.21
 export IP_ETCD_2=10.0.0.3
 
@@ -29,7 +29,7 @@ export PCB_HOST_TAGS="pantopic/config-bus=member"
 mkdir -p /tmp/${IP_ETCD_0}/ /tmp/${IP_ETCD_1}/ /tmp/${IP_ETCD_2}/ /tmp/${IP_APISERVER_0}/ # /tmp/${IP_APISERVER_1}/ /tmp/${IP_APISERVER_2}/
 
 export HOSTS=(${IP_ETCD_0} ${IP_ETCD_1} ${IP_ETCD_2} ${IP_APISERVER_0}) # ${IP_APISERVER_1} ${IP_APISERVER_2})
-export NAMES=(${NAME0} ${NAME1} ${NAME2} ${APINAME0} ${APINAME1} ${APINAME2})
+export NAMES=(${NAME0} ${NAME1} ${NAME2} ${APINAME0}) # ${APINAME1} ${APINAME2})
 
 for i in "${!HOSTS[@]}"; do
 HOST=${HOSTS[$i]}
@@ -124,8 +124,11 @@ scp -o "StrictHostKeyChecking=accept-new" -r /tmp/${IP_ETCD_2}/* root@${IP_ETCD_
 
 nohup /usr/bin/pcb &
 
-export PCB_ENDPOINTS=https://${IP_ETCD_0}:2379,https://${IP_ETCD_1}:2379,https://${IP_ETCD_2}:2379
-etcdctl --endpoints ${PCB_ENDPOINTS} endpoint health
+ETCDCTL_API=3 etcdctl \
+--cert /etc/kubernetes/pki/etcd/peer.crt \
+--key /etc/kubernetes/pki/etcd/peer.key \
+--cacert /etc/kubernetes/pki/etcd/ca.crt \
+--endpoints https://${IP_ETCD_0}:2379,https://${IP_ETCD_1}:2379,https://${IP_ETCD_2}:2379 endpoint health
 
 wget https://raw.githubusercontent.com/ymdysk/iostat-csv/refs/heads/master/iostat-csv.sh
 chmod +x iostat-csv.sh
@@ -133,3 +136,8 @@ chmod +x iostat-csv.sh
 
 scp -o "StrictHostKeyChecking=accept-new" -r /usr/bin/pcb root@${IP_ETCD_1}:/usr/bin
 scp -o "StrictHostKeyChecking=accept-new" -r /usr/bin/pcb root@${IP_ETCD_2}:/usr/bin
+
+ETCDCTL_API=3 etcdctl \
+--cert /etc/kubernetes/pki/etcd/peer.crt \
+--key /etc/kubernetes/pki/etcd/peer.key \
+--cacert /etc/kubernetes/pki/etcd/ca.crt endpoint health
