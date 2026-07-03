@@ -232,7 +232,6 @@ func main() {
 	httpListener := m.Match(cmux.Any())
 	go func() {
 		if err = grpcServer.Serve(grpcListener); err != nil {
-			println(`AASDASDASDASSD`)
 			panic(err)
 		}
 	}()
