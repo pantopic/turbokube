@@ -2,4 +2,4 @@
 _data
 _dist
 _logs
-*.wasm
+cmd/**/*.wasm

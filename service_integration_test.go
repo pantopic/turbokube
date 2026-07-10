@@ -441,7 +441,7 @@ func setupCluster(t *testing.T) {
 	// Start shard
 	// TODO - Replace shard creation with resource creation
 	shard, _, err = agents[0].ShardCreate(ctx, Uri,
-		zongzi.WithName("default.pcb.kv"),
+		zongzi.WithName("default.pcb.default.kv"),
 		zongzi.WithPlacementMembers(3, `pantopic/config-bus=member`),
 		zongzi.WithPlacementCover(`pantopic/config-bus=nonvoting`))
 	if err != nil {
@@ -501,10 +501,7 @@ func setupCluster(t *testing.T) {
 		hostModGlobal,
 		hostModGrpcServer,
 		wazero_buffer_pool.New(),
-		wazero_shard_client.New(agents[0],
-			wazero_shard_client.WithNamespace(`default`),
-			wazero_shard_client.WithResource(`pcb`),
-		),
+		wazero_shard_client.New(agents[0]),
 	}
 	var serviceContextCopiers []wazero_grpc_server.ContextCopier
 	for _, m := range serviceExtensions {
@@ -527,6 +524,7 @@ func setupCluster(t *testing.T) {
 			}
 		}
 	})
+	serviceContextCopiers = append(serviceContextCopiers, wazero_shard_client.NewResolver(`default`, `pcb`))
 	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, serviceContextCopiers...); err != nil {
 		panic(err)
 	}

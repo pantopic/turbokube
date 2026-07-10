@@ -9,7 +9,6 @@ import (
 
 var (
 	rangeRequest = &internal.RangeRequest{}
-	shardNameKv  = []byte(`kv`)
 )
 
 func kvRange(in []byte) (err error) {

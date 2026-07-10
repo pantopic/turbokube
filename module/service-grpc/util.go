@@ -7,6 +7,11 @@ import (
 	"github.com/pantopic/wazero-shard-client/sdk-go"
 )
 
+var (
+	componentName = []byte(`default`)
+	shardNameKv   = []byte(`kv`)
+)
+
 func autoSend(out []byte, err error) error {
 	if err == nil {
 		grpc_server.Send(out)
@@ -30,5 +35,5 @@ func grpcError(val uint64, out []byte, err error) ([]byte, error) {
 }
 
 func kvShard() shard_client.Client {
-	return shard_client.New(shardNameKv)
+	return shard_client.New(componentName, shardNameKv)
 }

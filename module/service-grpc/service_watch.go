@@ -9,7 +9,7 @@ import (
 	internal "github.com/pantopic/config-bus/module/service-grpc/internal"
 )
 
-func shardRecv(_, _ []byte, data []byte, id uint64) {
+func shardRecv(_ []byte, data []byte, id uint64) {
 	var err error
 	if id == WATCH_ID_ERROR {
 		println(`watch err ` + string(data))

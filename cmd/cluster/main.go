@@ -181,17 +181,14 @@ func main() {
 		hostModGlobal,
 		hostModGrpcServer,
 		wazero_buffer_pool.New(),
-		wazero_shard_client.New(agent,
-			wazero_shard_client.WithNamespace(`default`),
-			wazero_shard_client.WithResource(`pcb`),
-		),
+		wazero_shard_client.New(agent),
 	}
 	var serviceContextCopiers []wazero_grpc_server.ContextCopier
 	for _, m := range serviceExtensions {
 		if err = m.Register(ctx, runtimeServiceGrpc); err != nil {
 			panic(err)
 		}
-		serviceContextCopiers = append(serviceContextCopiers, wazero_grpc_server.ContextCopier(m))
+		serviceContextCopiers = append(serviceContextCopiers, m)
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
@@ -207,6 +204,7 @@ func main() {
 			}
 		}
 	})
+	serviceContextCopiers = append(serviceContextCopiers, wazero_shard_client.NewResolver(`default`, `pcb`))
 	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, serviceContextCopiers...); err != nil {
 		panic(err)
 	}
