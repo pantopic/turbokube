@@ -16,7 +16,7 @@ var (
 
 func init() {
 	shard_client.RegisterStreamRecv(shardRecv)
-	bufferPoolWatchEvent = buffer_pool.NewMultiValueSet(BUFFER_POOL_WATCH_EVENT, buffer_pool.WithSizeLimit(PCB_RESPONSE_SIZE_MAX()))
+	bufferPoolWatchEvent = buffer_pool.NewMultiValueSet(BUFFER_POOL_WATCH_EVENT, buffer_pool.WithSizeLimit(PCB_RESPONSE_SIZE_MAX))
 	grpc_server.Init(
 		grpc_server.WithBufferCap(256, 1.5*1024*1024),
 	)

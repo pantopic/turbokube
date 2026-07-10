@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/pantopic/wazero-global/sdk-go"
+	"os"
+	"strconv"
 )
 
 const (
@@ -34,7 +35,7 @@ var (
 
 	// PCB_RESPONSE_SIZE_MAX sets the maximum request and response size.
 	// Matches etcd by default.
-	PCB_RESPONSE_SIZE_MAX = global.NewUint64(`PCB_RESPONSE_SIZE_MAX`, 10<<20) // 10 MiB
+	PCB_RESPONSE_SIZE_MAX = envUint64(`PCB_RESPONSE_SIZE_MAX`, 10<<20) // 10 MiB
 )
 
 const (
@@ -51,3 +52,12 @@ const (
 const (
 	WATCH_ID_ERROR uint64 = 1 << 63 // 0x8000000000000000
 )
+
+func envUint64(key string, def uint64) uint64 {
+	if s := os.Getenv(key); s != "" {
+		if v, err := strconv.ParseUint(s, 10, 64); err == nil {
+			return v
+		}
+	}
+	return def
+}

@@ -334,8 +334,9 @@ func setupCluster(t *testing.T) {
 		}
 		storageContextCopiers = append(storageContextCopiers, wazero_state_machine.ContextCopier(m))
 	}
+	cfg := wazero.NewModuleConfig().WithStdout(os.Stdout)
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithModuleConfig(cfg),
 		wazeropool.WithLimit(runtime.NumCPU()))
 	if err != nil {
 		panic(err)
@@ -494,8 +495,8 @@ func setupCluster(t *testing.T) {
 	var grpcServer = grpc.NewServer(opts...)
 
 	// Wazero Service Runtime
-	runtimeServiceGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeServiceGrpc)
+	runtimeSvcGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
+	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeSvcGrpc)
 	hostModGrpcServer := wazero_grpc_server.New()
 	serviceExtensions := []extService{
 		hostModGlobal,
@@ -503,14 +504,14 @@ func setupCluster(t *testing.T) {
 		wazero_buffer_pool.New(),
 		wazero_shard_client.New(agents[0]),
 	}
-	var serviceContextCopiers []wazero_grpc_server.ContextCopier
+	var svcCtxCopiers []wazero_grpc_server.ContextCopier
 	for _, m := range serviceExtensions {
-		if err = m.Register(ctx, runtimeServiceGrpc); err != nil {
+		if err = m.Register(ctx, runtimeSvcGrpc); err != nil {
 			panic(err)
 		}
-		serviceContextCopiers = append(serviceContextCopiers, wazero_grpc_server.ContextCopier(m))
+		svcCtxCopiers = append(svcCtxCopiers, wazero_grpc_server.ContextCopier(m))
 	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, wasmServiceGrpc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()))
 	if err != nil {
@@ -524,8 +525,8 @@ func setupCluster(t *testing.T) {
 			}
 		}
 	})
-	serviceContextCopiers = append(serviceContextCopiers, wazero_shard_client.NewResolver(`default`, `pcb`))
-	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, serviceContextCopiers...); err != nil {
+	svcCtxCopiers = append(svcCtxCopiers, wazero_shard_client.NewResolver(`default`, `pcb`))
+	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, svcCtxCopiers...); err != nil {
 		panic(err)
 	}
 	globalSet = hostModGlobal.Set

@@ -93,5 +93,6 @@ wasm-service-grpc-dev:
 wasm-dev: wasm-storage-kv-dev wasm-service-grpc-dev
 wasm-prod: wasm-storage-kv wasm-service-grpc
 wasm: wasm-dev wasm-prod
+	@cp cmd/cluster/*.wasm embed
 
 .PHONY: test
