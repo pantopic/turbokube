@@ -4,6 +4,10 @@ import (
 	_ "embed"
 )
 
+const (
+	NameServiceGrpc = "pantopic/turbokube/service/grpc"
+)
+
 //go:embed service\-grpc\.wasm
 var WasmServiceGrpc []byte
 

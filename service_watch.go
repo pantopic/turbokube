@@ -11,7 +11,7 @@ import (
 	"github.com/tidwall/btree"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 type serviceWatch struct {

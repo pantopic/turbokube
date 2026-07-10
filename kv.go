@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/snappy"
 
-	"github.com/pantopic/config-bus/internal"
-	"github.com/pantopic/config-bus/internal/patch"
+	"github.com/pantopic/turbokube/internal"
+	"github.com/pantopic/turbokube/internal/patch"
 )
 
 type kv struct {

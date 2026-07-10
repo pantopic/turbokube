@@ -19,10 +19,10 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
-const Uri = "zongzi://github.com/pantopic/config-bus"
+const Uri = "zongzi://github.com/pantopic/turbokube"
 
 type stateMachine struct {
 	clock      clock.Clock

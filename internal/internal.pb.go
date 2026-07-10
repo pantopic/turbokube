@@ -200,7 +200,7 @@ const file_internal_proto_rawDesc = "" +
 	"\x05epoch\x18\x01 \x01(\x04R\x05epoch\"!\n" +
 	"\vTermRequest\x12\x12\n" +
 	"\x04term\x18\x01 \x01(\x04R\x04term\"\x0e\n" +
-	"\fTermResponseB)Z'github.com/pantopic/config-bus/internalb\x06proto3"
+	"\fTermResponseB(Z&github.com/pantopic/turbokube/internalb\x06proto3"
 
 var (
 	file_internal_proto_rawDescOnce sync.Once

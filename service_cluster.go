@@ -6,7 +6,7 @@ import (
 
 	"github.com/logbn/zongzi"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 type serviceCluster struct {

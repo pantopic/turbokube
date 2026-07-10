@@ -18,8 +18,8 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 
-	"github.com/pantopic/config-bus"
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube"
+	"github.com/pantopic/turbokube/internal"
 )
 
 func main() {
@@ -65,8 +65,8 @@ func main() {
 	}
 	shard, _, err := agent.ShardCreate(ctx, pcb.Uri,
 		zongzi.WithName("pcb"),
-		zongzi.WithPlacementMembers(3, `pantopic/config-bus=member`),
-		zongzi.WithPlacementCover(`pantopic/config-bus=nonvoting`))
+		zongzi.WithPlacementMembers(3, `pantopic/turbokube=member`),
+		zongzi.WithPlacementCover(`pantopic/turbokube=nonvoting`))
 	if err != nil {
 		panic(err)
 	}

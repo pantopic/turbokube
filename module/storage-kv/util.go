@@ -1,7 +1,7 @@
 package main
 
 import (
-	internal "github.com/pantopic/config-bus/module/storage-kv/internal"
+	internal "github.com/pantopic/turbokube/module/storage-kv/internal"
 )
 
 func txnIntCompare(cond internal.Compare_CompareResult, a, b int64) bool {

@@ -8,7 +8,7 @@ import (
 	"github.com/logbn/zongzi"
 	"google.golang.org/grpc"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 type serviceMaintenance struct {

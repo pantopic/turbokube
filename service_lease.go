@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 type serviceLease struct {

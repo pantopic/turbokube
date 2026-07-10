@@ -6,7 +6,7 @@ import (
 
 	"github.com/pantopic/wazero-grpc-server/sdk-go"
 
-	internal "github.com/pantopic/config-bus/module/service-grpc/internal"
+	internal "github.com/pantopic/turbokube/module/service-grpc/internal"
 )
 
 func shardRecv(_ []byte, data []byte, id uint64) {

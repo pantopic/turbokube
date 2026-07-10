@@ -9,7 +9,7 @@ import (
 	"github.com/pantopic/wazero-small-cache/sdk-go"
 	"github.com/pantopic/wazero-state-machine/sdk-go"
 
-	internal "github.com/pantopic/config-bus/module/storage-kv/internal"
+	internal "github.com/pantopic/turbokube/module/storage-kv/internal"
 )
 
 const (

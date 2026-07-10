@@ -40,7 +40,7 @@ import (
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 var (
@@ -164,7 +164,7 @@ func setupPcb(t *testing.T) {
 			zongzi.WithAddrGossip(fmt.Sprintf(host+":%d", port+(i*10)+1)),
 			zongzi.WithAddrRaft(fmt.Sprintf(host+":%d", port+(i*10)+2)),
 			zongzi.WithAddrApi(fmt.Sprintf(host+":%d", port+(i*10)+3)),
-			zongzi.WithHostTags(`pantopic/config-bus=member`),
+			zongzi.WithHostTags(`pantopic/turbokube=member`),
 			zongzi.WithRaftEventListener(ctrl[i]),
 		); err != nil {
 			panic(err)
@@ -194,7 +194,7 @@ func setupPcb(t *testing.T) {
 			zongzi.WithAddrGossip(fmt.Sprintf(host+":%d", port+100+(i*10)+1)),
 			zongzi.WithAddrRaft(fmt.Sprintf(host+":%d", port+100+(i*10)+2)),
 			zongzi.WithAddrApi(fmt.Sprintf(host+":%d", port+100+(i*10)+3)),
-			zongzi.WithHostTags(`pantopic/config-bus=nonvoting`),
+			zongzi.WithHostTags(`pantopic/turbokube=nonvoting`),
 			zongzi.WithRaftEventListener(ctrl2[i]),
 		); err != nil {
 			panic(err)
@@ -218,8 +218,8 @@ func setupPcb(t *testing.T) {
 	// Start shard
 	shard, _, err = agents[0].ShardCreate(ctx, Uri,
 		zongzi.WithName("standalone-001"),
-		zongzi.WithPlacementMembers(3, `pantopic/config-bus=member`),
-		zongzi.WithPlacementCover(`pantopic/config-bus=nonvoting`))
+		zongzi.WithPlacementMembers(3, `pantopic/turbokube=member`),
+		zongzi.WithPlacementCover(`pantopic/turbokube=nonvoting`))
 	if err != nil {
 		panic(err)
 	}
@@ -378,7 +378,7 @@ func setupCluster(t *testing.T) {
 			zongzi.WithAddrGossip(fmt.Sprintf(host+":%d", port+(i*10)+1)),
 			zongzi.WithAddrRaft(fmt.Sprintf(host+":%d", port+(i*10)+2)),
 			zongzi.WithAddrApi(fmt.Sprintf(host+":%d", port+(i*10)+3)),
-			zongzi.WithHostTags(`pantopic/config-bus=member`),
+			zongzi.WithHostTags(`pantopic/turbokube=member`),
 			zongzi.WithRaftEventListener(ctrl[i]),
 		); err != nil {
 			panic(err)
@@ -413,7 +413,7 @@ func setupCluster(t *testing.T) {
 			zongzi.WithAddrGossip(fmt.Sprintf(host+":%d", port+100+(i*10)+1)),
 			zongzi.WithAddrRaft(fmt.Sprintf(host+":%d", port+100+(i*10)+2)),
 			zongzi.WithAddrApi(fmt.Sprintf(host+":%d", port+100+(i*10)+3)),
-			zongzi.WithHostTags(`pantopic/config-bus=nonvoting`),
+			zongzi.WithHostTags(`pantopic/turbokube=nonvoting`),
 			zongzi.WithRaftEventListener(ctrl2[i]),
 		); err != nil {
 			panic(err)
@@ -443,8 +443,8 @@ func setupCluster(t *testing.T) {
 	// TODO - Replace shard creation with resource creation
 	shard, _, err = agents[0].ShardCreate(ctx, Uri,
 		zongzi.WithName("default.pcb.default.kv"),
-		zongzi.WithPlacementMembers(3, `pantopic/config-bus=member`),
-		zongzi.WithPlacementCover(`pantopic/config-bus=nonvoting`))
+		zongzi.WithPlacementMembers(3, `pantopic/turbokube=member`),
+		zongzi.WithPlacementCover(`pantopic/turbokube=nonvoting`))
 	if err != nil {
 		panic(err)
 	}

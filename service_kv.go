@@ -9,7 +9,7 @@ import (
 	"github.com/logbn/zongzi"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 type kvService struct {

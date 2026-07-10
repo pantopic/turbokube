@@ -7,7 +7,7 @@ import (
 
 	"github.com/PowerDNS/lmdb-go/lmdb"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 type dbKv struct {

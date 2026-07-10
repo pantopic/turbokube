@@ -23,7 +23,7 @@ type config struct {
 func getConfig() config {
 	cfg := config{
 		ClusterName: "pcb",
-		Dir:         "/var/lib/pantopic/config-bus",
+		Dir:         "/var/lib/pantopic/turbokube",
 		HostName:    "pcb-0",
 		HostPeers:   "pcb-0:17003,pcb-1:17003,pcb-2:17003",
 		PortApi:     19000,

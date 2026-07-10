@@ -1,4 +1,4 @@
-module github.com/pantopic/config-bus/module/storage-kv
+module github.com/pantopic/turbokube/module/storage-kv
 
 go 1.25.7
 

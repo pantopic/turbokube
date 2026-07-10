@@ -7,8 +7,8 @@ import (
 
 	"github.com/golang/snappy"
 
-	internal "github.com/pantopic/config-bus/module/storage-kv/internal"
-	"github.com/pantopic/config-bus/module/storage-kv/patch"
+	internal "github.com/pantopic/turbokube/module/storage-kv/internal"
+	"github.com/pantopic/turbokube/module/storage-kv/patch"
 )
 
 type kv struct {

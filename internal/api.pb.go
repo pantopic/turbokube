@@ -4776,7 +4776,7 @@ const file_api_proto_rawDesc = "" +
 	"\bSnapshot\x12\x1d.etcdserverpb.SnapshotRequest\x1a\x1e.etcdserverpb.SnapshotResponse\"\x000\x01\x12Q\n" +
 	"\n" +
 	"MoveLeader\x12\x1f.etcdserverpb.MoveLeaderRequest\x1a .etcdserverpb.MoveLeaderResponse\"\x00\x12N\n" +
-	"\tDowngrade\x12\x1e.etcdserverpb.DowngradeRequest\x1a\x1f.etcdserverpb.DowngradeResponse\"\x00B)Z'github.com/pantopic/config-bus/internalb\x06proto3"
+	"\tDowngrade\x12\x1e.etcdserverpb.DowngradeRequest\x1a\x1f.etcdserverpb.DowngradeResponse\"\x00B(Z&github.com/pantopic/turbokube/internalb\x06proto3"
 
 var (
 	file_api_proto_rawDescOnce sync.Once

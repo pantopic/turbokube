@@ -35,7 +35,7 @@ import (
 	"github.com/pantopic/wazero-small-cache/host"
 	"github.com/pantopic/wazero-state-machine/host"
 
-	"github.com/pantopic/config-bus"
+	"github.com/pantopic/turbokube"
 )
 
 const (
@@ -141,8 +141,8 @@ func main() {
 	// TODO - Replace shard create with resource create
 	shard, _, err := agent.ShardCreate(ctx, pcb.Uri,
 		zongzi.WithName("default.pcb.kv"),
-		zongzi.WithPlacementMembers(3, `pantopic/config-bus=member`),
-		zongzi.WithPlacementCover(`pantopic/config-bus=nonvoting`))
+		zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
+		zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
 	if err != nil {
 		panic(err)
 	}

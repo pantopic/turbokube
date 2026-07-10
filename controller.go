@@ -10,7 +10,7 @@ import (
 	"github.com/logbn/zongzi"
 	"google.golang.org/protobuf/proto"
 
-	"github.com/pantopic/config-bus/internal"
+	"github.com/pantopic/turbokube/internal"
 )
 
 // Controller operates background processes like epoch advancement and election notices

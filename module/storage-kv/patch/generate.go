@@ -3,7 +3,7 @@ package patch
 import (
 	"encoding/binary"
 
-	"github.com/pantopic/config-bus/module/storage-kv/patch/lcs"
+	"github.com/pantopic/turbokube/module/storage-kv/patch/lcs"
 )
 
 // Generate returns a patch representing the difference between a and b

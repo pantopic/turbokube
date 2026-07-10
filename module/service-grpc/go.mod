@@ -1,4 +1,4 @@
-module github.com/pantopic/config-bus/module/service-grpc
+module github.com/pantopic/turbokube/module/service-grpc
 
 go 1.25.7
 

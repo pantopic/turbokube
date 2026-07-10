@@ -1,4 +1,4 @@
-module github.com/pantopic/config-bus
+module github.com/pantopic/turbokube
 
 go 1.25.7
 
