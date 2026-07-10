@@ -1,5 +1,9 @@
 package turbokube
 
+import (
+	_ "embed"
+)
+
 //go:embed service\-grpc\.wasm
 var WasmServiceGrpc []byte
 
