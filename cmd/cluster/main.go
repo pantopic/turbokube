@@ -50,15 +50,15 @@ var wasmServiceGrpc []byte
 var wasmStorageKv []byte
 
 type extStorage interface {
-	wazero_state_machine.ContextCopier
 	Register(context.Context, wazero.Runtime) error
 	InitContext(context.Context, api.Module) (context.Context, error)
+	ContextCopy(dst, src context.Context) context.Context
 }
 
 type extService interface {
-	wazero_grpc_server.ContextCopier
 	Register(context.Context, wazero.Runtime) error
 	InitContext(context.Context, api.Module) (context.Context, error)
+	ContextCopy(dst, src context.Context) context.Context
 }
 
 func main() {
@@ -94,12 +94,12 @@ func main() {
 			wazero_small_cache.New(),
 			wazero_state_machine.New(),
 		}
-		var storageContextCopiers []wazero_state_machine.ContextCopier
+		var storageContextCopiers []func(dst, src context.Context) context.Context
 		for _, m := range storageExtensions {
 			if err = m.Register(ctx, runtimeStorageKv); err != nil {
 				panic(err)
 			}
-			storageContextCopiers = append(storageContextCopiers, wazero_state_machine.ContextCopier(m))
+			storageContextCopiers = append(storageContextCopiers, m.ContextCopy)
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
@@ -184,12 +184,12 @@ func main() {
 		wazero_buffer_pool.New(),
 		wazero_shard_client.New(agent),
 	}
-	var serviceContextCopiers []wazero_grpc_server.ContextCopier
+	var serviceContextCopiers []func(dst, src context.Context) context.Context
 	for _, m := range serviceExtensions {
 		if err = m.Register(ctx, runtimeServiceGrpc); err != nil {
 			panic(err)
 		}
-		serviceContextCopiers = append(serviceContextCopiers, m)
+		serviceContextCopiers = append(serviceContextCopiers, m.ContextCopy)
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),

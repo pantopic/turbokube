@@ -1,6 +1,7 @@
 package pcb
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -165,3 +166,5 @@ type (
 	Entry  = zongzi.Entry
 	Result = zongzi.Result
 )
+
+type ContextCopy = func(dst, src context.Context) context.Context

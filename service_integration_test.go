@@ -265,15 +265,15 @@ func setupPcb(t *testing.T) {
 }
 
 type extStorage interface {
-	wazero_state_machine.ContextCopier
 	Register(context.Context, wazero.Runtime) error
 	InitContext(context.Context, api.Module) (context.Context, error)
+	ContextCopy(dst, src context.Context) context.Context
 }
 
 type extService interface {
-	wazero_grpc_server.ContextCopier
 	Register(context.Context, wazero.Runtime) error
 	InitContext(context.Context, api.Module) (context.Context, error)
+	ContextCopy(dst, src context.Context) context.Context
 }
 
 // Run integration tests against bootstrapped pcb cluster instance(s)
@@ -328,12 +328,12 @@ func setupCluster(t *testing.T) {
 		wazero_small_cache.New(),
 		wazero_state_machine.New(),
 	}
-	var storageContextCopiers []wazero_state_machine.ContextCopier
+	var storageContextCopiers []ContextCopy
 	for _, m := range storageExtensions {
 		if err = m.Register(ctx, runtimeStorageKv); err != nil {
 			panic(err)
 		}
-		storageContextCopiers = append(storageContextCopiers, wazero_state_machine.ContextCopier(m))
+		storageContextCopiers = append(storageContextCopiers, m.ContextCopy)
 	}
 	cfg := wazero.NewModuleConfig().WithStdout(os.Stdout)
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
@@ -505,12 +505,12 @@ func setupCluster(t *testing.T) {
 		wazero_buffer_pool.New(),
 		wazero_shard_client.New(agents[0]),
 	}
-	var svcCtxCopiers []wazero_grpc_server.ContextCopier
+	var svcCtxCopiers []wazero_grpc_server.ContextCopy
 	for _, m := range serviceExtensions {
 		if err = m.Register(ctx, runtimeSvcGrpc); err != nil {
 			panic(err)
 		}
-		svcCtxCopiers = append(svcCtxCopiers, wazero_grpc_server.ContextCopier(m))
+		svcCtxCopiers = append(svcCtxCopiers, m.ContextCopy)
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, wasmServiceGrpc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
