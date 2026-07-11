@@ -28,6 +28,7 @@ import (
 
 	"github.com/pantopic/wazero-atomic/host"
 	"github.com/pantopic/wazero-buffer-pool/host"
+	"github.com/pantopic/wazero-cluster/host"
 	"github.com/pantopic/wazero-global/host"
 	"github.com/pantopic/wazero-grpc-server/host"
 	"github.com/pantopic/wazero-lmdb/host"
@@ -525,7 +526,7 @@ func setupCluster(t *testing.T) {
 			}
 		}
 	})
-	svcCtxCopiers = append(svcCtxCopiers, wazero_shard_client.NewResolver(`default`, `pcb`))
+	svcCtxCopiers = append(svcCtxCopiers, wazero_cluster.NewResolver(`default`, `pcb`))
 	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, svcCtxCopiers...); err != nil {
 		panic(err)
 	}

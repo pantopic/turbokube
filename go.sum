@@ -304,6 +304,8 @@ github.com/pantopic/wazero-atomic/host v0.0.3 h1:2AIGN2XdFGmXIeCJvtk9H3wBon42pUg
 github.com/pantopic/wazero-atomic/host v0.0.3/go.mod h1:zQwA7GIrf1Ixj9EqvhfQ4cuw/MpllNaqJ0KOUN5+6X0=
 github.com/pantopic/wazero-buffer-pool/host v0.0.1 h1:Geav13f64YGieQwqfLt9/uPCKi7shrFANseFAXtm4yE=
 github.com/pantopic/wazero-buffer-pool/host v0.0.1/go.mod h1:WFKFKKAIf2ixmvNUwxvUUw5c5t9P+vuR+ganPHvGUQQ=
+github.com/pantopic/wazero-cluster/host v0.0.0-20260703160550-ba6a44a5f868 h1:fkXvWV9k531rs8tnuWcppPLfdb8S8I4lVq/fA1bukgA=
+github.com/pantopic/wazero-cluster/host v0.0.0-20260703160550-ba6a44a5f868/go.mod h1:MTyzv5HnNxyvHasDoMWhW05zRVVCYJnGJcPmtCISS+M=
 github.com/pantopic/wazero-global/host v0.0.2 h1:0CnWY7jO1RSJ4GCbCL9nTtzK/Ry34kupLXGDLX8XoGI=
 github.com/pantopic/wazero-global/host v0.0.2/go.mod h1:i+Godlx1MAuAIma1FrRX2JGb4OPvSStDNQZcuvaLy1o=
 github.com/pantopic/wazero-grpc-server/host v0.0.12 h1:HLiQrd/3bRnJyYNzpe82K7Fi8TXmOUwjY7PCaV7pDro=

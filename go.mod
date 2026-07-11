@@ -12,6 +12,7 @@ require (
 	github.com/logbn/zongzi v0.0.21
 	github.com/pantopic/wazero-atomic/host v0.0.3
 	github.com/pantopic/wazero-buffer-pool/host v0.0.1
+	github.com/pantopic/wazero-cluster/host v0.0.0-20260703160550-ba6a44a5f868
 	github.com/pantopic/wazero-global/host v0.0.2
 	github.com/pantopic/wazero-grpc-server/host v0.0.12
 	github.com/pantopic/wazero-lmdb/host v0.0.9
