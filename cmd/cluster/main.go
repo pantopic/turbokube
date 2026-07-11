@@ -49,13 +49,7 @@ var wasmServiceGrpc []byte
 //go:embed storage\-kv\.wasm
 var wasmStorageKv []byte
 
-type extStorage interface {
-	Register(context.Context, wazero.Runtime) error
-	InitContext(context.Context, api.Module) (context.Context, error)
-	ContextCopy(dst, src context.Context) context.Context
-}
-
-type extService interface {
+type extension interface {
 	Register(context.Context, wazero.Runtime) error
 	InitContext(context.Context, api.Module) (context.Context, error)
 	ContextCopy(dst, src context.Context) context.Context
@@ -86,7 +80,7 @@ func main() {
 		runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 		wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
 		hostModLMDB := wazero_lmdb.New()
-		storageExtensions := []extStorage{
+		storageExtensions := []extension{
 			hostModLMDB,
 			hostModGlobal,
 			wazero_atomic.New(),
@@ -178,7 +172,7 @@ func main() {
 	runtimeServiceGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeServiceGrpc)
 	hostModGrpcServer := wazero_grpc_server.New()
-	serviceExtensions := []extService{
+	serviceExtensions := []extension{
 		hostModGlobal,
 		hostModGrpcServer,
 		wazero_buffer_pool.New(),
