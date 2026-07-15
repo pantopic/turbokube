@@ -19,6 +19,7 @@ func init() {
 	bufferPoolWatchEvent = buffer_pool.NewMultiValueSet(BUFFER_POOL_WATCH_EVENT, buffer_pool.WithSizeLimit(PCB_RESPONSE_SIZE_MAX))
 	grpc_server.Init(
 		grpc_server.WithBufferCap(256, 1.5*1024*1024),
+		grpc_server.WithHttpHandler(httpHandler),
 	)
 	grpc_server.NewService(`etcdserverpb.Cluster`).
 		Unary(`MemberAdd`, clusterMemberAdd).
@@ -52,4 +53,18 @@ func init() {
 }
 
 func main() {
+}
+
+func httpHandler(method, path, body []byte) (code int, res []byte) {
+	switch string(path) {
+	case "/metrics":
+		res = append(res, []byte(`pantopic_power_level 9001`)...)
+	case "/health":
+		res = append(res, []byte(`{"health":"true","reason":""}`)...)
+	case "/version":
+		res = append(res, []byte(`{"etcdserver":"3.5.25","etcdcluster":"3.5.0"}`)...)
+	default:
+		code = 405
+	}
+	return
 }

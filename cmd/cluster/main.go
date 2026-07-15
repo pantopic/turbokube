@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 	"net"
-	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -15,7 +14,6 @@ import (
 	"time"
 
 	"github.com/logbn/zongzi"
-	"github.com/soheilhy/cmux"
 	"github.com/tetratelabs/wazero"
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
@@ -200,9 +198,11 @@ func main() {
 		}
 	})
 	serviceContextCopiers = append(serviceContextCopiers, wazero_cluster.NewResolver(`default`, `pcb`))
-	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, serviceContextCopiers...); err != nil {
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
+	if err != nil {
 		panic(err)
 	}
+	hostModGrpcServer.ServerStart(ctx, lis, poolServiceGrpc, serviceContextCopiers...)
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)
@@ -215,39 +215,6 @@ func main() {
 		}
 	}()
 
-	// Run gRPC and HTTP servers
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
-	if err != nil {
-		panic(err)
-	}
-	m := cmux.New(lis)
-	grpcListener := m.Match(cmux.HTTP2())
-	httpListener := m.Match(cmux.Any())
-	go func() {
-		if err = grpcServer.Serve(grpcListener); err != nil {
-			panic(err)
-		}
-	}()
-	httpServer := &http.Server{
-		Handler: pcb.NewEndpointHandler(grpcServer),
-	}
-	go func() {
-		if cfg.TlsCrt != "" && cfg.TlsKey != "" {
-			if err = httpServer.ServeTLS(httpListener, cfg.TlsCrt, cfg.TlsKey); err != nil {
-				panic(err)
-			}
-		} else {
-			if err = httpServer.Serve(httpListener); err != nil {
-				panic(err)
-			}
-		}
-	}()
-	go func() {
-		if err := m.Serve(); err != nil {
-			panic(err)
-		}
-	}()
-
 	// await stop
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
@@ -257,13 +224,12 @@ func main() {
 	if grpcServer != nil {
 		var ch = make(chan bool)
 		go func() {
-			grpcServer.GracefulStop()
+			hostModGrpcServer.Stop()
 			close(ch)
 		}()
 		select {
 		case <-ch:
 		case <-time.After(5 * time.Second):
-			grpcServer.Stop()
 		}
 	}
 	agent.Stop()

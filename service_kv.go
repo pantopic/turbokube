@@ -46,6 +46,10 @@ func (s *kvService) Put(
 			err = internal.ErrGRPCLeaseProvided
 		} else if bytes.Equal(data, []byte(internal.ErrGRPCValueProvided.Error())) {
 			err = internal.ErrGRPCValueProvided
+		} else if bytes.Equal(data, []byte(internal.ErrGRPCKeyTooLong.Error())) {
+			err = internal.ErrGRPCKeyTooLong
+		} else if bytes.Equal(data, []byte(internal.ErrGRPCEmptyKey.Error())) {
+			err = internal.ErrGRPCEmptyKey
 		} else {
 			err = fmt.Errorf("%s", string(data))
 		}

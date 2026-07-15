@@ -10,6 +10,7 @@ import (
 	"log/slog"
 	"math/rand"
 	"net"
+	"net/http"
 	"os"
 	"runtime"
 	"strings"
@@ -19,6 +20,7 @@ import (
 
 	"github.com/benbjohnson/clock"
 	"github.com/logbn/zongzi"
+	"github.com/soheilhy/cmux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -59,6 +61,9 @@ var (
 
 	globalSet func(key string, val uint64)
 	globalDel func(key string)
+
+	addr       = "127.0.0.1:2379"
+	httpClient = &http.Client{Timeout: time.Second}
 )
 
 //go:embed cmd/cluster/service\-grpc\.dev\.wasm
@@ -92,6 +97,7 @@ func TestService(t *testing.T) {
 	t.Run("controller", testController)
 	t.Run("maintenance", testMaintenance)
 	t.Run("cluster", testCluster)
+	t.Run("testHttp", testHttp)
 
 	// TODO - Prometheus metrics
 }
@@ -100,7 +106,7 @@ func TestService(t *testing.T) {
 // Be sure to completely destroy the etcd cluster between parity runs
 // Otherwise data from previous runs will give bad results
 func setupParity(t *testing.T) {
-	conn, err := grpc.NewClient("127.0.0.1:2379", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
@@ -255,12 +261,58 @@ func setupPcb(t *testing.T) {
 			panic(err)
 		}
 	}
-	client := agents[0].Client(shard.ID)
-	svcKv = NewServiceKv(client)
-	svcLease = NewServiceLease(client)
-	svcWatch = NewServiceWatch(client)
-	svcCluster = NewServiceCluster(client, "")
-	svcMaintenance = NewServiceMaintenance(client)
+	var opts = []grpc.ServerOption{
+		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
+			MinTime:             5 * time.Second,
+			PermitWithoutStream: false,
+		}),
+		grpc.KeepaliveParams(keepalive.ServerParameters{
+			Time:    2 * time.Hour,
+			Timeout: 20 * time.Second,
+		}),
+	}
+	var grpcServer = grpc.NewServer(opts...)
+	client := agents[0].Client(shard.ID, zongzi.WithWriteToLeader())
+	internal.RegisterKVServer(grpcServer, NewServiceKv(client))
+	internal.RegisterWatchServer(grpcServer, NewServiceWatch(client))
+	internal.RegisterLeaseServer(grpcServer, NewServiceLease(client))
+	internal.RegisterMaintenanceServer(grpcServer, NewServiceMaintenance(client))
+	internal.RegisterClusterServer(grpcServer, NewServiceCluster(client, addr))
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		panic(err)
+	}
+	m := cmux.New(lis)
+	grpcListener := m.Match(cmux.HTTP2())
+	httpListener := m.Match(cmux.Any())
+	go func() {
+		if err = grpcServer.Serve(grpcListener); err != nil {
+			panic(err)
+		}
+	}()
+	httpServer := &http.Server{
+		Handler: NewEndpointHandler(grpcServer),
+	}
+	go func() {
+		if err = httpServer.Serve(httpListener); err != nil {
+			panic(err)
+		}
+	}()
+	go func() {
+		if err := m.Serve(); err != nil {
+			panic(err)
+		}
+	}()
+
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		panic(err)
+	}
+	svcKv = newParityKvService(conn)
+	svcLease = newParityLeaseService(conn)
+	svcWatch = newParityWatchService(conn)
+	svcCluster = newParityClusterService(conn)
+	svcMaintenance = newParityMaintenanceService(conn)
 }
 
 type extStorage interface {
@@ -463,19 +515,6 @@ func setupCluster(t *testing.T) {
 		}
 	}
 
-	// gRPC server
-	var opts = []grpc.ServerOption{
-		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             5 * time.Second,
-			PermitWithoutStream: false,
-		}),
-		grpc.KeepaliveParams(keepalive.ServerParameters{
-			Time:    2 * time.Hour,
-			Timeout: 20 * time.Second,
-		}),
-	}
-	var grpcServer = grpc.NewServer(opts...)
-
 	// Wazero Service Runtime
 	runtimeSvcGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeSvcGrpc)
@@ -508,22 +547,15 @@ func setupCluster(t *testing.T) {
 		}
 	})
 	svcCtxCopiers = append(svcCtxCopiers, wazero_cluster.NewResolver(`default`, `pcb`))
-	if err = hostModGrpcServer.RegisterServices(ctx, grpcServer, poolServiceGrpc, svcCtxCopiers...); err != nil {
-		panic(err)
-	}
-	globalSet = hostModGlobal.Set
-	globalDel = hostModGlobal.Del
-
-	grpcListener, err := net.Listen("tcp", ":2379")
+	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		panic(err)
 	}
-	go func() {
-		if err = grpcServer.Serve(grpcListener); err != nil {
-			panic(err)
-		}
-	}()
-	conn, err := grpc.NewClient("127.0.0.1:2379", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	hostModGrpcServer.ServerStart(ctx, lis, poolServiceGrpc, svcCtxCopiers...)
+
+	globalSet = hostModGlobal.Set
+	globalDel = hostModGlobal.Del
+	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
@@ -1994,6 +2026,7 @@ func testLeaseTimeToLive(t *testing.T) {
 }
 
 func testController(t *testing.T) {
+	// Flaky
 	t.Run("lease-expire", func(t *testing.T) {
 		resp2, err := svcLease.LeaseLeases(ctx, &internal.LeaseLeasesRequest{})
 		require.Nil(t, err, err)
@@ -2016,6 +2049,42 @@ func testController(t *testing.T) {
 		require.Nil(t, err, err)
 		require.NotNil(t, resp2)
 		assert.Equal(t, 0, len(resp2.Leases))
+	})
+}
+
+func testHttp(t *testing.T) {
+	t.Run("metrics", func(t *testing.T) {
+		res, err := httpClient.Get(fmt.Sprintf(`http://%s/metrics`, addr))
+		require.Nil(t, err, err)
+		defer res.Body.Close()
+		require.Equal(t, 200, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
+		b, err := io.ReadAll(res.Body)
+		require.Nil(t, err, err)
+		require.Equal(t, `pantopic_power_level 9001`, string(b), `Incorrect response body: %s`, string(b))
+	})
+	t.Run("health", func(t *testing.T) {
+		res, err := httpClient.Get(fmt.Sprintf(`http://%s/health`, addr))
+		require.Nil(t, err, err)
+		defer res.Body.Close()
+		require.Equal(t, 200, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
+		b, err := io.ReadAll(res.Body)
+		require.Nil(t, err, err)
+		require.Equal(t, `{"health":"true","reason":""}`, string(b), `Incorrect response body: %s`, string(b))
+	})
+	t.Run("version", func(t *testing.T) {
+		res, err := httpClient.Get(fmt.Sprintf(`http://%s/version`, addr))
+		require.Nil(t, err, err)
+		defer res.Body.Close()
+		require.Equal(t, 200, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
+		b, err := io.ReadAll(res.Body)
+		require.Nil(t, err, err)
+		require.Equal(t, `{"etcdserver":"3.5.25","etcdcluster":"3.5.0"}`, string(b), `Incorrect response body: %s`, string(b))
+	})
+	t.Run("unimplemented", func(t *testing.T) {
+		res, err := httpClient.Get(fmt.Sprintf(`http://%s/unimplemented`, addr))
+		require.Nil(t, err, err)
+		defer res.Body.Close()
+		require.Equal(t, 405, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
 	})
 }
 

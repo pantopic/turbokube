@@ -33,6 +33,6 @@ func (h *endpointHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/version":
 		w.Write([]byte(`{"etcdserver":"3.5.25","etcdcluster":"3.5.0"}`))
 	default:
-		panic(r.URL.Path)
+		w.WriteHeader(405)
 	}
 }
