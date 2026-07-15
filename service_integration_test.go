@@ -17,7 +17,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PowerDNS/lmdb-go/lmdb"
 	"github.com/benbjohnson/clock"
 	"github.com/logbn/zongzi"
 	"github.com/stretchr/testify/assert"
@@ -318,22 +317,21 @@ func setupCluster(t *testing.T) {
 	// Wazero Storage Runtime
 	runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
-	hostModLMDB := wazero_lmdb.New()
 	hostModGlobal := wazero_global.New()
 	storageExtensions := []extStorage{
-		hostModLMDB,
+		wazero_lmdb.New(),
 		hostModGlobal,
 		wazero_atomic.New(),
 		wazero_range_watch.New(),
 		wazero_small_cache.New(),
 		wazero_state_machine.New(),
 	}
-	var storageContextCopiers []ContextCopy
+	var storageCtxCopy []ContextCopy
 	for _, m := range storageExtensions {
 		if err = m.Register(ctx, runtimeStorageKv); err != nil {
 			panic(err)
 		}
-		storageContextCopiers = append(storageContextCopiers, m.ContextCopy)
+		storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
 	}
 	cfg := wazero.NewModuleConfig().WithStdout(os.Stdout)
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
@@ -350,26 +348,11 @@ func setupCluster(t *testing.T) {
 			}
 		}
 	})
-	poolFactoryStorage := func(shardID uint64) wazeropool.Instance {
-		return poolStorageKv
+	ctxInit := func(ctx context.Context, shardID, replicaID uint64) context.Context {
+		dir := fmt.Sprintf("%s/data/%d/%d", dir, shardID, replicaID)
+		return wazero_lmdb.EnvRegister(ctx, wazero_lmdb.EnvCreate(dir))
 	}
-	createLmdbEnv := func(dir string) *lmdb.Env {
-		err = os.MkdirAll(dir, 0700)
-		if err != nil {
-			panic(err)
-		}
-		env, err := lmdb.NewEnv()
-		if err != nil {
-			panic(err)
-		}
-		env.SetMaxDBs(255)
-		env.SetMapSize(int64(64 << 30)) // 64 GiB
-		env.SetMaxReaders(1 << 16)      // 64k readers
-		if err = env.Open(dir+`/data.mdb`, uint(lmdbEnvFlags), 0700); err != nil {
-			panic(err)
-		}
-		return env
-	}
+	logger := zongzi.GetLogger(`statemachine`)
 	for i := range len(agents) {
 		ctrl = append(ctrl, &controller{ctx: ctx, log: log, clock: clk, isLeader: map[uint64]bool{}})
 		dir := fmt.Sprintf("%s/%03d", dir, i)
@@ -384,12 +367,11 @@ func setupCluster(t *testing.T) {
 		); err != nil {
 			panic(err)
 		}
-		agents[i].StateMachineRegister(Uri, wazero_state_machine.FactoryPersistent(
-			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
-			zongzi.GetLogger(`statemachine`),
-			poolFactoryStorage,
-			storageContextCopiers...,
-		))
+		poolProvider := func(shardID uint64) wazeropool.Instance {
+			return poolStorageKv
+		}
+		fsm := wazero_state_machine.FactoryPersistent(ctx, logger, poolProvider, ctxInit, storageCtxCopy...)
+		agents[i].StateMachineRegister(Uri, fsm)
 		go func() {
 			if err = agents[i].Start(ctx); err != nil {
 				panic(err)
@@ -419,12 +401,11 @@ func setupCluster(t *testing.T) {
 		); err != nil {
 			panic(err)
 		}
-		nonvoting[i].StateMachineRegister(Uri, wazero_state_machine.FactoryPersistent(
-			hostModLMDB.RegisterEnv(ctx, createLmdbEnv(dir+"/data")),
-			zongzi.GetLogger(`statemachine`),
-			poolFactoryStorage,
-			storageContextCopiers...,
-		))
+		poolProvider := func(shardID uint64) wazeropool.Instance {
+			return poolStorageKv
+		}
+		fsm := wazero_state_machine.FactoryPersistent(ctx, logger, poolProvider, ctxInit, storageCtxCopy...)
+		nonvoting[i].StateMachineRegister(Uri, fsm)
 		go func() {
 			if err = nonvoting[i].Start(ctx); err != nil {
 				panic(err)

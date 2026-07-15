@@ -2,7 +2,7 @@ dev:
 	@go build -ldflags="-s -w" -o _dist/standalone ./cmd/standalone && cd cmd/standalone && docker compose up --build
 
 cluster:
-	@go build -ldflags="-s -w" -o _dist/cluster ./cmd/cluster && cd cmd/cluster && docker compose up --build
+	@go build -ldflags="-s -w" -o _dist/wasm ./cmd/cluster && cd cmd/cluster && docker compose up --build
 
 build:
 	@go build -ldflags="-s -w" -o _dist/pcb ./cmd/standalone

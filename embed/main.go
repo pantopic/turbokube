@@ -5,18 +5,18 @@ import (
 )
 
 const (
-	NameServiceGrpc = "pantopic/turbokube/service/grpc"
-	NameStorageKv   = "pantopic/turbokube/storage/kv"
+	ServiceGrpcName = "pantopic/turbokube/service/grpc"
+	StorageKvName   = "pantopic/turbokube/storage/kv"
 )
 
 //go:embed service\-grpc\.wasm
-var WasmServiceGrpc []byte
+var ServiceGrpcWasm []byte
 
 //go:embed service\-grpc\.dev\.wasm
-var WasmServiceGrpcDev []byte
+var ServiceGrpcDevWasm []byte
 
 //go:embed storage\-kv\.wasm
-var WasmStorageKv []byte
+var StorageKvWasm []byte
 
 //go:embed storage\-kv\.dev\.wasm
-var WasmStorageKvDev []byte
+var StorageKvDevWasm []byte

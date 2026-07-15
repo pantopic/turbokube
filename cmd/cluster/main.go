@@ -14,7 +14,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/PowerDNS/lmdb-go/lmdb"
 	"github.com/logbn/zongzi"
 	"github.com/soheilhy/cmux"
 	"github.com/tetratelabs/wazero"
@@ -88,12 +87,12 @@ func main() {
 			wazero_small_cache.New(),
 			wazero_state_machine.New(),
 		}
-		var storageContextCopiers []func(dst, src context.Context) context.Context
+		var storageCtxCopy []func(dst, src context.Context) context.Context
 		for _, m := range storageExtensions {
 			if err = m.Register(ctx, runtimeStorageKv); err != nil {
 				panic(err)
 			}
-			storageContextCopiers = append(storageContextCopiers, m.ContextCopy)
+			storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
@@ -109,15 +108,16 @@ func main() {
 				}
 			}
 		})
-		poolFactoryStorage := func(shardID uint64) wazeropool.Instance {
+		logger := zongzi.GetLogger(`statemachine`)
+		ctxInit := func(ctx context.Context, shardID, replicaID uint64) context.Context {
+			dir := fmt.Sprintf("%s/data/%d/%d", cfg.Dir, shardID, replicaID)
+			return wazero_lmdb.EnvRegister(ctx, wazero_lmdb.EnvCreate(dir))
+		}
+		poolProvider := func(shardID uint64) wazeropool.Instance {
 			return poolStorageKv
 		}
-		ctx = hostModLMDB.RegisterEnv(ctx, getEnv(cfg))
-		agent.StateMachineRegister(pcb.Uri, wazero_state_machine.FactoryPersistent(ctx,
-			zongzi.GetLogger(`statemachine`),
-			poolFactoryStorage,
-			storageContextCopiers...,
-		))
+		fsm := wazero_state_machine.FactoryPersistent(ctx, logger, poolProvider, ctxInit, storageCtxCopy...)
+		agent.StateMachineRegister(pcb.Uri, fsm)
 		go func() {
 			for {
 				time.Sleep(5 * time.Second)
@@ -267,22 +267,4 @@ func main() {
 		}
 	}
 	agent.Stop()
-}
-
-func getEnv(cfg config) *lmdb.Env {
-	err := os.MkdirAll(cfg.Dir, 0700)
-	if err != nil {
-		panic(err)
-	}
-	env, err := lmdb.NewEnv()
-	if err != nil {
-		panic(err)
-	}
-	env.SetMaxDBs(255)
-	env.SetMapSize(int64(64 << 30)) // 64 GiB
-	env.SetMaxReaders(1 << 16)      // 64k readers
-	if err = env.Open(cfg.Dir+`/data.mdb`, uint(lmdb.NoMemInit|lmdb.NoSync|lmdb.NoMetaSync|lmdb.NoSubdir), 0700); err != nil {
-		panic(err)
-	}
-	return env
 }
