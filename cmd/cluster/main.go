@@ -34,6 +34,7 @@ import (
 	"github.com/pantopic/wazero-state-machine/host"
 
 	"github.com/pantopic/turbokube"
+	"github.com/pantopic/turbokube/embed"
 )
 
 const (
@@ -72,7 +73,8 @@ func main() {
 	}
 	hostModGlobal := wazero_global.New()
 	if !PCB_STATE_MACHINE_WASM {
-		agent.StateMachineRegister(pcb.Uri, pcb.NewStateMachineFactory(log, cfg.Dir+"/data"))
+		// TODO: remove partial wasm migration
+		agent.StateMachineRegister(turbokube.StorageKvName, pcb.NewStateMachineFactory(log, cfg.Dir+"/data"))
 	} else {
 		runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 		wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
@@ -94,7 +96,8 @@ func main() {
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
-			wazeropool.WithLimit(runtime.NumCPU()))
+			wazeropool.WithLimit(runtime.NumCPU()),
+			wazeropool.WithName(turbokube.StorageKvName))
 		if err != nil {
 			panic(err)
 		}
@@ -115,7 +118,7 @@ func main() {
 			return poolStorageKv
 		}
 		fsm := wazero_state_machine.FactoryPersistent(ctx, logger, poolProvider, ctxInit, storageCtxCopy...)
-		agent.StateMachineRegister(pcb.Uri, fsm)
+		agent.StateMachineRegister(turbokube.StorageKvName, fsm)
 		go func() {
 			for {
 				time.Sleep(5 * time.Second)
@@ -132,8 +135,8 @@ func main() {
 		panic(err)
 	}
 	// TODO - Replace shard create with resource create
-	shard, _, err := agent.ShardCreate(ctx, pcb.Uri,
-		zongzi.WithName("default.pcb.kv"),
+	shard, _, err := agent.ShardCreate(ctx, turbokube.StorageKvName,
+		zongzi.WithName("default.turbokube.default.kv"),
 		zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
 		zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
 	if err != nil {
@@ -185,7 +188,8 @@ func main() {
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
-		wazeropool.WithLimit(runtime.NumCPU()))
+		wazeropool.WithLimit(runtime.NumCPU()),
+		wazeropool.WithName(turbokube.ServiceGrpcName))
 	if err != nil {
 		panic(err)
 	}
@@ -197,12 +201,12 @@ func main() {
 			}
 		}
 	})
-	serviceContextCopiers = append(serviceContextCopiers, wazero_cluster.NewResolver(`default`, `pcb`))
+	serviceContextCopiers = append(serviceContextCopiers, wazero_cluster.NewResolver(`default`, `turbokube`))
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
 	if err != nil {
 		panic(err)
 	}
-	hostModGrpcServer.ServerStart(ctx, lis, poolServiceGrpc, serviceContextCopiers...)
+	hostModGrpcServer.ServerStart(ctx, lis, cfg.TlsCrt, cfg.TlsKey, poolServiceGrpc, serviceContextCopiers...)
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)

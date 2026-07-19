@@ -9,7 +9,7 @@ import (
 	internal "github.com/pantopic/turbokube/module/service-grpc/internal"
 )
 
-func shardRecv(_ []byte, data []byte, id uint64) {
+func shardRecv(_, data []byte, id uint64) {
 	var err error
 	if id == WATCH_ID_ERROR {
 		println(`watch err ` + string(data))

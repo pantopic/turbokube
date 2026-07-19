@@ -33,8 +33,7 @@ func rangeWatchRecv(watchIdBytes []byte, alertRev uint64) {
 	if err != nil {
 		panic("Watch request malformed")
 	}
-	rev, sent, err := watchScan(watchCreateRequest, max(rev, alertRev)+1)
-	// println(sent)
+	rev, sent, err := watchScan(watchCreateRequest, max(rev+1, alertRev))
 	if err != nil {
 		panic("Error reading events: " + err.Error())
 	}
@@ -84,8 +83,16 @@ func streamRecv(data []byte) {
 	}
 }
 
+var filtered = map[uint8]bool{}
+
+func mapClear[K comparable, V any](m map[K]V) {
+	for k := range m {
+		delete(m, k)
+	}
+}
+
 func watchScan(req *internal.WatchCreateRequest, since uint64) (rev uint64, sent int, err error) {
-	var filtered = map[uint8]bool{}
+	defer mapClear(filtered)
 	for _, f := range req.Filters {
 		filtered[uint8(f)] = true
 	}

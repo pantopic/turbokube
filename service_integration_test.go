@@ -3,6 +3,7 @@
 package pcb
 
 import (
+	"bytes"
 	"context"
 	_ "embed"
 	"fmt"
@@ -42,6 +43,7 @@ import (
 	"github.com/tetratelabs/wazero/api"
 	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 
+	"github.com/pantopic/turbokube/embed"
 	"github.com/pantopic/turbokube/internal"
 )
 
@@ -97,7 +99,8 @@ func TestService(t *testing.T) {
 	t.Run("controller", testController)
 	t.Run("maintenance", testMaintenance)
 	t.Run("cluster", testCluster)
-	t.Run("testHttp", testHttp)
+	t.Run("http", testHttp)
+	t.Run("load", testLoad)
 
 	// TODO - Prometheus metrics
 }
@@ -388,7 +391,8 @@ func setupCluster(t *testing.T) {
 	cfg := wazero.NewModuleConfig().WithStdout(os.Stdout)
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
 		wazeropool.WithModuleConfig(cfg),
-		wazeropool.WithLimit(runtime.NumCPU()))
+		wazeropool.WithLimit(runtime.NumCPU()),
+		wazeropool.WithName(turbokube.StorageKvName))
 	if err != nil {
 		panic(err)
 	}
@@ -534,7 +538,8 @@ func setupCluster(t *testing.T) {
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, wasmServiceGrpc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
-		wazeropool.WithLimit(runtime.NumCPU()))
+		wazeropool.WithLimit(runtime.NumCPU()),
+		wazeropool.WithName(turbokube.ServiceGrpcName))
 	if err != nil {
 		panic(err)
 	}
@@ -551,7 +556,7 @@ func setupCluster(t *testing.T) {
 	if err != nil {
 		panic(err)
 	}
-	hostModGrpcServer.ServerStart(ctx, lis, poolServiceGrpc, svcCtxCopiers...)
+	hostModGrpcServer.ServerStart(ctx, lis, "", "", poolServiceGrpc, svcCtxCopiers...)
 
 	globalSet = hostModGlobal.Set
 	globalDel = hostModGlobal.Del
@@ -2026,8 +2031,8 @@ func testLeaseTimeToLive(t *testing.T) {
 }
 
 func testController(t *testing.T) {
-	// Flaky
-	t.Run("lease-expire", func(t *testing.T) {
+	t.Run("lease-expire", func(t *testing.T) { // Flaky
+		wait(10 * time.Millisecond)
 		resp2, err := svcLease.LeaseLeases(ctx, &internal.LeaseLeasesRequest{})
 		require.Nil(t, err, err)
 		for _, lease := range resp2.Leases {
@@ -2036,7 +2041,8 @@ func testController(t *testing.T) {
 			})
 			require.Nil(t, err, err)
 		}
-		resp, err := svcLease.LeaseGrant(ctx, &internal.LeaseGrantRequest{TTL: 2})
+		wait(10 * time.Millisecond)
+		resp, err := svcLease.LeaseGrant(ctx, &internal.LeaseGrantRequest{TTL: 3})
 		require.Nil(t, err, err)
 		leaseID := resp.ID
 		resp2, err = svcLease.LeaseLeases(ctx, &internal.LeaseLeasesRequest{})
@@ -2053,39 +2059,29 @@ func testController(t *testing.T) {
 }
 
 func testHttp(t *testing.T) {
-	t.Run("metrics", func(t *testing.T) {
-		res, err := httpClient.Get(fmt.Sprintf(`http://%s/metrics`, addr))
-		require.Nil(t, err, err)
-		defer res.Body.Close()
-		require.Equal(t, 200, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
-		b, err := io.ReadAll(res.Body)
-		require.Nil(t, err, err)
-		require.Equal(t, `pantopic_power_level 9001`, string(b), `Incorrect response body: %s`, string(b))
-	})
-	t.Run("health", func(t *testing.T) {
-		res, err := httpClient.Get(fmt.Sprintf(`http://%s/health`, addr))
-		require.Nil(t, err, err)
-		defer res.Body.Close()
-		require.Equal(t, 200, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
-		b, err := io.ReadAll(res.Body)
-		require.Nil(t, err, err)
-		require.Equal(t, `{"health":"true","reason":""}`, string(b), `Incorrect response body: %s`, string(b))
-	})
-	t.Run("version", func(t *testing.T) {
-		res, err := httpClient.Get(fmt.Sprintf(`http://%s/version`, addr))
-		require.Nil(t, err, err)
-		defer res.Body.Close()
-		require.Equal(t, 200, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
-		b, err := io.ReadAll(res.Body)
-		require.Nil(t, err, err)
-		require.Equal(t, `{"etcdserver":"3.5.25","etcdcluster":"3.5.0"}`, string(b), `Incorrect response body: %s`, string(b))
-	})
-	t.Run("unimplemented", func(t *testing.T) {
-		res, err := httpClient.Get(fmt.Sprintf(`http://%s/unimplemented`, addr))
-		require.Nil(t, err, err)
-		defer res.Body.Close()
-		require.Equal(t, 405, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
-	})
+	for _, tc := range []struct {
+		code     int
+		endpoint string
+		response string
+	}{
+		{200, `health`, `{"health":"true","reason":""}`},
+		{200, `metrics`, `pantopic_power_level 9001`},
+		{200, `version`, `{"etcdserver":"3.5.25","etcdcluster":"3.5.0"}`},
+		{405, `unimplemented`, ``},
+	} {
+		t.Run(tc.endpoint, func(t *testing.T) {
+			res, err := httpClient.Get(fmt.Sprintf(`http://%s/%s`, addr, tc.endpoint))
+			require.Nil(t, err, err)
+			defer res.Body.Close()
+			require.Equal(t, tc.code, res.StatusCode, `Incorrect status code: %d`, res.StatusCode)
+			if tc.response == `` {
+				return
+			}
+			b, err := io.ReadAll(res.Body)
+			require.Nil(t, err, err)
+			require.Equal(t, tc.response, string(b), `Incorrect response body: %s`, string(b))
+		})
+	}
 }
 
 func watchServe(t *testing.T, ctx context.Context, fn func(s *mockWatchServer)) {
@@ -2788,6 +2784,57 @@ func testCluster(t *testing.T) {
 		assert.GreaterOrEqual(t, len(resp.Members), 1)
 		// assert.GreaterOrEqual(t, resp.Members[0].ID, uint64(1))
 	})
+}
+
+func testLoad(t *testing.T) {
+	put := &internal.PutRequest{
+		Value: bytes.Repeat([]byte(`0123456789`), 100),
+	}
+	var done = make(chan bool)
+	var wg sync.WaitGroup
+	for range 5 {
+		wg.Go(func() {
+			var n = make(map[int64]int)
+			watchServe(t, context.Background(), func(s *mockWatchServer) {
+				for range 2 {
+					s.create(&internal.WatchCreateRequest{
+						Key:      fmt.Appendf(nil, "test-key-%08x", 0),
+						RangeEnd: fmt.Appendf(nil, "test-key-%08x", 1000),
+					})
+				}
+				for {
+					select {
+					case <-done:
+						return
+					case res := <-s.resChan:
+						if res.Created {
+							n[res.WatchId] = 0
+						}
+						for _, e := range res.Events {
+							require.Equal(t, e.Kv.Key, fmt.Appendf(nil, "test-key-%08x", n[res.WatchId]%1000), e)
+							n[res.WatchId]++
+						}
+					}
+				}
+			})
+			for _, n := range n {
+				assert.Equal(t, 10*1000, n)
+			}
+		})
+	}
+	time.Sleep(time.Second)
+	for range 10 {
+		for i := range 1000 {
+			put.Key = fmt.Appendf(put.Key[:0], "test-key-%08x", i)
+			_, err := svcKv.Put(ctx, put)
+			require.Nil(t, err, err)
+		}
+		print(".")
+	}
+	time.Sleep(time.Second)
+	close(done)
+	wg.Wait()
+	println("")
 }
 
 func delOp(req *internal.DeleteRangeRequest) *internal.RequestOp {
