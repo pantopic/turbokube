@@ -30,7 +30,9 @@ func (db dbLeaseKeyImpl) sweep(txn *lmdb.Txn, id uint64, batch [][]byte) ([][]by
 	defer cur.Close()
 	var found uint64
 	var r = bytes.NewReader(nil)
-	k, v, err := cur.Get(binary.AppendUvarint(nil, id), nil, lmdb.SetRange)
+	var k, v []byte
+	k = binary.AppendUvarint(k, id)
+	k, v, err = cur.Get(k, v[:0], lmdb.SetRange)
 	for range cap(batch) {
 		if lmdb.IsNotFound(err) || len(k) == 0 {
 			err = nil
@@ -57,7 +59,7 @@ func (db dbLeaseKeyImpl) sweep(txn *lmdb.Txn, id uint64, batch [][]byte) ([][]by
 			return nil, err
 		}
 		batch = append(batch, key)
-		k, v, err = cur.Get(nil, nil, lmdb.Next)
+		k, v, err = cur.Get(k[:0], v[:0], lmdb.Next)
 	}
 	return batch, nil
 }

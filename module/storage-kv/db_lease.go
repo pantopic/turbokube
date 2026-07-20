@@ -38,7 +38,8 @@ func (db dbLeaseImpl) all(txn *lmdb.Txn) (items []lease, err error) {
 	}
 	defer cur.Close()
 	var item lease
-	k, v, err := cur.Get(nil, nil, lmdb.Next)
+	var k, v []byte
+	k, v, err = cur.Get(k, v, lmdb.Next)
 	for !lmdb.IsNotFound(err) && len(k) > 0 {
 		if err != nil {
 			return nil, err
@@ -48,7 +49,7 @@ func (db dbLeaseImpl) all(txn *lmdb.Txn) (items []lease, err error) {
 			return nil, err
 		}
 		items = append(items, item)
-		k, v, err = cur.Get(nil, nil, lmdb.Next)
+		k, v, err = cur.Get(k[:0], v[:0], lmdb.Next)
 	}
 	if lmdb.IsNotFound(err) {
 		err = nil

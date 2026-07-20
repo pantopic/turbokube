@@ -32,7 +32,8 @@ func (db dbLeaseExpImpl) scan(txn *lmdb.Txn, expires uint64) iter.Seq[uint64] {
 	if err != nil {
 		return nil
 	}
-	k, v, err := cur.Get(nil, nil, lmdb.Next)
+	var k, v []byte
+	k, v, err = cur.Get(k, v, lmdb.Next)
 	return func(yield func(uint64) bool) {
 		defer cur.Close()
 		for !lmdb.IsNotFound(err) {
@@ -53,7 +54,7 @@ func (db dbLeaseExpImpl) scan(txn *lmdb.Txn, expires uint64) iter.Seq[uint64] {
 			if !yield(id) {
 				break
 			}
-			k, v, err = cur.Get(nil, nil, lmdb.Next)
+			k, v, err = cur.Get(k[:0], v[:0], lmdb.Next)
 		}
 	}
 }

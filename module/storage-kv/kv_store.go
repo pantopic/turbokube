@@ -40,8 +40,9 @@ func (db kvStoreImpl) put(
 	}
 	defer cur.Close()
 	var krec keyrecord
-	var v []byte
-	k, b, err := cur.Get(key, nil, lmdb.SetRange)
+	var k, b, v []byte
+	k = append(k[:0], key...)
+	k, b, err = cur.Get(k, b, lmdb.SetRange)
 	if err == nil && bytes.Equal(k, key) {
 		if krec, err = krec.FromBytes(k, b); err != nil {
 			return
@@ -139,9 +140,10 @@ func (db kvStoreImpl) getRange(
 		return
 	}
 	defer cur.Close()
-	var k, v []byte
+	var k, b, v []byte
 	var isFullScan = bytes.Equal(key, []byte{0}) && bytes.Equal(end, []byte{0})
-	k, b, err := cur.Get(key, nil, lmdb.SetRange)
+	k = append(k[:0], key...)
+	k, b, err = cur.Get(k, b, lmdb.SetRange)
 	for !lmdb.IsNotFound(err) {
 		if err != nil {
 			return
@@ -170,7 +172,7 @@ func (db kvStoreImpl) getRange(
 			} else if !countOnly {
 				next = append(next, rev)
 			}
-			if k, b, err = cur.Get(nil, nil, lmdb.NextDup); err != nil {
+			if k, b, err = cur.Get(k[:0], b[:0], lmdb.NextDup); err != nil {
 				break
 			}
 			if krec, err = krec.FromBytes(k, b); err != nil {
@@ -224,7 +226,7 @@ func (db kvStoreImpl) getRange(
 		if len(end) == 0 {
 			break
 		}
-		k, b, err = cur.Get(k, b, lmdb.NextNoDup)
+		k, b, err = cur.Get(k[:0], b[:0], lmdb.NextNoDup)
 	}
 	if lmdb.IsNotFound(err) {
 		err = nil
@@ -240,7 +242,9 @@ func (db kvStoreImpl) deleteRange(txn *lmdb.Txn, rev, subrev, epoch uint64, key,
 		return
 	}
 	defer cur.Close()
-	k, v, err := cur.Get(key, nil, lmdb.SetRange)
+	var k, v []byte
+	k = append(k[:0], key...)
+	k, v, err = cur.Get(k, v[:0], lmdb.SetRange)
 	for !lmdb.IsNotFound(err) {
 		if err != nil {
 			return
@@ -277,7 +281,7 @@ func (db kvStoreImpl) deleteRange(txn *lmdb.Txn, rev, subrev, epoch uint64, key,
 		if len(end) == 0 {
 			break
 		}
-		k, v, err = cur.Get(k, nil, lmdb.NextNoDup)
+		k, v, err = cur.Get(k, v[:0], lmdb.NextNoDup)
 	}
 	if lmdb.IsNotFound(err) {
 		err = nil
@@ -294,7 +298,8 @@ func (db kvStoreImpl) deleteBatch(txn *lmdb.Txn, rev, subrev, epoch uint64, keys
 	}
 	defer cur.Close()
 	for _, key := range keys {
-		k, v, err = cur.Get(key, nil, lmdb.SetRange)
+		k = append(k[:0], key...)
+		k, v, err = cur.Get(k, v[:0], lmdb.SetRange)
 		if lmdb.IsNotFound(err) {
 			return ErrNotFound
 		}
@@ -335,7 +340,8 @@ func (db kvStoreImpl) compact(txn *lmdb.Txn, max uint64) (last uint64, err error
 		return
 	}
 	defer curEvt.Close()
-	k, v, err := curEvt.Get(nil, nil, lmdb.Next)
+	var k, v []byte
+	k, v, err = curEvt.Get(k[:0], v[:0], lmdb.Next)
 	if err != nil && !lmdb.IsNotFound(err) {
 		return
 	}
@@ -368,9 +374,9 @@ func (db kvStoreImpl) compact(txn *lmdb.Txn, max uint64) (last uint64, err error
 			if err = curEvt.Del(lmdb.Current); err != nil {
 				return
 			}
-			k, v, err = curEvt.Get(nil, nil, lmdb.NextDup)
+			k, v, err = curEvt.Get(k[:0], v[:0], lmdb.NextDup)
 			if lmdb.IsNotFound(err) {
-				k, v, err = curEvt.Get(nil, nil, lmdb.Next)
+				k, v, err = curEvt.Get(k[:0], v[:0], lmdb.Next)
 			}
 			if err == nil {
 				rev, err = rev.FromKey(k, v)
@@ -380,7 +386,8 @@ func (db kvStoreImpl) compact(txn *lmdb.Txn, max uint64) (last uint64, err error
 		var k, v []byte
 		var hasNewer bool
 		for key, rev := range keys {
-			k, v, err = curRev.Get([]byte(key), nil, lmdb.SetRange)
+			k = append(k[:0], []byte(key)...)
+			k, v, err = curRev.Get(k, v[:0], lmdb.SetRange)
 			for !lmdb.IsNotFound(err) {
 				if err != nil {
 					return
@@ -406,7 +413,7 @@ func (db kvStoreImpl) compact(txn *lmdb.Txn, max uint64) (last uint64, err error
 				hasNewer = true
 				goto next
 			next:
-				k, v, err = curRev.Get(nil, nil, lmdb.NextDup)
+				k, v, err = curRev.Get(k[:0], v[:0], lmdb.NextDup)
 			}
 			hasNewer = false
 		}
@@ -438,7 +445,9 @@ func (db kvStoreImpl) getRev(txn *lmdb.Txn, key []byte, revision uint64, withPre
 	defer cur.Close()
 	var krec keyrecord
 	var next []keyrev
-	k, v, err := cur.Get(key, nil, lmdb.SetRange)
+	var k, v []byte
+	k = append(k, key...)
+	k, v, err = cur.Get(k, v[:0], lmdb.SetRange)
 	if err != nil {
 		return
 	}
@@ -454,7 +463,7 @@ func (db kvStoreImpl) getRev(txn *lmdb.Txn, key []byte, revision uint64, withPre
 		} else {
 			next = append(next, krec.rev)
 		}
-		if k, v, err = cur.Get(nil, nil, lmdb.NextDup); err != nil {
+		if k, v, err = cur.Get(k[:0], v[:0], lmdb.NextDup); err != nil {
 			break
 		}
 		if krec, err = krec.FromBytes(k, v); err != nil {
@@ -487,7 +496,8 @@ func (db kvStoreImpl) getRev(txn *lmdb.Txn, key []byte, revision uint64, withPre
 }
 
 func (db kvStoreImpl) prev(txn *lmdb.Txn, cur *lmdb.Cursor, item kv) (prev kv, err error) {
-	k, v, err := cur.Get(nil, nil, lmdb.NextDup)
+	var k, v []byte
+	k, v, err = cur.Get(k[:0], v[:0], lmdb.NextDup)
 	if err != nil {
 		return
 	}
@@ -508,7 +518,9 @@ func (db kvStoreImpl) scan(txn *lmdb.Txn, revision uint64) iter.Seq[kvEvent] {
 		return nil
 	}
 	var evt kvEvent
-	k, v, err := cur.Get(binary.BigEndian.AppendUint64(nil, revision<<12), nil, lmdb.SetRange)
+	var k, v []byte
+	k = binary.BigEndian.AppendUint64(k, revision<<12)
+	k, v, err = cur.Get(k, v[:0], lmdb.SetRange)
 	return func(yield func(kvEvent) bool) {
 		defer cur.Close()
 		for !lmdb.IsNotFound(err) {
@@ -522,9 +534,9 @@ func (db kvStoreImpl) scan(txn *lmdb.Txn, revision uint64) iter.Seq[kvEvent] {
 			if !yield(evt) {
 				break
 			}
-			k, v, err = cur.Get(nil, nil, lmdb.NextDup)
+			k, v, err = cur.Get(k[:0], v[:0], lmdb.NextDup)
 			if lmdb.IsNotFound(err) {
-				k, v, err = cur.Get(nil, nil, lmdb.Next)
+				k, v, err = cur.Get(k[:0], v[:0], lmdb.Next)
 			}
 		}
 	}
