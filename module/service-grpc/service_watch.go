@@ -32,6 +32,7 @@ func shardRecv(_, data []byte, id uint64) {
 		grpc_server.Send(data)
 	case WatchMessageType_EVENT:
 		events := bufferPoolWatchEvent.Find(id)
+		// println(len(data))
 		if events.Append(data[1:]) {
 			return
 		}
@@ -74,6 +75,8 @@ func shardRecv(_, data []byte, id uint64) {
 		for b := range events.Iter() {
 			evt := &internal.Event{}
 			if err = evt.UnmarshalVT(b[8:]); err != nil {
+				println(len(b), string(b))
+				events.Reset()
 				panic(`Unable to unmarshal event in sync: ` + err.Error())
 			}
 			resp.Events = append(resp.Events, evt)
@@ -103,6 +106,7 @@ func shardRecv(_, data []byte, id uint64) {
 			panic(`Unable to marshal watch response: ` + err.Error())
 		}
 		grpc_server.Send(data)
+		// TODO: reset watch buffer pool
 	case WatchMessageType_ERR_EXISTS:
 		watchResp.Reset()
 		watchResp.WatchId = -1

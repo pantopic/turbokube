@@ -68,12 +68,6 @@ var (
 	httpClient = &http.Client{Timeout: time.Second}
 )
 
-//go:embed cmd/cluster/service\-grpc\.dev\.wasm
-var wasmServiceGrpc []byte
-
-//go:embed cmd/cluster/storage\-kv\.dev\.wasm
-var wasmStorageKv []byte
-
 func TestService(t *testing.T) {
 	if parity {
 		t.Run("setup-parity", setupParity)
@@ -389,7 +383,7 @@ func setupCluster(t *testing.T) {
 		storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
 	}
 	cfg := wazero.NewModuleConfig().WithStdout(os.Stdout)
-	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
+	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, turbokube.StorageKvWasm,
 		wazeropool.WithModuleConfig(cfg),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithName(turbokube.StorageKvName))
@@ -536,7 +530,7 @@ func setupCluster(t *testing.T) {
 		}
 		svcCtxCopiers = append(svcCtxCopiers, m.ContextCopy)
 	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, wasmServiceGrpc,
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, turbokube.ServiceGrpcWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithName(turbokube.ServiceGrpcName))
@@ -2787,9 +2781,8 @@ func testCluster(t *testing.T) {
 }
 
 func testLoad(t *testing.T) {
-	put := &internal.PutRequest{
-		Value: bytes.Repeat([]byte(`0123456789`), 100),
-	}
+	val := bytes.Repeat([]byte(`0123456789`), 100)
+	put := &internal.PutRequest{}
 	var done = make(chan bool)
 	var wg sync.WaitGroup
 	for range 5 {
@@ -2826,6 +2819,7 @@ func testLoad(t *testing.T) {
 	for range 10 {
 		for i := range 1000 {
 			put.Key = fmt.Appendf(put.Key[:0], "test-key-%08x", i)
+			put.Value = val[:(i*10)%len(val)]
 			_, err := svcKv.Put(ctx, put)
 			require.Nil(t, err, err)
 		}

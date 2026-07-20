@@ -83,16 +83,15 @@ gen-lite-install:
 	go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@latest
 
 wasm-storage-kv:
-	@cd module/storage-kv && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../cmd/cluster/storage-kv.wasm -no-debug
+	@cd module/storage-kv && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/storage-kv.wasm -no-debug
 wasm-storage-kv-dev:
-	@cd module/storage-kv && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../cmd/cluster/storage-kv.dev.wasm
+	@cd module/storage-kv && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/storage-kv.dev.wasm
 wasm-service-grpc:
-	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../cmd/cluster/service-grpc.wasm -no-debug
+	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/service-grpc.wasm -no-debug
 wasm-service-grpc-dev:
-	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../cmd/cluster/service-grpc.dev.wasm
+	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/service-grpc.dev.wasm
 wasm-dev: wasm-storage-kv-dev wasm-service-grpc-dev
 wasm-prod: wasm-storage-kv wasm-service-grpc
 wasm: wasm-dev wasm-prod
-	@cp cmd/cluster/*.wasm embed
 
 .PHONY: test

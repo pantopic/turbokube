@@ -41,12 +41,6 @@ const (
 	PCB_STATE_MACHINE_WASM = true
 )
 
-//go:embed service\-grpc\.wasm
-var wasmServiceGrpc []byte
-
-//go:embed storage\-kv\.wasm
-var wasmStorageKv []byte
-
 type extension interface {
 	Register(context.Context, wazero.Runtime) error
 	InitContext(context.Context, api.Module) (context.Context, error)
@@ -94,7 +88,7 @@ func main() {
 			}
 			storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
 		}
-		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmStorageKv,
+		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, turbokube.StorageKvWasm,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 			wazeropool.WithLimit(runtime.NumCPU()),
 			wazeropool.WithName(turbokube.StorageKvName))
@@ -186,7 +180,7 @@ func main() {
 		}
 		serviceContextCopiers = append(serviceContextCopiers, m.ContextCopy)
 	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmServiceGrpc,
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, turbokube.ServiceGrpcWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithName(turbokube.ServiceGrpcName))
