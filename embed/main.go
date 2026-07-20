@@ -7,6 +7,7 @@ import (
 const (
 	ServiceGrpcName = "pantopic/turbokube/service/grpc"
 	StorageKvName   = "pantopic/turbokube/storage/kv"
+	Version         = 0
 )
 
 //go:embed service\-grpc\.wasm

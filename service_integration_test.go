@@ -366,10 +366,11 @@ func setupCluster(t *testing.T) {
 	// Wazero Storage Runtime
 	runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
-	hostModGlobal := wazero_global.New()
+	extLmdb := wazero_lmdb.New()
+	extGlobal := wazero_global.New()
 	storageExtensions := []extStorage{
-		wazero_lmdb.New(),
-		hostModGlobal,
+		extLmdb,
+		extGlobal,
 		wazero_atomic.New(),
 		wazero_range_watch.New(),
 		wazero_small_cache.New(),
@@ -386,7 +387,8 @@ func setupCluster(t *testing.T) {
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, turbokube.StorageKvWasm,
 		wazeropool.WithModuleConfig(cfg),
 		wazeropool.WithLimit(runtime.NumCPU()),
-		wazeropool.WithName(turbokube.StorageKvName))
+		wazeropool.WithName(turbokube.StorageKvName),
+		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
 		panic(err)
 	}
@@ -400,7 +402,7 @@ func setupCluster(t *testing.T) {
 	})
 	ctxInit := func(ctx context.Context, shardID, replicaID uint64) context.Context {
 		dir := fmt.Sprintf("%s/data/%d/%d", dir, shardID, replicaID)
-		return wazero_lmdb.EnvRegister(ctx, wazero_lmdb.EnvCreate(dir))
+		return wazero_lmdb.EnvRegisterDir(ctx, dir)
 	}
 	logger := zongzi.GetLogger(`statemachine`)
 	for i := range len(agents) {
@@ -420,7 +422,7 @@ func setupCluster(t *testing.T) {
 		poolProvider := func(shardID uint64) wazeropool.Instance {
 			return poolStorageKv
 		}
-		fsm := wazero_state_machine.FactoryPersistent(ctx, logger, poolProvider, ctxInit, storageCtxCopy...)
+		fsm := wazero_state_machine.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
 		agents[i].StateMachineRegister(Uri, fsm)
 		go func() {
 			if err = agents[i].Start(ctx); err != nil {
@@ -454,7 +456,7 @@ func setupCluster(t *testing.T) {
 		poolProvider := func(shardID uint64) wazeropool.Instance {
 			return poolStorageKv
 		}
-		fsm := wazero_state_machine.FactoryPersistent(ctx, logger, poolProvider, ctxInit, storageCtxCopy...)
+		fsm := wazero_state_machine.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
 		nonvoting[i].StateMachineRegister(Uri, fsm)
 		go func() {
 			if err = nonvoting[i].Start(ctx); err != nil {
@@ -518,7 +520,7 @@ func setupCluster(t *testing.T) {
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeSvcGrpc)
 	hostModGrpcServer := wazero_grpc_server.New()
 	serviceExtensions := []extService{
-		hostModGlobal,
+		extGlobal,
 		hostModGrpcServer,
 		wazero_buffer_pool.New(),
 		wazero_shard_client.New(agents[0]),
@@ -533,7 +535,8 @@ func setupCluster(t *testing.T) {
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, turbokube.ServiceGrpcWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
-		wazeropool.WithName(turbokube.ServiceGrpcName))
+		wazeropool.WithName(turbokube.ServiceGrpcName),
+		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
 		panic(err)
 	}
@@ -552,8 +555,8 @@ func setupCluster(t *testing.T) {
 	}
 	hostModGrpcServer.ServerStart(ctx, lis, "", "", poolServiceGrpc, svcCtxCopiers...)
 
-	globalSet = hostModGlobal.Set
-	globalDel = hostModGlobal.Del
+	globalSet = extGlobal.Set
+	globalDel = extGlobal.Del
 	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)

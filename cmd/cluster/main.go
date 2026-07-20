@@ -81,17 +81,18 @@ func main() {
 			wazero_small_cache.New(),
 			wazero_state_machine.New(),
 		}
-		var storageCtxCopy []func(dst, src context.Context) context.Context
+		var ctxCopy []func(dst, src context.Context) context.Context
 		for _, m := range storageExtensions {
 			if err = m.Register(ctx, runtimeStorageKv); err != nil {
 				panic(err)
 			}
-			storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
+			ctxCopy = append(ctxCopy, m.ContextCopy)
 		}
 		poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, turbokube.StorageKvWasm,
 			wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 			wazeropool.WithLimit(runtime.NumCPU()),
-			wazeropool.WithName(turbokube.StorageKvName))
+			wazeropool.WithName(turbokube.StorageKvName),
+			wazeropool.WithVersion(turbokube.Version))
 		if err != nil {
 			panic(err)
 		}
@@ -106,13 +107,13 @@ func main() {
 		logger := zongzi.GetLogger(`statemachine`)
 		ctxInit := func(ctx context.Context, shardID, replicaID uint64) context.Context {
 			dir := fmt.Sprintf("%s/data/%d/%d", cfg.Dir, shardID, replicaID)
-			return wazero_lmdb.EnvRegister(ctx, wazero_lmdb.EnvCreate(dir))
+			return wazero_lmdb.EnvRegisterDir(ctx, dir)
 		}
 		poolProvider := func(shardID uint64) wazeropool.Instance {
 			return poolStorageKv
 		}
-		fsm := wazero_state_machine.FactoryPersistent(ctx, logger, poolProvider, ctxInit, storageCtxCopy...)
-		agent.StateMachineRegister(turbokube.StorageKvName, fsm)
+		fsmFactory := wazero_state_machine.FactoryPersistent(ctx, ctxInit, ctxCopy, logger, poolProvider, hostModLMDB)
+		agent.StateMachineRegister(turbokube.StorageKvName, fsmFactory)
 		go func() {
 			for {
 				time.Sleep(5 * time.Second)
@@ -183,7 +184,8 @@ func main() {
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, turbokube.ServiceGrpcWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
-		wazeropool.WithName(turbokube.ServiceGrpcName))
+		wazeropool.WithName(turbokube.ServiceGrpcName),
+		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
 		panic(err)
 	}
