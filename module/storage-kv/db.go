@@ -26,7 +26,7 @@ type db struct {
 	flags uint32
 }
 
-func (db db) open(txn *lmdb.Txn) {
+func (db db) open(txn lmdb.Txn) {
 	i, err := txn.OpenDBI(db.name, db.flags)
 	if err != nil {
 		panic(err)
@@ -52,8 +52,9 @@ func (db db) addChecksum(key, val []byte) []byte {
 	return binary.BigEndian.AppendUint32(val, crc(key, val))
 }
 
-func (db db) getUint64(txn *lmdb.Txn, key []byte) (i uint64, err error) {
-	val, err := txn.Get(db.i, key)
+func (db db) getUint64(txn lmdb.Txn, key []byte) (i uint64, err error) {
+	var val []byte
+	val, err = txn.Get(db.i, key, val)
 	if err != nil {
 		return
 	}
@@ -68,6 +69,6 @@ func (db db) getUint64(txn *lmdb.Txn, key []byte) (i uint64, err error) {
 	return
 }
 
-func (db db) putUint64(txn *lmdb.Txn, key []byte, val uint64) (err error) {
+func (db db) putUint64(txn lmdb.Txn, key []byte, val uint64) (err error) {
 	return txn.Put(db.i, key, db.addChecksum(key, binary.BigEndian.AppendUint64(nil, val)), 0)
 }

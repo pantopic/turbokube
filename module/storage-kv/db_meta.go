@@ -31,7 +31,7 @@ type dbMetaImpl struct {
 	db
 }
 
-func (db dbMetaImpl) init(txn *lmdb.Txn) (index uint64) {
+func (db dbMetaImpl) init(txn lmdb.Txn) (index uint64) {
 	var err error
 	db.open(txn)
 	for _, k := range [][]byte{
@@ -65,58 +65,58 @@ func (db dbMetaImpl) init(txn *lmdb.Txn) (index uint64) {
 	return
 }
 
-func (db dbMetaImpl) getEpoch(txn *lmdb.Txn) (val uint64, err error) {
+func (db dbMetaImpl) getEpoch(txn lmdb.Txn) (val uint64, err error) {
 	return db.getUint64(txn, metaKeyEpoch)
 }
 
-func (db dbMetaImpl) setEpoch(txn *lmdb.Txn, val uint64) (err error) {
+func (db dbMetaImpl) setEpoch(txn lmdb.Txn, val uint64) (err error) {
 	return db.putUint64(txn, metaKeyEpoch, val)
 }
 
-func (db dbMetaImpl) getIndex(txn *lmdb.Txn) (val uint64, err error) {
+func (db dbMetaImpl) getIndex(txn lmdb.Txn) (val uint64, err error) {
 	return db.getUint64(txn, metaKeyIndex)
 }
 
-func (db dbMetaImpl) setIndex(txn *lmdb.Txn, val uint64) (err error) {
+func (db dbMetaImpl) setIndex(txn lmdb.Txn, val uint64) (err error) {
 	return db.putUint64(txn, metaKeyIndex, val)
 }
 
-func (db dbMetaImpl) getLeaseID(txn *lmdb.Txn) (val uint64, err error) {
+func (db dbMetaImpl) getLeaseID(txn lmdb.Txn) (val uint64, err error) {
 	return db.getUint64(txn, metaKeyLeaseID)
 }
 
-func (db dbMetaImpl) setLeaseID(txn *lmdb.Txn, val uint64) (err error) {
+func (db dbMetaImpl) setLeaseID(txn lmdb.Txn, val uint64) (err error) {
 	return db.putUint64(txn, metaKeyLeaseID, val)
 }
 
-func (db dbMetaImpl) getRevision(txn *lmdb.Txn) (val uint64, err error) {
+func (db dbMetaImpl) getRevision(txn lmdb.Txn) (val uint64, err error) {
 	return db.getUint64(txn, metaKeyRevision)
 }
 
-func (db dbMetaImpl) setRevision(txn *lmdb.Txn, val uint64) (err error) {
+func (db dbMetaImpl) setRevision(txn lmdb.Txn, val uint64) (err error) {
 	return db.putUint64(txn, metaKeyRevision, val)
 }
 
-func (db dbMetaImpl) getRevisionCompacted(txn *lmdb.Txn) (val uint64, err error) {
+func (db dbMetaImpl) getRevisionCompacted(txn lmdb.Txn) (val uint64, err error) {
 	return db.getUint64(txn, metaKeyRevisionCompacted)
 }
 
-func (db dbMetaImpl) setRevisionCompacted(txn *lmdb.Txn, val uint64) (err error) {
+func (db dbMetaImpl) setRevisionCompacted(txn lmdb.Txn, val uint64) (err error) {
 	return db.putUint64(txn, metaKeyRevisionCompacted, val)
 }
 
-func (db dbMetaImpl) getRevisionMin(txn *lmdb.Txn) (val uint64, err error) {
+func (db dbMetaImpl) getRevisionMin(txn lmdb.Txn) (val uint64, err error) {
 	return db.getUint64(txn, metaKeyRevisionMin)
 }
 
-func (db dbMetaImpl) setRevisionMin(txn *lmdb.Txn, val uint64) (err error) {
+func (db dbMetaImpl) setRevisionMin(txn lmdb.Txn, val uint64) (err error) {
 	return db.putUint64(txn, metaKeyRevisionMin, val)
 }
 
-func (db dbMetaImpl) getTerm(txn *lmdb.Txn) (val uint64, err error) {
+func (db dbMetaImpl) getTerm(txn lmdb.Txn) (val uint64, err error) {
 	return db.getUint64(txn, metaKeyTerm)
 }
 
-func (db dbMetaImpl) setTerm(txn *lmdb.Txn, val uint64) (err error) {
+func (db dbMetaImpl) setTerm(txn lmdb.Txn, val uint64) (err error) {
 	return db.putUint64(txn, metaKeyTerm, val)
 }

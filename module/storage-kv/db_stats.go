@@ -8,6 +8,6 @@ type dbStatsImpl struct {
 	db
 }
 
-func (db dbStatsImpl) init(txn *lmdb.Txn) {
+func (db dbStatsImpl) init(txn lmdb.Txn) {
 	db.open(txn)
 }

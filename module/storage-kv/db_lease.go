@@ -10,13 +10,14 @@ type dbLeaseImpl struct {
 	db
 }
 
-func (db dbLeaseImpl) init(txn *lmdb.Txn) {
+func (db dbLeaseImpl) init(txn lmdb.Txn) {
 	db.open(txn)
 }
 
-func (db dbLeaseImpl) get(txn *lmdb.Txn, id uint64) (item lease, err error) {
+func (db dbLeaseImpl) get(txn lmdb.Txn, id uint64) (item lease, err error) {
 	k := binary.AppendUvarint(nil, id)
-	v, err := txn.Get(db.i, k)
+	var v []byte
+	v, err = txn.Get(db.i, k, v)
 	if lmdb.IsNotFound(err) {
 		err = nil
 		return
@@ -27,11 +28,11 @@ func (db dbLeaseImpl) get(txn *lmdb.Txn, id uint64) (item lease, err error) {
 	return item.FromBytes(k, v)
 }
 
-func (db dbLeaseImpl) put(txn *lmdb.Txn, item lease) error {
+func (db dbLeaseImpl) put(txn lmdb.Txn, item lease) error {
 	return txn.Put(db.i, binary.AppendUvarint(nil, item.id), item.Bytes(nil), 0)
 }
 
-func (db dbLeaseImpl) all(txn *lmdb.Txn) (items []lease, err error) {
+func (db dbLeaseImpl) all(txn lmdb.Txn) (items []lease, err error) {
 	cur, err := txn.OpenCursor(db.i)
 	if err != nil {
 		return nil, err
@@ -57,6 +58,6 @@ func (db dbLeaseImpl) all(txn *lmdb.Txn) (items []lease, err error) {
 	return
 }
 
-func (db dbLeaseImpl) del(txn *lmdb.Txn, id uint64) error {
+func (db dbLeaseImpl) del(txn lmdb.Txn, id uint64) error {
 	return txn.Del(db.i, binary.AppendUvarint(nil, id), nil)
 }

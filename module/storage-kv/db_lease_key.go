@@ -12,17 +12,17 @@ type dbLeaseKeyImpl struct {
 	db
 }
 
-func (db dbLeaseKeyImpl) init(txn *lmdb.Txn) {
+func (db dbLeaseKeyImpl) init(txn lmdb.Txn) {
 	db.open(txn)
 }
 
-func (db dbLeaseKeyImpl) put(txn *lmdb.Txn, id uint64, key []byte) error {
+func (db dbLeaseKeyImpl) put(txn lmdb.Txn, id uint64, key []byte) error {
 	k := append(binary.AppendUvarint(nil, id), key...)
 	v := db.addChecksum(k, nil)
 	return txn.Put(db.i, k, v, 0)
 }
 
-func (db dbLeaseKeyImpl) sweep(txn *lmdb.Txn, id uint64, batch [][]byte) ([][]byte, error) {
+func (db dbLeaseKeyImpl) sweep(txn lmdb.Txn, id uint64, batch [][]byte) ([][]byte, error) {
 	cur, err := txn.OpenCursor(db.i)
 	if err != nil {
 		return nil, err
@@ -64,6 +64,6 @@ func (db dbLeaseKeyImpl) sweep(txn *lmdb.Txn, id uint64, batch [][]byte) ([][]by
 	return batch, nil
 }
 
-func (db dbLeaseKeyImpl) del(txn *lmdb.Txn, id uint64, key []byte) (err error) {
+func (db dbLeaseKeyImpl) del(txn lmdb.Txn, id uint64, key []byte) (err error) {
 	return txn.Del(db.i, append(binary.AppendUvarint(nil, id), key...), nil)
 }

@@ -58,7 +58,7 @@ const (
 	sizeMetaHeader        = 256
 	sizeMetaWatchResponse = 256
 
-	limitCompactionMaxKeys = 1000
+	limitCompactionMaxKeys = 1 << 10
 )
 
 const (
@@ -115,7 +115,7 @@ var (
 
 	// PCB_RESPONSE_SIZE_MAX sets the maximum request and response size.
 	// Matches etcd by default.
-	PCB_RESPONSE_SIZE_MAX = 10 * 1024 * 1024
+	PCB_RESPONSE_SIZE_MAX = 10 << 20
 
 	// PCB_WATCH_PROGRESS_NOTIFY_INTERVAL sets the duration of periodic watch progress notification.
 	// Matches etcd by default.

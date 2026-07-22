@@ -20,14 +20,18 @@ import (
 	"time"
 
 	"github.com/benbjohnson/clock"
-	"github.com/logbn/zongzi"
 	"github.com/soheilhy/cmux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/tetratelabs/wazero"
+	"github.com/tetratelabs/wazero/api"
+	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
+	"google.golang.org/protobuf/proto"
 
+	"github.com/logbn/zongzi"
 	"github.com/pantopic/wazero-atomic/host"
 	"github.com/pantopic/wazero-buffer-pool/host"
 	"github.com/pantopic/wazero-cluster/host"
@@ -39,9 +43,6 @@ import (
 	"github.com/pantopic/wazero-shard-client/host"
 	"github.com/pantopic/wazero-small-cache/host"
 	"github.com/pantopic/wazero-state-machine/host"
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 
 	"github.com/pantopic/turbokube/embed"
 	"github.com/pantopic/turbokube/internal"
@@ -66,6 +67,7 @@ var (
 
 	addr       = "127.0.0.1:2379"
 	httpClient = &http.Client{Timeout: time.Second}
+	tick       = func() {}
 )
 
 func TestService(t *testing.T) {
@@ -310,6 +312,13 @@ func setupPcb(t *testing.T) {
 	svcWatch = newParityWatchService(conn)
 	svcCluster = newParityClusterService(conn)
 	svcMaintenance = newParityMaintenanceService(conn)
+	tick = func() {
+		cmd, _ := proto.Marshal(&internal.TickRequest{Term: 1e7})
+		val, data, err := agents[0].Client(shard.ID).Apply(ctx, append(cmd, CMD_INTERNAL_TICK))
+		if val == 0 || err != nil {
+			println(`tick`, val, data, err)
+		}
+	}
 }
 
 type extStorage interface {
@@ -384,7 +393,7 @@ func setupCluster(t *testing.T) {
 		storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
 	}
 	cfg := wazero.NewModuleConfig().WithStdout(os.Stdout)
-	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, turbokube.StorageKvWasm,
+	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, turbokube.StorageKvDevWasm,
 		wazeropool.WithModuleConfig(cfg),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithName(turbokube.StorageKvName),
@@ -532,7 +541,7 @@ func setupCluster(t *testing.T) {
 		}
 		svcCtxCopiers = append(svcCtxCopiers, m.ContextCopy)
 	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, turbokube.ServiceGrpcWasm,
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, turbokube.ServiceGrpcDevWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithName(turbokube.ServiceGrpcName),
@@ -566,6 +575,13 @@ func setupCluster(t *testing.T) {
 	svcWatch = newParityWatchService(conn)
 	svcCluster = newParityClusterService(conn)
 	svcMaintenance = newParityMaintenanceService(conn)
+	tick = func() {
+		cmd, _ := proto.Marshal(&internal.TickRequest{Term: 1e7})
+		val, data, err := agents[0].Client(shard.ID).Apply(ctx, append(cmd, CMD_INTERNAL_TICK))
+		if val == 0 || err != nil {
+			println(`tick`, val, data, err)
+		}
+	}
 }
 
 func testInsert(t *testing.T) {
@@ -1191,10 +1207,10 @@ func testCompact(t *testing.T) {
 	})
 	revs = revs[:0]
 	t.Run("update", func(t *testing.T) {
-		// Insert 10 test keys
-		for i := range 10 {
+		// Insert 2000 test keys
+		for i := range 2000 {
 			resp, err := svcKv.Put(ctx, &internal.PutRequest{
-				Key:   []byte(fmt.Sprintf(`test-key-compact-%02d`, i+10)),
+				Key:   fmt.Appendf(nil, `test-key-compact-update-%05d`, i),
 				Value: []byte(`test-value-1`),
 			})
 			require.Nil(t, err, err)
@@ -1203,25 +1219,51 @@ func testCompact(t *testing.T) {
 		// Udpate 10 test keys
 		for i := range 10 {
 			resp, err := svcKv.Put(ctx, &internal.PutRequest{
-				Key:   []byte(fmt.Sprintf(`test-key-compact-%02d`, i+10)),
+				Key:   fmt.Appendf(nil, `test-key-compact-update-%05d`, i),
 				Value: []byte(`test-value-2`),
 			})
 			require.Nil(t, err, err)
 			revs = append(revs, resp.Header.Revision)
 		}
 		resp, err := svcKv.Range(ctx, &internal.RangeRequest{
-			Key:      []byte(`test-key-compact-10`),
-			RangeEnd: []byte(`test-key-compact-20`),
-			Revision: revs[10],
+			Key:      fmt.Appendf(nil, `test-key-compact-update-%05d`, 0),
+			RangeEnd: fmt.Appendf(nil, `test-key-compact-update-%05d`, 10000),
+			Revision: revs[2000],
 		})
 		require.Nil(t, err, err)
 		assert.Equal(t, "test-value-2", string(resp.Kvs[0].Value))
 		assert.Equal(t, "test-value-1", string(resp.Kvs[1].Value))
 		// Compact update
 		_, err = svcKv.Compact(ctx, &internal.CompactionRequest{
-			Revision: revs[15],
+			Revision: revs[2000],
 		})
 		require.Nil(t, err, err)
+		resp, err = svcKv.Range(ctx, &internal.RangeRequest{
+			Key:      []byte(fmt.Sprintf(`test-key-compact-update-%05d`, 0)),
+			RangeEnd: []byte(fmt.Sprintf(`test-key-compact-update-%05d`, 10000)),
+			Revision: revs[1999],
+		})
+		require.NotNil(t, err, err, resp)
+		resp, err = svcKv.Range(ctx, &internal.RangeRequest{
+			Key:      []byte(fmt.Sprintf(`test-key-compact-update-%05d`, 0)),
+			RangeEnd: []byte(fmt.Sprintf(`test-key-compact-update-%05d`, 10000)),
+			Revision: revs[2000],
+		})
+		require.Nil(t, err, err)
+		assert.Equal(t, "test-value-2", string(resp.Kvs[0].Value))
+		assert.Equal(t, "test-value-1", string(resp.Kvs[1].Value))
+	})
+	t.Run("tick", func(t *testing.T) {
+		tick()
+		resp, err := svcKv.Range(ctx, &internal.RangeRequest{
+			Key:      []byte(fmt.Sprintf(`test-key-compact-update-%05d`, 0)),
+			RangeEnd: []byte(fmt.Sprintf(`test-key-compact-update-%05d`, 10000)),
+			Revision: revs[2000],
+		})
+		require.Nil(t, err, err)
+		assert.Equal(t, "test-value-2", string(resp.Kvs[0].Value))
+		assert.Equal(t, "test-value-1", string(resp.Kvs[1].Value))
+		tick()
 	})
 }
 

@@ -64,7 +64,7 @@ func streamRecv(data []byte) {
 		statemachine.StreamSend(uint64(req.WatchId), []byte{WatchMessageType_CANCELED})
 	case *internal.WatchRequest_ProgressRequest:
 		var rev uint64
-		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
+		err := lmdb.View(func(txn lmdb.Txn) (err error) {
 			rev, err = dbMeta.getRevision(txn)
 			if err != nil {
 				return
@@ -96,7 +96,7 @@ func watchScan(req *internal.WatchCreateRequest, since uint64) (rev uint64, sent
 	for _, f := range req.Filters {
 		filtered[uint8(f)] = true
 	}
-	err = lmdb.View(func(txn *lmdb.Txn) (err error) {
+	err = lmdb.View(func(txn lmdb.Txn) (err error) {
 		rev, err = dbMeta.getRevision(txn)
 		if err != nil {
 			return
@@ -171,7 +171,7 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 			return
 		}
 	}
-	err = lmdb.View(func(txn *lmdb.Txn) (err error) {
+	err = lmdb.View(func(txn lmdb.Txn) (err error) {
 		if min, err = dbMeta.getRevisionMin(txn); err != nil {
 			return
 		}

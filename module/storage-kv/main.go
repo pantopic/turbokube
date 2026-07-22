@@ -32,7 +32,7 @@ var (
 	newIndex   uint64
 	newRev     uint64
 	oldRev     uint64
-	txn        *lmdb.Txn
+	txn        lmdb.Txn
 	watchCache = small_cache.NewLocal(SMALL_CACHE_WATCH_CREATE_REQ)
 	watchID    = atomic.NewUint64Set(ATOMIC_UINT64_SET_GLOBAL).Find(ATOMIC_UINT64_GLOBAL_WATCH_ID)
 	watchRev   = atomic.NewUint64Set(ATOMIC_UINT64_SET_WATCH_REV)
@@ -47,7 +47,7 @@ func init() {
 func main() {}
 
 func open() (index uint64) {
-	if err := lmdb.Update(func(txn *lmdb.Txn) (err error) {
+	if err := lmdb.Update(func(txn lmdb.Txn) (err error) {
 		index = dbMeta.init(txn)
 		dbStats.init(txn)
 		kvStore.init(txn)
@@ -65,8 +65,8 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 	newIndex = index
 	var err error
 	var rev uint64
-	if txn == nil {
-		txn, err = lmdb.BeginTxn(nil, 0)
+	if txn == 0 {
+		txn, err = lmdb.Begin(0)
 		if err != nil {
 			panic(`Unable to open txn: ` + err.Error())
 		}
@@ -152,12 +152,6 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			data = []byte(`Invalid command: ` + string(cmd))
 			return
 		}
-		// TODO - Add support for asynchronous compaction w/ req.Physical
-		rev, err := kvStore.compact(txn, uint64(req.Revision))
-		if err != nil {
-			data = []byte(err.Error())
-			return
-		}
 		data, err = (&internal.CompactionResponse{
 			Header: responseHeader(newRev),
 		}).MarshalVT()
@@ -166,10 +160,6 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 			return
 		}
 		if err := dbMeta.setRevisionMin(txn, uint64(req.Revision)); err != nil {
-			data = []byte(err.Error())
-			return
-		}
-		if err := dbMeta.setRevisionCompacted(txn, rev); err != nil {
 			data = []byte(err.Error())
 			return
 		}
@@ -301,6 +291,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 		if err = dbMeta.setEpoch(txn, epoch); err != nil {
 			panic(`Unable to set epoch: ` + err.Error())
 		}
+		// lease expire
 		for id := range dbLeaseExp.scan(txn, epoch) {
 			affected, _, err := cmdLeaseRevoke(txn, newRev+1, epoch, id)
 			if err != nil {
@@ -310,6 +301,21 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 				newRev++
 				keys = append(keys, affected...)
 			}
+		}
+		// revision compact
+		min, err := dbMeta.getRevisionMin(txn)
+		if err != nil {
+			data = []byte(err.Error())
+			return
+		}
+		rev, err := kvStore.compact(txn, min)
+		if err != nil {
+			data = []byte(err.Error())
+			return
+		}
+		if err := dbMeta.setRevisionCompacted(txn, rev); err != nil {
+			data = []byte(err.Error())
+			return
 		}
 		data, err = (&internal.TickResponse{
 			Epoch: epoch,
@@ -362,7 +368,7 @@ func finish() {
 		range_watch.Emit(oldRev, keys)
 	}
 	keys = keys[:0]
-	txn = nil
+	txn = 0
 }
 
 func read(query []byte) (value uint64, data []byte) {
@@ -375,7 +381,7 @@ func read(query []byte) (value uint64, data []byte) {
 			return
 		}
 		var resp *internal.RangeResponse
-		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
+		err := lmdb.View(func(txn lmdb.Txn) (err error) {
 			rev, err = dbMeta.getRevision(txn)
 			if err != nil {
 				return
@@ -403,7 +409,7 @@ func read(query []byte) (value uint64, data []byte) {
 			return
 		}
 		var resp *internal.LeaseLeasesResponse
-		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
+		err := lmdb.View(func(txn lmdb.Txn) (err error) {
 			rev, err = dbMeta.getRevision(txn)
 			if err != nil {
 				return
@@ -429,7 +435,7 @@ func read(query []byte) (value uint64, data []byte) {
 			return
 		}
 		var resp *internal.LeaseTimeToLiveResponse
-		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
+		err := lmdb.View(func(txn lmdb.Txn) (err error) {
 			rev, err = dbMeta.getRevision(txn)
 			if err != nil {
 				return
@@ -449,7 +455,7 @@ func read(query []byte) (value uint64, data []byte) {
 		}
 		value = 1
 	case QUERY_WATCH_PROGRESS:
-		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
+		err := lmdb.View(func(txn lmdb.Txn) (err error) {
 			rev, err = dbMeta.getRevision(txn)
 			if err != nil {
 				return
@@ -464,7 +470,7 @@ func read(query []byte) (value uint64, data []byte) {
 		}
 		value = 1
 	case QUERY_HEADER:
-		err := lmdb.View(func(txn *lmdb.Txn) (err error) {
+		err := lmdb.View(func(txn lmdb.Txn) (err error) {
 			rev, err = dbMeta.getRevision(txn)
 			if err != nil {
 				return
@@ -483,7 +489,7 @@ func read(query []byte) (value uint64, data []byte) {
 }
 
 func cmdPut(
-	txn *lmdb.Txn, rev, subrev, epoch uint64,
+	txn lmdb.Txn, rev, subrev, epoch uint64,
 	req *internal.PutRequest,
 ) (res *internal.PutResponse, val uint64, affected [][]byte, err error) {
 	res = &internal.PutResponse{}
@@ -513,7 +519,7 @@ func cmdPut(
 }
 
 func cmdDeleteRange(
-	txn *lmdb.Txn, rev, subrev, epoch uint64,
+	txn lmdb.Txn, rev, subrev, epoch uint64,
 	req *internal.DeleteRangeRequest,
 ) (res *internal.DeleteRangeResponse, keys [][]byte, err error) {
 	res = &internal.DeleteRangeResponse{}
@@ -542,11 +548,13 @@ func cmdDeleteRange(
 	return
 }
 
+var subTxn = new(lmdb.Txn)
+
 func txnOps(
-	txn *lmdb.Txn, rev, epoch uint64,
+	txn lmdb.Txn, rev, epoch uint64,
 	ops []*internal.RequestOp,
 ) (res []*internal.ResponseOp, keys [][]byte, err error) {
-	err = txn.Sub(func(txn *lmdb.Txn) (err error) {
+	err = txn.Sub(func(txn lmdb.Txn) (err error) {
 		for i, op := range ops {
 			switch req := op.Request.(type) {
 			case *internal.RequestOp_RequestPut:
@@ -591,7 +599,7 @@ func txnOps(
 	return
 }
 
-func txnCompare(txn *lmdb.Txn, conds []*internal.Compare) (success bool, err error) {
+func txnCompare(txn lmdb.Txn, conds []*internal.Compare) (success bool, err error) {
 	success = true
 	var item kv
 	for _, cond := range conds {
@@ -632,7 +640,7 @@ func txnCompare(txn *lmdb.Txn, conds []*internal.Compare) (success bool, err err
 }
 
 func cmdLeaseGrant(
-	txn *lmdb.Txn, epoch uint64,
+	txn lmdb.Txn, epoch uint64,
 	req *internal.LeaseGrantRequest,
 ) (res *internal.LeaseGrantResponse, val uint64, err error) {
 	res = &internal.LeaseGrantResponse{}
@@ -680,7 +688,7 @@ func cmdLeaseGrant(
 }
 
 func cmdLeaseRevoke(
-	txn *lmdb.Txn, rev, epoch, id uint64,
+	txn lmdb.Txn, rev, epoch, id uint64,
 ) (keys [][]byte, val uint64, err error) {
 	var item lease
 	if item, err = dbLease.get(txn, uint64(id)); err != nil {
@@ -714,7 +722,7 @@ func cmdLeaseRevoke(
 }
 
 func cmdLeaseKeepAlive(
-	txn *lmdb.Txn, epoch uint64,
+	txn lmdb.Txn, epoch uint64,
 	req *internal.LeaseKeepAliveRequest,
 ) (res *internal.LeaseKeepAliveResponse, val uint64, err error) {
 	res = &internal.LeaseKeepAliveResponse{ID: req.ID}
@@ -739,7 +747,7 @@ func cmdLeaseKeepAlive(
 }
 
 func cmdLeaseKeepAliveBatch(
-	txn *lmdb.Txn, epoch uint64,
+	txn lmdb.Txn, epoch uint64,
 	req *internal.LeaseKeepAliveBatchRequest,
 ) (res *internal.LeaseKeepAliveBatchResponse, val uint64, err error) {
 	res = &internal.LeaseKeepAliveBatchResponse{}
@@ -768,7 +776,7 @@ func cmdLeaseKeepAliveBatch(
 }
 
 func queryRange(
-	txn *lmdb.Txn, rev uint64,
+	txn lmdb.Txn, rev uint64,
 	req *internal.RangeRequest,
 ) (res *internal.RangeResponse, err error) {
 	res = &internal.RangeResponse{
@@ -814,7 +822,7 @@ func queryRange(
 }
 
 func queryLeaseLeases(
-	txn *lmdb.Txn,
+	txn lmdb.Txn,
 	_ *internal.LeaseLeasesRequest,
 ) (res *internal.LeaseLeasesResponse, err error) {
 	res = &internal.LeaseLeasesResponse{}
@@ -829,7 +837,7 @@ func queryLeaseLeases(
 }
 
 func queryLeaseTimeToLive(
-	txn *lmdb.Txn,
+	txn lmdb.Txn,
 	req *internal.LeaseTimeToLiveRequest,
 ) (res *internal.LeaseTimeToLiveResponse, err error) {
 	res = &internal.LeaseTimeToLiveResponse{}
