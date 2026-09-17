@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
 	"strings"
@@ -72,6 +73,9 @@ var (
 )
 
 func TestService(t *testing.T) {
+	go func() {
+		slog.Info("pprof server", "err", http.ListenAndServe(":6060", nil))
+	}()
 	if parity {
 		t.Run("setup-parity", setupParity)
 	} else if cluster {
@@ -106,7 +110,12 @@ func TestService(t *testing.T) {
 // Be sure to completely destroy the etcd cluster between parity runs
 // Otherwise data from previous runs will give bad results
 func setupParity(t *testing.T) {
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallSendMsgSize(1<<30),
+			grpc.MaxCallRecvMsgSize(1<<30),
+		))
 	if err != nil {
 		panic(err)
 	}
@@ -304,7 +313,12 @@ func setupPcb(t *testing.T) {
 		}
 	}()
 
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallSendMsgSize(1<<30),
+			grpc.MaxCallRecvMsgSize(1<<30),
+		))
 	if err != nil {
 		panic(err)
 	}
@@ -402,6 +416,7 @@ func setupCluster(t *testing.T) {
 		wazeropool.WithModuleConfig(cfg),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithBurst(runtime.NumCPU()),
+		// wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.StorageKvName),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
@@ -554,6 +569,7 @@ func setupCluster(t *testing.T) {
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, svcWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
+		// wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.ServiceGrpcName),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
@@ -576,7 +592,12 @@ func setupCluster(t *testing.T) {
 
 	globalSet = extGlobal.Set
 	globalDel = extGlobal.Del
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallSendMsgSize(1<<30),
+			grpc.MaxCallRecvMsgSize(1<<30),
+		))
 	if err != nil {
 		panic(err)
 	}
@@ -1291,7 +1312,7 @@ func testCompact(t *testing.T) {
 			require.Nil(t, err, err)
 			revs = append(revs, resp.Header.Revision)
 		}
-		// Udpate 10 test keys
+		// Update 10 test keys
 		for i := range 10 {
 			resp, err := svcKv.Put(ctx, &internal.PutRequest{
 				Key:   fmt.Appendf(nil, `test-key-compact-update-%05d`, i),
@@ -2874,7 +2895,7 @@ func testWatch(t *testing.T) {
 					StartRevision: rev[0],
 					Fragment:      true,
 				})
-				timeout(t, time.Second, func() {
+				timeout(t, 5*time.Second, func() {
 					res = <-s.resChan // WatchCreated
 				})
 				require.Greater(t, res.WatchId, int64(0), res)

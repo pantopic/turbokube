@@ -14,7 +14,7 @@ import (
 var evtPool = sync.Pool{New: func() any { return &internal.Event{} }}
 var watchEventBatch = &internal.WatchEventBatch{Event: &internal.Event{}}
 var watchEventSync = &internal.WatchEventSync{}
-var watch_buffer = make([]byte, PCB_RESPONSE_SIZE_MAX)
+var watch_buffer = make([]byte, PCB_RESPONSE_SIZE_MAX())
 
 func shardRecv(_, data []byte, id uint64) {
 	var err error
@@ -146,7 +146,7 @@ func clearEvents(events buffer.MultiValue, id int64, rev uint64, sync bool) {
 	watchResp.Reset()
 	watchResp.Header = respHeader
 	watchResp.WatchId = int64(id)
-	for b := range events.Iter(watch_buffer[:0]) {
+	for b := range events.Iter() {
 		evt := evtPool.Get().(*internal.Event)
 		if err := evt.UnmarshalVT(b[:len(b)-8]); err != nil {
 			panic(`Unable to unmarshal event B: ` + err.Error())

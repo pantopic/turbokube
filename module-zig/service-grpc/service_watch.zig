@@ -11,7 +11,6 @@ const util = @import("util.zig");
 
 var arena_state = std.heap.ArenaAllocator.init(std.heap.wasm_allocator);
 var out: [1536 * 1024 + 8]u8 = undefined;
-var resp_buffer: [types.PCB_RESPONSE_SIZE_MAX]u8 = undefined;
 
 fn decode(comptime T: type, b: []const u8) !T {
     var reader = std.Io.Reader.fixed(b);
@@ -169,7 +168,7 @@ fn clearEvents(events: buffer.MultiValue, watch_id: i64, rev: u64, sync: bool) !
         .watch_id = @bitCast(watch_id),
     };
     var last_rev: u64 = 0;
-    var it = events.iterator(&resp_buffer);
+    var it = events.iterator();
     while (it.next()) |b| {
         const rev_bytes: *const [8]u8 = @ptrCast(b[b.len - 8 ..].ptr);
         last_rev = std.mem.readInt(u64, rev_bytes, .big);

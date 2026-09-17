@@ -4,5 +4,7 @@ github.com/pantopic/ext-buffer/sdk-go v0.0.3 h1:xA8vrMMrry4TLDHfuaBuF4fVmPFE9OOn
 github.com/pantopic/ext-buffer/sdk-go v0.0.3/go.mod h1:ZYPD6qhPxvxTDHsr69nWwVgz8/Vq/XQSTubzRGT5qjs=
 github.com/pantopic/ext-grpc-server/sdk-go v0.0.15 h1:tU6/l5etV3UkNvMv6haW7+qRCoquM6FwMEDpuPIDzE8=
 github.com/pantopic/ext-grpc-server/sdk-go v0.0.15/go.mod h1:80sYV0H/vv9updbQp1sY8HQDjIEYk9U8SfizwJP4bQo=
+github.com/pantopic/wazero-global/sdk-go v0.0.2 h1:AEKINPqUInItWyLyE+hzNFN1ww2f/2Gzp6Qnft+yUWI=
+github.com/pantopic/wazero-global/sdk-go v0.0.2/go.mod h1:1ZC9ZxiDCX2V6AdgCS0UNjkpHNzVr5HbYTNHgPqHjTA=
 github.com/pantopic/wazero-shard-client/sdk-go v0.0.1 h1:xJhDEJwvZpYk3p8GJiQFZEZ+nHqi2595I4rgIlJsOyw=
 github.com/pantopic/wazero-shard-client/sdk-go v0.0.1/go.mod h1:bAwjgvpHsSnfjRNbxgI/dg3aAhUzQ0Que8B71UCLQfc=
