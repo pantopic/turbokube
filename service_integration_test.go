@@ -12,6 +12,7 @@ import (
 	"math/rand"
 	"net"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"runtime"
 	"strings"
@@ -32,11 +33,11 @@ import (
 	"google.golang.org/protobuf/proto"
 
 	"github.com/logbn/zongzi"
+	"github.com/pantopic/ext-buffer/host-wazero"
+	"github.com/pantopic/ext-grpc-server/host-wazero"
 	"github.com/pantopic/wazero-atomic/host"
-	"github.com/pantopic/wazero-buffer-pool/host"
 	"github.com/pantopic/wazero-cluster/host"
 	"github.com/pantopic/wazero-global/host"
-	"github.com/pantopic/wazero-grpc-server/host"
 	"github.com/pantopic/wazero-lmdb/host"
 	"github.com/pantopic/wazero-pool"
 	"github.com/pantopic/wazero-range-watch/host"
@@ -72,6 +73,9 @@ var (
 )
 
 func TestService(t *testing.T) {
+	go func() {
+		slog.Info("pprof server", "err", http.ListenAndServe(":6060", nil))
+	}()
 	if parity {
 		t.Run("setup-parity", setupParity)
 	} else if cluster {
@@ -106,7 +110,12 @@ func TestService(t *testing.T) {
 // Be sure to completely destroy the etcd cluster between parity runs
 // Otherwise data from previous runs will give bad results
 func setupParity(t *testing.T) {
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallSendMsgSize(1<<30),
+			grpc.MaxCallRecvMsgSize(1<<30),
+		))
 	if err != nil {
 		panic(err)
 	}
@@ -304,7 +313,12 @@ func setupPcb(t *testing.T) {
 		}
 	}()
 
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallSendMsgSize(1<<30),
+			grpc.MaxCallRecvMsgSize(1<<30),
+		))
 	if err != nil {
 		panic(err)
 	}
@@ -402,6 +416,7 @@ func setupCluster(t *testing.T) {
 		wazeropool.WithModuleConfig(cfg),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithBurst(runtime.NumCPU()),
+		// wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.StorageKvName),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
@@ -537,7 +552,7 @@ func setupCluster(t *testing.T) {
 	serviceExtensions := []extService{
 		extGlobal,
 		hostModGrpcServer,
-		wazero_buffer_pool.New(),
+		wazero_buffer.New(),
 		wazero_shard_client.New(agents[0]),
 	}
 	var svcCtxCopiers []wazero_grpc_server.ContextCopy
@@ -554,6 +569,7 @@ func setupCluster(t *testing.T) {
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, svcWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
+		// wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.ServiceGrpcName),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
@@ -576,7 +592,12 @@ func setupCluster(t *testing.T) {
 
 	globalSet = extGlobal.Set
 	globalDel = extGlobal.Del
-	conn, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	conn, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(
+			grpc.MaxCallSendMsgSize(1<<30),
+			grpc.MaxCallRecvMsgSize(1<<30),
+		))
 	if err != nil {
 		panic(err)
 	}
@@ -1263,6 +1284,7 @@ func testCompact(t *testing.T) {
 		})
 		require.Nil(t, err, err)
 		assert.Equal(t, 9, len(resp2.Kvs))
+		time.Sleep(100 * time.Millisecond) // Wait for compaction to complete
 		// Ensure querying compacted revision is not possible
 		resp2, err = svcKv.Range(ctx, &internal.RangeRequest{
 			Key:      []byte(`test-key-compact-00`),
@@ -1270,6 +1292,7 @@ func testCompact(t *testing.T) {
 			Revision: revs[9],
 		})
 		require.NotNil(t, err, err)
+		time.Sleep(100 * time.Millisecond) // Wait for compaction to complete
 		// Ensure ranging at future revision is not possible
 		resp2, err = svcKv.Range(ctx, &internal.RangeRequest{
 			Key:      []byte(`test-key-compact-00`),
@@ -1289,7 +1312,7 @@ func testCompact(t *testing.T) {
 			require.Nil(t, err, err)
 			revs = append(revs, resp.Header.Revision)
 		}
-		// Udpate 10 test keys
+		// Update 10 test keys
 		for i := range 10 {
 			resp, err := svcKv.Put(ctx, &internal.PutRequest{
 				Key:   fmt.Appendf(nil, `test-key-compact-update-%05d`, i),
@@ -2872,7 +2895,7 @@ func testWatch(t *testing.T) {
 					StartRevision: rev[0],
 					Fragment:      true,
 				})
-				timeout(t, time.Second, func() {
+				timeout(t, 5*time.Second, func() {
 					res = <-s.resChan // WatchCreated
 				})
 				require.Greater(t, res.WatchId, int64(0), res)

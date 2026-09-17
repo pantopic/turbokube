@@ -267,8 +267,8 @@ func rangeWatchRecv(notices []range_watch.Notice) {
 				e.PrevKv = previous.ToProto(eventKvPrevResponse)
 			}
 			watchEventBatch.Event = e
-			watchEventBatch.Revision = revs[len(revs)-1]
-			// watchEventBatch.Revision = uint64(e.Kv.ModRevision)
+			// watchEventBatch.Revision = revs[len(revs)-1]
+			watchEventBatch.Revision = uint64(e.Kv.ModRevision)
 		watches:
 			for _, watchIdBytes := range notice.IDs {
 				watchID := binary.BigEndian.Uint64(watchIdBytes)

@@ -3,6 +3,8 @@ package main
 import (
 	"os"
 	"strconv"
+
+	"github.com/pantopic/wazero-global/sdk-go"
 )
 
 const (
@@ -35,7 +37,7 @@ var (
 
 	// PCB_RESPONSE_SIZE_MAX sets the maximum request and response size.
 	// Matches etcd by default.
-	PCB_RESPONSE_SIZE_MAX = envUint64(`PCB_RESPONSE_SIZE_MAX`, 10<<20) // 10 MiB
+	PCB_RESPONSE_SIZE_MAX = global.NewUint64(`PCB_RESPONSE_SIZE_MAX`, 10<<20) // 10 MiB
 )
 
 const (

@@ -2,7 +2,7 @@
 
 const std = @import("std");
 const pb = @import("pb/etcdserverpb.pb.zig");
-const buffer_pool = @import("buffer_pool");
+const buffer = @import("buffer");
 
 const errors = @import("error.zig");
 const module = @import("module.zig");
@@ -162,7 +162,7 @@ fn sendEvent(watch_id: i64, rev: u64, data: []const u8) !void {
     }
 }
 
-fn clearEvents(events: buffer_pool.MultiValue, watch_id: i64, rev: u64, sync: bool) !void {
+fn clearEvents(events: buffer.MultiValue, watch_id: i64, rev: u64, sync: bool) !void {
     var resp = pb.WatchResponse{
         .header = .{},
         .watch_id = @bitCast(watch_id),
