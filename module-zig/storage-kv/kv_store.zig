@@ -1,7 +1,7 @@
 //! Mirrors module/storage-kv/kv_store.go
 
 const std = @import("std");
-const lmdb = @import("lmdb");
+const mdb = @import("mdb");
 
 const Db = @import("db.zig").Db;
 const errors = @import("error.zig");
@@ -19,7 +19,7 @@ pub const KvStore = struct {
     rev: Db,
     val: Db,
 
-    pub fn init(self: KvStore, txn: lmdb.Txn) void {
+    pub fn init(self: KvStore, txn: mdb.Txn) void {
         self.rev.open(txn);
         self.evt.open(txn);
         self.val.open(txn);
@@ -31,7 +31,7 @@ pub const KvStore = struct {
         patched: bool = false,
     };
 
-    fn putEvent(self: KvStore, txn: lmdb.Txn, rev_key: []const u8, epoch: u64, key: []const u8) !void {
+    fn putEvent(self: KvStore, txn: mdb.Txn, rev_key: []const u8, epoch: u64, key: []const u8) !void {
         var data: [util.max_varint_len + types.LIMIT_KEY_LENGTH]u8 = undefined;
         const n = util.putUvarint(&data, epoch);
         @memcpy(data[n .. n + key.len], key);
@@ -41,7 +41,7 @@ pub const KvStore = struct {
 
     pub fn put(
         self: KvStore,
-        txn: lmdb.Txn,
+        txn: mdb.Txn,
         allocator: std.mem.Allocator,
         rev: u64,
         subrev: u64,
@@ -62,13 +62,13 @@ pub const KvStore = struct {
         const cur = try txn.openCursor(self.rev.i);
         defer cur.close();
         var krec = Keyrecord{};
-        if (cur.get(key, "", lmdb.op_set_range)) |entry| {
+        if (cur.get(key, "", mdb.op_set_range)) |entry| {
             if (std.mem.eql(u8, entry.key, key)) {
                 krec = try Keyrecord.fromBytes(key, entry.val);
                 krec.key = key;
             }
         } else |err| {
-            if (err != lmdb.Error.NotFound) return err;
+            if (err != mdb.Error.NotFound) return err;
         }
         var krec_buf: [8 + util.max_varint_len + 4]u8 = undefined;
         var rev_key_buf: [8]u8 = undefined;
@@ -136,7 +136,7 @@ pub const KvStore = struct {
 
     pub fn getRange(
         self: KvStore,
-        txn: lmdb.Txn,
+        txn: mdb.Txn,
         allocator: std.mem.Allocator,
         key: []const u8,
         end: []const u8,
@@ -157,10 +157,10 @@ pub const KvStore = struct {
         const cur = try txn.openCursor(self.rev.i);
         defer cur.close();
         const is_full_scan = std.mem.eql(u8, key, &[_]u8{0}) and std.mem.eql(u8, end, &[_]u8{0});
-        var entry_or_err = cur.get(key, "", lmdb.op_set_range);
+        var entry_or_err = cur.get(key, "", mdb.op_set_range);
         outer: while (true) {
             const entry = entry_or_err catch |err| {
-                if (err == lmdb.Error.NotFound) break;
+                if (err == mdb.Error.NotFound) break;
                 return err;
             };
             const k = try allocator.dupe(u8, entry.key);
@@ -187,8 +187,8 @@ pub const KvStore = struct {
                 } else if (!count_only) {
                     try next.append(allocator, rev);
                 }
-                const e2 = cur.get("", "", lmdb.op_next_dup) catch |err| {
-                    if (err == lmdb.Error.NotFound) {
+                const e2 = cur.get("", "", mdb.op_next_dup) catch |err| {
+                    if (err == mdb.Error.NotFound) {
                         not_found = true;
                         break;
                     }
@@ -231,7 +231,7 @@ pub const KvStore = struct {
                 }
             }
             if (end.len == 0) break;
-            entry_or_err = cur.get("", "", lmdb.op_next_no_dup);
+            entry_or_err = cur.get("", "", mdb.op_next_no_dup);
         }
         return .{ .items = items.items, .count = count, .more = more };
     }
@@ -243,7 +243,7 @@ pub const KvStore = struct {
 
     pub fn deleteRange(
         self: KvStore,
-        txn: lmdb.Txn,
+        txn: mdb.Txn,
         allocator: std.mem.Allocator,
         rev: u64,
         subrev: u64,
@@ -255,10 +255,10 @@ pub const KvStore = struct {
         var count: i64 = 0;
         const cur = try txn.openCursor(self.rev.i);
         defer cur.close();
-        var entry_or_err = cur.get(key, "", lmdb.op_set_range);
+        var entry_or_err = cur.get(key, "", mdb.op_set_range);
         while (true) {
             const entry = entry_or_err catch |err| {
-                if (err == lmdb.Error.NotFound) break;
+                if (err == mdb.Error.NotFound) break;
                 return err;
             };
             if (entry.val.len < 12) {
@@ -287,14 +287,14 @@ pub const KvStore = struct {
                 count += 1;
             }
             if (end.len == 0) break;
-            entry_or_err = cur.get("", "", lmdb.op_next_no_dup);
+            entry_or_err = cur.get("", "", mdb.op_next_no_dup);
         }
         return .{ .items = items.items, .count = count };
     }
 
     pub fn deleteBatch(
         self: KvStore,
-        txn: lmdb.Txn,
+        txn: mdb.Txn,
         rev: u64,
         subrev: u64,
         epoch: u64,
@@ -303,8 +303,8 @@ pub const KvStore = struct {
         const cur = try txn.openCursor(self.rev.i);
         defer cur.close();
         for (keys) |key| {
-            const entry = cur.get(key, "", lmdb.op_set_range) catch |err| {
-                if (err == lmdb.Error.NotFound) return errors.Error.ModuleNotFound;
+            const entry = cur.get(key, "", mdb.op_set_range) catch |err| {
+                if (err == mdb.Error.NotFound) return errors.Error.ModuleNotFound;
                 return err;
             };
             if (entry.val.len < 12) {
@@ -325,18 +325,18 @@ pub const KvStore = struct {
         }
     }
 
-    pub fn compact(self: KvStore, txn: lmdb.Txn, allocator: std.mem.Allocator, max: u64) !u64 {
+    pub fn compact(self: KvStore, txn: mdb.Txn, allocator: std.mem.Allocator, max: u64) !u64 {
         var last: u64 = 0;
         const cur_rev = try txn.openCursor(self.rev.i);
         defer cur_rev.close();
         const cur_evt = try txn.openCursor(self.evt.i);
         defer cur_evt.close();
         var not_found = false;
-        var entry: lmdb.Cursor.Entry = .{ .key = "", .val = "" };
-        if (cur_evt.get("", "", lmdb.op_next)) |e| {
+        var entry: mdb.Cursor.Entry = .{ .key = "", .val = "" };
+        if (cur_evt.get("", "", mdb.op_next)) |e| {
             entry = e;
         } else |err| {
-            if (err != lmdb.Error.NotFound) return err;
+            if (err != mdb.Error.NotFound) return err;
             not_found = true;
         }
         var rev = try Keyrev.fromKey(entry.key, entry.val);
@@ -359,18 +359,18 @@ pub const KvStore = struct {
                 const body = try self.rev.trimChecksum(entry.key, entry.val);
                 const n = util.uvarint(body) orelse return errors.Error.ValueInvalid;
                 try keys.put(allocator, try allocator.dupe(u8, body[n.n..]), rev);
-                try cur_evt.del(lmdb.current);
-                if (cur_evt.get("", "", lmdb.op_next_dup)) |e| {
+                try cur_evt.del(mdb.current);
+                if (cur_evt.get("", "", mdb.op_next_dup)) |e| {
                     entry = e;
                 } else |err| {
-                    if (err != lmdb.Error.NotFound) {
+                    if (err != mdb.Error.NotFound) {
                         done = true;
                         break;
                     }
-                    if (cur_evt.get("", "", lmdb.op_next)) |e| {
+                    if (cur_evt.get("", "", mdb.op_next)) |e| {
                         entry = e;
                     } else |err2| {
-                        if (err2 == lmdb.Error.NotFound) {
+                        if (err2 == mdb.Error.NotFound) {
                             not_found = true;
                             break;
                         }
@@ -389,10 +389,10 @@ pub const KvStore = struct {
                 const key_rev = kv.value_ptr.*;
                 keycount += 1;
                 var has_newer = false;
-                var e_or_err = cur_rev.get(key, "", lmdb.op_set_range);
+                var e_or_err = cur_rev.get(key, "", mdb.op_set_range);
                 while (true) {
                     const e = e_or_err catch |err| {
-                        if (err == lmdb.Error.NotFound) break;
+                        if (err == mdb.Error.NotFound) break;
                         return err;
                     };
                     if (!std.mem.eql(u8, e.key, key)) {
@@ -407,15 +407,15 @@ pub const KvStore = struct {
                         if (has_newer and !rec.rev.isdel()) {
                             var rkb: [8]u8 = undefined;
                             txn.del(self.val.i, rec.rev.key(&rkb), "") catch |err| {
-                                if (err != lmdb.Error.NotFound) return err;
+                                if (err != mdb.Error.NotFound) return err;
                             };
                         }
-                        cur_rev.del(lmdb.current) catch |err| {
-                            if (err != lmdb.Error.NotFound) return err;
+                        cur_rev.del(mdb.current) catch |err| {
+                            if (err != mdb.Error.NotFound) return err;
                         };
                         has_newer = true;
                     }
-                    e_or_err = cur_rev.get("", "", lmdb.op_next_dup);
+                    e_or_err = cur_rev.get("", "", mdb.op_next_dup);
                 }
             }
             if (!done) {
@@ -428,7 +428,7 @@ pub const KvStore = struct {
         return last;
     }
 
-    pub fn get(self: KvStore, txn: lmdb.Txn, allocator: std.mem.Allocator, key: []const u8) !Kv {
+    pub fn get(self: KvStore, txn: mdb.Txn, allocator: std.mem.Allocator, key: []const u8) !Kv {
         const r = try self.getRev(txn, allocator, key, 0, false);
         return r.item;
     }
@@ -438,20 +438,20 @@ pub const KvStore = struct {
         prev: Kv = .{},
     };
 
-    pub fn getRev(self: KvStore, txn: lmdb.Txn, allocator: std.mem.Allocator, key: []const u8, revision: u64, with_prev: bool) !GetRevResult {
+    pub fn getRev(self: KvStore, txn: mdb.Txn, allocator: std.mem.Allocator, key: []const u8, revision: u64, with_prev: bool) !GetRevResult {
         var res = GetRevResult{};
         self.getRevInner(txn, allocator, key, revision, with_prev, &res) catch |err| {
             // Mirrors Go's deferred IsNotFound -> nil conversion.
-            if (err != lmdb.Error.NotFound) return err;
+            if (err != mdb.Error.NotFound) return err;
         };
         return res;
     }
 
-    fn getRevInner(self: KvStore, txn: lmdb.Txn, allocator: std.mem.Allocator, key: []const u8, revision: u64, with_prev: bool, res: *GetRevResult) !void {
+    fn getRevInner(self: KvStore, txn: mdb.Txn, allocator: std.mem.Allocator, key: []const u8, revision: u64, with_prev: bool, res: *GetRevResult) !void {
         const cur = try txn.openCursor(self.rev.i);
         defer cur.close();
         var next = std.ArrayList(Keyrev).empty;
-        const first = try cur.get(key, "", lmdb.op_set_range);
+        const first = try cur.get(key, "", mdb.op_set_range);
         if (!std.mem.eql(u8, first.key, key)) {
             return;
         }
@@ -462,7 +462,7 @@ pub const KvStore = struct {
             } else {
                 try next.append(allocator, krec.rev);
             }
-            const e = try cur.get("", "", lmdb.op_next_dup);
+            const e = try cur.get("", "", mdb.op_next_dup);
             krec = try Keyrecord.fromBytes(key, e.val);
         }
         if (krec.rev.isdel()) {
@@ -485,8 +485,8 @@ pub const KvStore = struct {
         }
     }
 
-    fn prev(self: KvStore, txn: lmdb.Txn, allocator: std.mem.Allocator, cur: lmdb.Cursor, item: Kv) !Kv {
-        const e = try cur.get("", "", lmdb.op_next_dup);
+    fn prev(self: KvStore, txn: mdb.Txn, allocator: std.mem.Allocator, cur: mdb.Cursor, item: Kv) !Kv {
+        const e = try cur.get("", "", mdb.op_next_dup);
         const prec = try Keyrecord.fromBytes(try allocator.dupe(u8, e.key), e.val);
         var rkb: [8]u8 = undefined;
         const rk = prec.rev.key(&rkb);
@@ -494,16 +494,16 @@ pub const KvStore = struct {
         return Kv.fromBytes(try allocator.dupe(u8, rk), v, if (item.rev.v != 0) item.val else null, false, allocator);
     }
 
-    pub fn scan(self: KvStore, txn: lmdb.Txn, allocator: std.mem.Allocator, revision: u64) Scan {
+    pub fn scan(self: KvStore, txn: mdb.Txn, allocator: std.mem.Allocator, revision: u64) Scan {
         const cur = txn.openCursor(self.evt.i) catch null;
         var s = Scan{ .store = self, .cur = cur, .allocator = allocator };
         if (cur) |c| {
             var kb: [8]u8 = undefined;
             std.mem.writeInt(u64, &kb, revision << 12, .big);
-            if (c.get(&kb, "", lmdb.op_set_range)) |e| {
+            if (c.get(&kb, "", mdb.op_set_range)) |e| {
                 s.entry = e;
             } else |err| {
-                if (err == lmdb.Error.NotFound) {
+                if (err == mdb.Error.NotFound) {
                     s.finished = true;
                 } else {
                     std.debug.panic("{s}", .{@errorName(err)});
@@ -515,9 +515,9 @@ pub const KvStore = struct {
 
     pub const Scan = struct {
         store: KvStore,
-        cur: ?lmdb.Cursor,
+        cur: ?mdb.Cursor,
         allocator: std.mem.Allocator,
-        entry: lmdb.Cursor.Entry = .{ .key = "", .val = "" },
+        entry: mdb.Cursor.Entry = .{ .key = "", .val = "" },
         finished: bool = false,
         started: bool = false,
 
@@ -528,14 +528,14 @@ pub const KvStore = struct {
                 return null;
             }
             if (self.started) {
-                if (cur.get("", "", lmdb.op_next_dup)) |e| {
+                if (cur.get("", "", mdb.op_next_dup)) |e| {
                     self.entry = e;
                 } else |err| {
-                    if (err != lmdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err)});
-                    if (cur.get("", "", lmdb.op_next)) |e| {
+                    if (err != mdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err)});
+                    if (cur.get("", "", mdb.op_next)) |e| {
                         self.entry = e;
                     } else |err2| {
-                        if (err2 != lmdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err2)});
+                        if (err2 != mdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err2)});
                         self.close();
                         return null;
                     }
@@ -555,17 +555,17 @@ pub const KvStore = struct {
         }
     };
 
-    pub fn revScan(self: KvStore, txn: lmdb.Txn, allocator: std.mem.Allocator, revisions: []u64) RevScan {
+    pub fn revScan(self: KvStore, txn: mdb.Txn, allocator: std.mem.Allocator, revisions: []u64) RevScan {
         if (revisions.len == 0) std.debug.panic("revisions must not be empty", .{});
         const cur = txn.openCursor(self.evt.i) catch null;
         var s = RevScan{ .store = self, .cur = cur, .allocator = allocator, .revisions = revisions };
         if (cur) |c| {
             var kb: [8]u8 = undefined;
             std.mem.writeInt(u64, &kb, revisions[0] << 12, .big);
-            if (c.get(&kb, "", lmdb.op_set_range)) |e| {
+            if (c.get(&kb, "", mdb.op_set_range)) |e| {
                 s.entry = e;
             } else |err| {
-                if (err == lmdb.Error.NotFound) {
+                if (err == mdb.Error.NotFound) {
                     s.finished = true;
                 } else {
                     std.debug.panic("{s}", .{@errorName(err)});
@@ -577,10 +577,10 @@ pub const KvStore = struct {
 
     pub const RevScan = struct {
         store: KvStore,
-        cur: ?lmdb.Cursor,
+        cur: ?mdb.Cursor,
         allocator: std.mem.Allocator,
         revisions: []u64,
-        entry: lmdb.Cursor.Entry = .{ .key = "", .val = "" },
+        entry: mdb.Cursor.Entry = .{ .key = "", .val = "" },
         finished: bool = false,
         started: bool = false,
         kb: [8]u8 = undefined,
@@ -593,20 +593,20 @@ pub const KvStore = struct {
                 return null;
             }
             if (self.started) {
-                if (cur.get("", "", lmdb.op_next_dup)) |e| {
+                if (cur.get("", "", mdb.op_next_dup)) |e| {
                     self.entry = e;
                 } else |err| {
-                    if (err != lmdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err)});
+                    if (err != mdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err)});
                     self.i += 1;
                     if (self.i >= self.revisions.len) {
                         self.close();
                         return null;
                     }
                     std.mem.writeInt(u64, &self.kb, self.revisions[self.i] << 12, .big);
-                    if (cur.get(&self.kb, "", lmdb.op_set_range)) |e| {
+                    if (cur.get(&self.kb, "", mdb.op_set_range)) |e| {
                         self.entry = e;
                     } else |err2| {
-                        if (err2 != lmdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err2)});
+                        if (err2 != mdb.Error.NotFound) std.debug.panic("{s}", .{@errorName(err2)});
                         self.close();
                         return null;
                     }

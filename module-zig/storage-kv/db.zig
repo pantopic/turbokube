@@ -1,17 +1,17 @@
 //! Mirrors module/storage-kv/db.go
 
 const std = @import("std");
-const lmdb = @import("lmdb");
+const mdb = @import("mdb");
 
 const crc32 = @import("crc.zig");
 const errors = @import("error.zig");
 
 pub const Db = struct {
     name: []const u8,
-    i: lmdb.DBI,
+    i: mdb.DBI,
     flags: u32,
 
-    pub fn open(db: Db, txn: lmdb.Txn) void {
+    pub fn open(db: Db, txn: mdb.Txn) void {
         const i = txn.openDBI(db.name, db.flags) catch |err|
             std.debug.panic("{s}", .{@errorName(err)});
         if (i != db.i) {
@@ -39,7 +39,7 @@ pub const Db = struct {
         return out[0 .. val.len + 4];
     }
 
-    pub fn getUint64(db: Db, txn: lmdb.Txn, key: []const u8) !u64 {
+    pub fn getUint64(db: Db, txn: mdb.Txn, key: []const u8) !u64 {
         const val = try txn.get(db.i, key);
         const body = try db.trimChecksum(key, val);
         if (body.len < 8) {
@@ -48,7 +48,7 @@ pub const Db = struct {
         return std.mem.readInt(u64, body[0..8], .big);
     }
 
-    pub fn putUint64(db: Db, txn: lmdb.Txn, key: []const u8, val: u64) !void {
+    pub fn putUint64(db: Db, txn: mdb.Txn, key: []const u8, val: u64) !void {
         var buf: [12]u8 = undefined;
         std.mem.writeInt(u64, buf[0..8], val, .big);
         std.mem.writeInt(u32, buf[8..12], crc32.crc(key, buf[0..8]), .big);
@@ -57,22 +57,22 @@ pub const Db = struct {
 };
 
 pub const db_meta = @import("db_meta.zig").DbMeta{
-    .db = .{ .name = "meta", .i = 2, .flags = lmdb.create },
+    .db = .{ .name = "meta", .i = 2, .flags = mdb.create },
 };
 pub const db_stats = @import("db_stats.zig").DbStats{
-    .db = .{ .name = "stats", .i = 3, .flags = lmdb.create },
+    .db = .{ .name = "stats", .i = 3, .flags = mdb.create },
 };
 pub const kv_store = @import("kv_store.zig").KvStore{
-    .rev = .{ .name = "revision", .i = 4, .flags = lmdb.create | lmdb.dup_sort },
-    .evt = .{ .name = "event", .i = 5, .flags = lmdb.create | lmdb.dup_sort },
-    .val = .{ .name = "value", .i = 6, .flags = lmdb.create },
+    .rev = .{ .name = "revision", .i = 4, .flags = mdb.create | mdb.dup_sort },
+    .evt = .{ .name = "event", .i = 5, .flags = mdb.create | mdb.dup_sort },
+    .val = .{ .name = "value", .i = 6, .flags = mdb.create },
 };
 pub const db_lease = @import("db_lease.zig").DbLease{
-    .db = .{ .name = "lease", .i = 7, .flags = lmdb.create },
+    .db = .{ .name = "lease", .i = 7, .flags = mdb.create },
 };
 pub const db_lease_exp = @import("db_lease_exp.zig").DbLeaseExp{
-    .db = .{ .name = "lease_exp", .i = 8, .flags = lmdb.create },
+    .db = .{ .name = "lease_exp", .i = 8, .flags = mdb.create },
 };
 pub const db_lease_key = @import("db_lease_key.zig").DbLeaseKey{
-    .db = .{ .name = "lease_key", .i = 9, .flags = lmdb.create },
+    .db = .{ .name = "lease_key", .i = 9, .flags = mdb.create },
 };

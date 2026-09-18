@@ -4,29 +4,29 @@ import (
 	"encoding/binary"
 	"strconv"
 
-	"github.com/pantopic/wazero-lmdb/sdk-go"
+	"github.com/pantopic/ext-mdb/sdk-go"
 )
 
 var (
-	dbMeta  = dbMetaImpl{db{`meta`, 2, lmdb.Create}}
-	dbStats = dbStatsImpl{db{`stats`, 3, lmdb.Create}}
+	dbMeta  = dbMetaImpl{db{`meta`, 2, mdb.Create}}
+	dbStats = dbStatsImpl{db{`stats`, 3, mdb.Create}}
 	kvStore = kvStoreImpl{
-		rev: db{`revision`, 4, lmdb.Create | lmdb.DupSort},
-		evt: db{`event`, 5, lmdb.Create | lmdb.DupSort},
-		val: db{`value`, 6, lmdb.Create},
+		rev: db{`revision`, 4, mdb.Create | mdb.DupSort},
+		evt: db{`event`, 5, mdb.Create | mdb.DupSort},
+		val: db{`value`, 6, mdb.Create},
 	}
-	dbLease    = dbLeaseImpl{db{`lease`, 7, lmdb.Create}}
-	dbLeaseExp = dbLeaseExpImpl{db{`lease_exp`, 8, lmdb.Create}}
-	dbLeaseKey = dbLeaseKeyImpl{db{`lease_key`, 9, lmdb.Create}}
+	dbLease    = dbLeaseImpl{db{`lease`, 7, mdb.Create}}
+	dbLeaseExp = dbLeaseExpImpl{db{`lease_exp`, 8, mdb.Create}}
+	dbLeaseKey = dbLeaseKeyImpl{db{`lease_key`, 9, mdb.Create}}
 )
 
 type db struct {
 	name  string
-	i     lmdb.DBI
+	i     mdb.DBI
 	flags uint32
 }
 
-func (db db) open(txn lmdb.Txn) {
+func (db db) open(txn mdb.Txn) {
 	i, err := txn.OpenDBI(db.name, db.flags)
 	if err != nil {
 		panic(err)
@@ -52,7 +52,7 @@ func (db db) addChecksum(key, val []byte) []byte {
 	return binary.BigEndian.AppendUint32(val, crc(key, val))
 }
 
-func (db db) getUint64(txn lmdb.Txn, key []byte) (i uint64, err error) {
+func (db db) getUint64(txn mdb.Txn, key []byte) (i uint64, err error) {
 	var val []byte
 	val, err = txn.Get(db.i, key, val)
 	if err != nil {
@@ -69,6 +69,6 @@ func (db db) getUint64(txn lmdb.Txn, key []byte) (i uint64, err error) {
 	return
 }
 
-func (db db) putUint64(txn lmdb.Txn, key []byte, val uint64) (err error) {
+func (db db) putUint64(txn mdb.Txn, key []byte, val uint64) (err error) {
 	return txn.Put(db.i, key, db.addChecksum(key, binary.BigEndian.AppendUint64(nil, val)), 0)
 }

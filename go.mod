@@ -15,7 +15,6 @@ require (
 	github.com/pantopic/wazero-atomic/host v0.0.3
 	github.com/pantopic/wazero-cluster/host v0.0.0-20260703160550-ba6a44a5f868
 	github.com/pantopic/wazero-global/host v0.0.2
-	github.com/pantopic/wazero-lmdb/host v0.0.9
 	github.com/pantopic/wazero-pool v0.0.6
 	github.com/pantopic/wazero-range-watch/host v0.0.4
 	github.com/pantopic/wazero-shard-client/host v0.0.2

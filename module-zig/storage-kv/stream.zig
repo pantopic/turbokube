@@ -1,6 +1,6 @@
 const std = @import("std");
 const atomic = @import("atomic");
-const lmdb = @import("lmdb");
+const mdb = @import("mdb");
 const range_watch = @import("range_watch");
 const small_cache = @import("small_cache");
 const statemachine = @import("statemachine");
@@ -67,7 +67,7 @@ pub fn recv(data: []u8) void {
         .progress_request => {
             var rev: u64 = 0;
             {
-                const txn = lmdb.begin(lmdb.readonly) catch |err| {
+                const txn = mdb.begin(mdb.readonly) catch |err| {
                     std.debug.panic("Unable to retrieve database revision: {s}", .{@errorName(err)});
                 };
                 defer txn.abort();
@@ -111,7 +111,7 @@ fn watchStart(req: *pb.WatchCreateRequest) void {
     }
     var compacted = false;
     {
-        const txn = lmdb.begin(lmdb.readonly) catch |err| {
+        const txn = mdb.begin(mdb.readonly) catch |err| {
             std.debug.panic("Error checking min revision: {s}", .{@errorName(err)});
         };
         defer txn.abort();
@@ -161,7 +161,7 @@ fn watchStart(req: *pb.WatchCreateRequest) void {
 fn watchScan(req: *const pb.WatchCreateRequest, since: u64, start: bool) !WatchScanResult {
     var res = WatchScanResult{};
     {
-        const txn = try lmdb.begin(lmdb.readonly);
+        const txn = try mdb.begin(mdb.readonly);
         defer txn.abort();
         res.rev = try dbMeta.getRevision(txn);
         if (start) {
@@ -263,7 +263,7 @@ pub fn rangeWatchRecv(notices: []range_watch.Notice) void {
     }
     var watch_event_batch = pb.WatchEventBatch{};
     {
-        const txn = lmdb.begin(lmdb.readonly) catch |err| {
+        const txn = mdb.begin(mdb.readonly) catch |err| {
             std.debug.panic("Error reading events: {s}", .{@errorName(err)});
         };
         defer txn.abort();

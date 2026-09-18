@@ -3,22 +3,22 @@ package main
 import (
 	"encoding/binary"
 
-	"github.com/pantopic/wazero-lmdb/sdk-go"
+	"github.com/pantopic/ext-mdb/sdk-go"
 )
 
 type dbLeaseImpl struct {
 	db
 }
 
-func (db dbLeaseImpl) init(txn lmdb.Txn) {
+func (db dbLeaseImpl) init(txn mdb.Txn) {
 	db.open(txn)
 }
 
-func (db dbLeaseImpl) get(txn lmdb.Txn, id uint64) (item lease, err error) {
+func (db dbLeaseImpl) get(txn mdb.Txn, id uint64) (item lease, err error) {
 	k := binary.AppendUvarint(nil, id)
 	var v []byte
 	v, err = txn.Get(db.i, k, v)
-	if lmdb.IsNotFound(err) {
+	if mdb.IsNotFound(err) {
 		err = nil
 		return
 	}
@@ -28,11 +28,11 @@ func (db dbLeaseImpl) get(txn lmdb.Txn, id uint64) (item lease, err error) {
 	return item.FromBytes(k, v)
 }
 
-func (db dbLeaseImpl) put(txn lmdb.Txn, item lease) error {
+func (db dbLeaseImpl) put(txn mdb.Txn, item lease) error {
 	return txn.Put(db.i, binary.AppendUvarint(nil, item.id), item.Bytes(nil), 0)
 }
 
-func (db dbLeaseImpl) all(txn lmdb.Txn) (items []lease, err error) {
+func (db dbLeaseImpl) all(txn mdb.Txn) (items []lease, err error) {
 	cur, err := txn.OpenCursor(db.i)
 	if err != nil {
 		return nil, err
@@ -40,8 +40,8 @@ func (db dbLeaseImpl) all(txn lmdb.Txn) (items []lease, err error) {
 	defer cur.Close()
 	var item lease
 	var k, v []byte
-	k, v, err = cur.Get(k, v, lmdb.Next)
-	for !lmdb.IsNotFound(err) && len(k) > 0 {
+	k, v, err = cur.Get(k, v, mdb.Next)
+	for !mdb.IsNotFound(err) && len(k) > 0 {
 		if err != nil {
 			return nil, err
 		}
@@ -50,14 +50,14 @@ func (db dbLeaseImpl) all(txn lmdb.Txn) (items []lease, err error) {
 			return nil, err
 		}
 		items = append(items, item)
-		k, v, err = cur.Get(k[:0], v[:0], lmdb.Next)
+		k, v, err = cur.Get(k[:0], v[:0], mdb.Next)
 	}
-	if lmdb.IsNotFound(err) {
+	if mdb.IsNotFound(err) {
 		err = nil
 	}
 	return
 }
 
-func (db dbLeaseImpl) del(txn lmdb.Txn, id uint64) error {
+func (db dbLeaseImpl) del(txn mdb.Txn, id uint64) error {
 	return txn.Del(db.i, binary.AppendUvarint(nil, id), nil)
 }

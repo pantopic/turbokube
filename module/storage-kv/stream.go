@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 
-	"github.com/pantopic/wazero-lmdb/sdk-go"
+	"github.com/pantopic/ext-mdb/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
 	"github.com/pantopic/wazero-state-machine/sdk-go"
 
@@ -45,7 +45,7 @@ func streamRecv(data []byte) {
 		statemachine.StreamSend(uint64(req.WatchId), []byte{WatchMessageType_CANCELED})
 	case *internal.WatchRequest_ProgressRequest:
 		var rev uint64
-		err := lmdb.View(func(txn lmdb.Txn) (err error) {
+		err := mdb.View(func(txn mdb.Txn) (err error) {
 			rev, err = dbMeta.getRevision(txn)
 			if err != nil {
 				return
@@ -85,7 +85,7 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 			return
 		}
 	}
-	err = lmdb.View(func(txn lmdb.Txn) (err error) {
+	err = mdb.View(func(txn mdb.Txn) (err error) {
 		if min, err = dbMeta.getRevisionMin(txn); err != nil {
 			return
 		}
@@ -135,7 +135,7 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 }
 
 func watchScan(req *internal.WatchCreateRequest, since uint64, start bool) (rev uint64, sent int, err error) {
-	err = lmdb.View(func(txn lmdb.Txn) (err error) {
+	err = mdb.View(func(txn mdb.Txn) (err error) {
 		rev, err = dbMeta.getRevision(txn)
 		if err != nil {
 			return
@@ -232,7 +232,7 @@ func rangeWatchRecv(notices []range_watch.Notice) {
 			}
 		}
 	}
-	err := lmdb.View(func(txn lmdb.Txn) (err error) {
+	err := mdb.View(func(txn mdb.Txn) (err error) {
 		var n uint64
 		var i int
 		for evt := range kvStore.revScan(txn, revs) {

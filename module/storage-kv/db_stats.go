@@ -1,13 +1,13 @@
 package main
 
 import (
-	"github.com/pantopic/wazero-lmdb/sdk-go"
+	"github.com/pantopic/ext-mdb/sdk-go"
 )
 
 type dbStatsImpl struct {
 	db
 }
 
-func (db dbStatsImpl) init(txn lmdb.Txn) {
+func (db dbStatsImpl) init(txn mdb.Txn) {
 	db.open(txn)
 }

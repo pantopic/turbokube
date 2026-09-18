@@ -1,7 +1,7 @@
 //! Mirrors module/storage-kv/db_lease_exp.go
 
 const std = @import("std");
-const lmdb = @import("lmdb");
+const mdb = @import("mdb");
 
 const Db = @import("db.zig").Db;
 const Lease = @import("lease.zig").Lease;
@@ -10,7 +10,7 @@ const util = @import("util.zig");
 pub const DbLeaseExp = struct {
     db: Db,
 
-    pub fn init(self: DbLeaseExp, txn: lmdb.Txn) void {
+    pub fn init(self: DbLeaseExp, txn: mdb.Txn) void {
         self.db.open(txn);
     }
 
@@ -20,21 +20,21 @@ pub const DbLeaseExp = struct {
         return buf[0 .. 8 + n];
     }
 
-    pub fn put(self: DbLeaseExp, txn: lmdb.Txn, item: Lease) !void {
+    pub fn put(self: DbLeaseExp, txn: mdb.Txn, item: Lease) !void {
         var kbuf: [8 + util.max_varint_len]u8 = undefined;
         const k = keyOf(item, &kbuf);
         var vbuf: [4]u8 = undefined;
         return txn.put(self.db.i, k, self.db.addChecksum(k, "", &vbuf), 0);
     }
 
-    pub fn del(self: DbLeaseExp, txn: lmdb.Txn, item: Lease) !void {
+    pub fn del(self: DbLeaseExp, txn: mdb.Txn, item: Lease) !void {
         var kbuf: [8 + util.max_varint_len]u8 = undefined;
         return txn.del(self.db.i, keyOf(item, &kbuf), "");
     }
 
     /// Iterates ids of leases expiring at or before `expires`.
     /// Mirrors Go's scan iterator; the cursor closes when iteration ends.
-    pub fn scan(self: DbLeaseExp, txn: lmdb.Txn, expires: u64) Scan {
+    pub fn scan(self: DbLeaseExp, txn: mdb.Txn, expires: u64) Scan {
         const cur = txn.openCursor(self.db.i) catch {
             return .{ .db = self.db, .cur = null, .expires = expires };
         };
@@ -43,12 +43,12 @@ pub const DbLeaseExp = struct {
 
     pub const Scan = struct {
         db: Db,
-        cur: ?lmdb.Cursor,
+        cur: ?mdb.Cursor,
         expires: u64,
 
         pub fn next(self: *Scan) ?u64 {
             const cur = self.cur orelse return null;
-            const entry = cur.get("", "", lmdb.op_next) catch {
+            const entry = cur.get("", "", mdb.op_next) catch {
                 self.close();
                 return null;
             };

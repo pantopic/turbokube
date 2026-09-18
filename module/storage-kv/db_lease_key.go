@@ -5,24 +5,24 @@ import (
 	"encoding/binary"
 	"io"
 
-	"github.com/pantopic/wazero-lmdb/sdk-go"
+	"github.com/pantopic/ext-mdb/sdk-go"
 )
 
 type dbLeaseKeyImpl struct {
 	db
 }
 
-func (db dbLeaseKeyImpl) init(txn lmdb.Txn) {
+func (db dbLeaseKeyImpl) init(txn mdb.Txn) {
 	db.open(txn)
 }
 
-func (db dbLeaseKeyImpl) put(txn lmdb.Txn, id uint64, key []byte) error {
+func (db dbLeaseKeyImpl) put(txn mdb.Txn, id uint64, key []byte) error {
 	k := append(binary.AppendUvarint(nil, id), key...)
 	v := db.addChecksum(k, nil)
 	return txn.Put(db.i, k, v, 0)
 }
 
-func (db dbLeaseKeyImpl) sweep(txn lmdb.Txn, id uint64, batch [][]byte) ([][]byte, error) {
+func (db dbLeaseKeyImpl) sweep(txn mdb.Txn, id uint64, batch [][]byte) ([][]byte, error) {
 	cur, err := txn.OpenCursor(db.i)
 	if err != nil {
 		return nil, err
@@ -32,9 +32,9 @@ func (db dbLeaseKeyImpl) sweep(txn lmdb.Txn, id uint64, batch [][]byte) ([][]byt
 	var r = bytes.NewReader(nil)
 	var k, v []byte
 	k = binary.AppendUvarint(k, id)
-	k, v, err = cur.Get(k, v[:0], lmdb.SetRange)
+	k, v, err = cur.Get(k, v[:0], mdb.SetRange)
 	for range cap(batch) {
-		if lmdb.IsNotFound(err) || len(k) == 0 {
+		if mdb.IsNotFound(err) || len(k) == 0 {
 			err = nil
 			break
 		}
@@ -55,15 +55,15 @@ func (db dbLeaseKeyImpl) sweep(txn lmdb.Txn, id uint64, batch [][]byte) ([][]byt
 		if err != nil {
 			return nil, err
 		}
-		if err = cur.Del(lmdb.Current); err != nil {
+		if err = cur.Del(mdb.Current); err != nil {
 			return nil, err
 		}
 		batch = append(batch, key)
-		k, v, err = cur.Get(k[:0], v[:0], lmdb.Next)
+		k, v, err = cur.Get(k[:0], v[:0], mdb.Next)
 	}
 	return batch, nil
 }
 
-func (db dbLeaseKeyImpl) del(txn lmdb.Txn, id uint64, key []byte) (err error) {
+func (db dbLeaseKeyImpl) del(txn mdb.Txn, id uint64, key []byte) (err error) {
 	return txn.Del(db.i, append(binary.AppendUvarint(nil, id), key...), nil)
 }

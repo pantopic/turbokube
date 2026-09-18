@@ -10,7 +10,7 @@ pub fn build(b: *std.Build) void {
         .preferred_optimize_mode = .ReleaseSmall,
     });
     const protobuf_dep = b.dependency("protobuf", .{});
-    const lmdb_dep = b.dependency("lmdb_sdk_zig", .{});
+    const mdb_dep = b.dependency("mdb_sdk_zig", .{});
     const atomic_dep = b.dependency("atomic_sdk_zig", .{});
     const global_dep = b.dependency("global_sdk_zig", .{});
     const range_watch_dep = b.dependency("range_watch_sdk_zig", .{});
@@ -33,7 +33,7 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "lmdb", .module = lmdb_dep.module("lmdb") },
+                .{ .name = "mdb", .module = mdb_dep.module("mdb") },
                 .{ .name = "atomic", .module = atomic_dep.module("atomic") },
                 .{ .name = "global", .module = global_dep.module("global") },
                 .{ .name = "range_watch", .module = range_watch_dep.module("range_watch") },

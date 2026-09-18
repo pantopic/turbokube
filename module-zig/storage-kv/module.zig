@@ -1,7 +1,7 @@
 const std = @import("std");
 const atomic = @import("atomic");
 const global = @import("global");
-const lmdb = @import("lmdb");
+const mdb = @import("mdb");
 const range_watch = @import("range_watch");
 const small_cache = @import("small_cache");
 const statemachine = @import("statemachine");
@@ -42,7 +42,7 @@ var epoch: u64 = 0;
 var new_index: u64 = 0;
 var new_rev: u64 = 0;
 var old_rev: u64 = 0;
-var txn: lmdb.Txn = .{ .id = 0 };
+var txn: mdb.Txn = .{ .id = 0 };
 
 pub const watchCache = small_cache
     .newLocal(@intFromEnum(SMALL_CACHE.WATCH_CREATE_REQ));
@@ -62,7 +62,7 @@ var out: [2 * 1024 * 1024]u8 = undefined;
 
 comptime {
     _ = statemachine;
-    _ = lmdb;
+    _ = mdb;
     _ = atomic;
     _ = global;
     _ = range_watch;
@@ -93,7 +93,7 @@ fn invalidCommand(allocator: std.mem.Allocator, cmd: []const u8) []const u8 {
 
 fn open() u64 {
     var index: u64 = 0;
-    const t = lmdb.begin(0) catch |err| {
+    const t = mdb.begin(0) catch |err| {
         std.debug.panic("Unable to open env {s}", .{@errorName(err)});
     };
     index = dbMeta.init(t);
@@ -111,7 +111,7 @@ fn open() u64 {
 fn update(index: u64, cmd: []u8) statemachine.Result {
     new_index = index;
     if (txn.id == 0) {
-        txn = lmdb.begin(0) catch |err| {
+        txn = mdb.begin(0) catch |err| {
             std.debug.panic("Unable to open txn: {s}", .{@errorName(err)});
         };
         epoch = dbMeta.getEpoch(txn) catch |err| {
@@ -376,7 +376,7 @@ fn read(query: []u8) statemachine.Result {
             };
             var resp: pb.RangeResponse = undefined;
             const err_or: ?anyerror = blk: {
-                const t = lmdb.begin(lmdb.readonly) catch |err| break :blk err;
+                const t = mdb.begin(mdb.readonly) catch |err| break :blk err;
                 defer t.abort();
                 rev = dbMeta.getRevision(t) catch |err| break :blk err;
                 resp = queryRange(t, arena, rev, &req) catch |err| break :blk err;
@@ -396,7 +396,7 @@ fn read(query: []u8) statemachine.Result {
             };
             var resp: pb.LeaseLeasesResponse = undefined;
             const err_or: ?anyerror = blk: {
-                const t = lmdb.begin(lmdb.readonly) catch |err| break :blk err;
+                const t = mdb.begin(mdb.readonly) catch |err| break :blk err;
                 defer t.abort();
                 rev = dbMeta.getRevision(t) catch |err| break :blk err;
                 resp = queryLeaseLeases(t, arena) catch |err| break :blk err;
@@ -417,7 +417,7 @@ fn read(query: []u8) statemachine.Result {
             };
             var resp: pb.LeaseTimeToLiveResponse = undefined;
             const err_or: ?anyerror = blk: {
-                const t = lmdb.begin(lmdb.readonly) catch |err| break :blk err;
+                const t = mdb.begin(mdb.readonly) catch |err| break :blk err;
                 defer t.abort();
                 rev = dbMeta.getRevision(t) catch |err| break :blk err;
                 resp = queryLeaseTimeToLive(t, &req) catch |err| break :blk err;
@@ -442,7 +442,7 @@ fn read(query: []u8) statemachine.Result {
         },
         types.QUERY_HEADER => {
             blk: {
-                const t = lmdb.begin(lmdb.readonly) catch break :blk;
+                const t = mdb.begin(mdb.readonly) catch break :blk;
                 defer t.abort();
                 rev = dbMeta.getRevision(t) catch break :blk;
             }
@@ -463,7 +463,7 @@ const PutOut = struct {
 };
 
 fn cmdPut(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     arena: std.mem.Allocator,
     rev: u64,
     subrev: u64,
@@ -498,7 +498,7 @@ const DelOut = struct {
 };
 
 fn cmdDeleteRange(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     arena: std.mem.Allocator,
     rev: u64,
     subrev: u64,
@@ -546,7 +546,7 @@ var txn_ops_in: []const pb.RequestOp = &.{};
 var txn_ops_res: std.ArrayList(pb.ResponseOp) = .empty;
 var txn_ops_keys: std.ArrayList([]const u8) = .empty;
 
-fn txnOpsFn(t: lmdb.Txn) anyerror!void {
+fn txnOpsFn(t: mdb.Txn) anyerror!void {
     const arena = txn_ops_arena;
     for (txn_ops_in, 0..) |op, i| {
         if (op.request) |r| switch (r) {
@@ -576,7 +576,7 @@ fn txnOpsFn(t: lmdb.Txn) anyerror!void {
 }
 
 fn txnOps(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     arena: std.mem.Allocator,
     rev: u64,
     epoch_: u64,
@@ -592,7 +592,7 @@ fn txnOps(
     return .{ .res = txn_ops_res, .affected = txn_ops_keys.items, .err = sub_err };
 }
 
-fn txnCompare(t: lmdb.Txn, arena: std.mem.Allocator, conds: []const pb.Compare) !bool {
+fn txnCompare(t: mdb.Txn, arena: std.mem.Allocator, conds: []const pb.Compare) !bool {
     var success = true;
     for (conds) |cond| {
         const item = try kvStore.get(t, arena, cond.key);
@@ -630,7 +630,7 @@ const LeaseGrantOut = struct {
 };
 
 fn cmdLeaseGrant(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     epoch_: u64,
     req: *const pb.LeaseGrantRequest,
 ) !LeaseGrantOut {
@@ -669,7 +669,7 @@ const LeaseRevokeOut = struct {
 };
 
 fn cmdLeaseRevoke(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     arena: std.mem.Allocator,
     rev: u64,
     epoch_: u64,
@@ -699,7 +699,7 @@ const LeaseKeepAliveOut = struct {
 };
 
 fn cmdLeaseKeepAlive(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     epoch_: u64,
     req: *const pb.LeaseKeepAliveRequest,
 ) !LeaseKeepAliveOut {
@@ -722,7 +722,7 @@ const LeaseKeepAliveBatchOut = struct {
 };
 
 fn cmdLeaseKeepAliveBatch(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     arena: std.mem.Allocator,
     epoch_: u64,
     req: *const pb.LeaseKeepAliveBatchRequest,
@@ -745,7 +745,7 @@ fn cmdLeaseKeepAliveBatch(
 }
 
 pub fn queryRange(
-    t: lmdb.Txn,
+    t: mdb.Txn,
     arena: std.mem.Allocator,
     rev: u64,
     req: *const pb.RangeRequest,
@@ -788,7 +788,7 @@ pub fn queryRange(
     return res;
 }
 
-fn queryLeaseLeases(t: lmdb.Txn, arena: std.mem.Allocator) !pb.LeaseLeasesResponse {
+fn queryLeaseLeases(t: mdb.Txn, arena: std.mem.Allocator) !pb.LeaseLeasesResponse {
     var res = pb.LeaseLeasesResponse{};
     const items = try dbLease.all(t, arena);
     for (items) |item| {
@@ -797,7 +797,7 @@ fn queryLeaseLeases(t: lmdb.Txn, arena: std.mem.Allocator) !pb.LeaseLeasesRespon
     return res;
 }
 
-fn queryLeaseTimeToLive(t: lmdb.Txn, req: *const pb.LeaseTimeToLiveRequest) !pb.LeaseTimeToLiveResponse {
+fn queryLeaseTimeToLive(t: mdb.Txn, req: *const pb.LeaseTimeToLiveRequest) !pb.LeaseTimeToLiveResponse {
     var res = pb.LeaseTimeToLiveResponse{};
     const epoch_ = try dbMeta.getEpoch(t);
     const item = try dbLease.get(t, util.u64Of(req.ID));

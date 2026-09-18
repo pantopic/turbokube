@@ -1,7 +1,7 @@
 //! Mirrors module/storage-kv/db_meta.go
 
 const std = @import("std");
-const lmdb = @import("lmdb");
+const mdb = @import("mdb");
 
 const Db = @import("db.zig").Db;
 
@@ -29,7 +29,7 @@ const meta_key_term = "term";
 pub const DbMeta = struct {
     db: Db,
 
-    pub fn init(self: DbMeta, txn: lmdb.Txn) u64 {
+    pub fn init(self: DbMeta, txn: mdb.Txn) u64 {
         self.db.open(txn);
         for ([_][]const u8{
             meta_key_epoch,
@@ -39,7 +39,7 @@ pub const DbMeta = struct {
             meta_key_term,
         }) |k| {
             _ = self.db.getUint64(txn, k) catch |err| {
-                if (err != lmdb.Error.NotFound) {
+                if (err != mdb.Error.NotFound) {
                     std.debug.panic("{s}", .{@errorName(err)});
                 }
                 self.db.putUint64(txn, k, 0) catch |perr|
@@ -51,7 +51,7 @@ pub const DbMeta = struct {
             meta_key_revision_min,
         }) |k| {
             _ = self.db.getUint64(txn, k) catch |err| {
-                if (err != lmdb.Error.NotFound) {
+                if (err != mdb.Error.NotFound) {
                     return 0;
                 }
                 self.db.putUint64(txn, k, 1) catch {
@@ -63,59 +63,59 @@ pub const DbMeta = struct {
             std.debug.panic("{s}", .{@errorName(err)});
     }
 
-    pub fn getEpoch(self: DbMeta, txn: lmdb.Txn) !u64 {
+    pub fn getEpoch(self: DbMeta, txn: mdb.Txn) !u64 {
         return self.db.getUint64(txn, meta_key_epoch);
     }
 
-    pub fn setEpoch(self: DbMeta, txn: lmdb.Txn, val: u64) !void {
+    pub fn setEpoch(self: DbMeta, txn: mdb.Txn, val: u64) !void {
         return self.db.putUint64(txn, meta_key_epoch, val);
     }
 
-    pub fn getIndex(self: DbMeta, txn: lmdb.Txn) !u64 {
+    pub fn getIndex(self: DbMeta, txn: mdb.Txn) !u64 {
         return self.db.getUint64(txn, meta_key_index);
     }
 
-    pub fn setIndex(self: DbMeta, txn: lmdb.Txn, val: u64) !void {
+    pub fn setIndex(self: DbMeta, txn: mdb.Txn, val: u64) !void {
         return self.db.putUint64(txn, meta_key_index, val);
     }
 
-    pub fn getLeaseID(self: DbMeta, txn: lmdb.Txn) !u64 {
+    pub fn getLeaseID(self: DbMeta, txn: mdb.Txn) !u64 {
         return self.db.getUint64(txn, meta_key_lease_id);
     }
 
-    pub fn setLeaseID(self: DbMeta, txn: lmdb.Txn, val: u64) !void {
+    pub fn setLeaseID(self: DbMeta, txn: mdb.Txn, val: u64) !void {
         return self.db.putUint64(txn, meta_key_lease_id, val);
     }
 
-    pub fn getRevision(self: DbMeta, txn: lmdb.Txn) !u64 {
+    pub fn getRevision(self: DbMeta, txn: mdb.Txn) !u64 {
         return self.db.getUint64(txn, meta_key_revision);
     }
 
-    pub fn setRevision(self: DbMeta, txn: lmdb.Txn, val: u64) !void {
+    pub fn setRevision(self: DbMeta, txn: mdb.Txn, val: u64) !void {
         return self.db.putUint64(txn, meta_key_revision, val);
     }
 
-    pub fn getRevisionCompacted(self: DbMeta, txn: lmdb.Txn) !u64 {
+    pub fn getRevisionCompacted(self: DbMeta, txn: mdb.Txn) !u64 {
         return self.db.getUint64(txn, meta_key_revision_compacted);
     }
 
-    pub fn setRevisionCompacted(self: DbMeta, txn: lmdb.Txn, val: u64) !void {
+    pub fn setRevisionCompacted(self: DbMeta, txn: mdb.Txn, val: u64) !void {
         return self.db.putUint64(txn, meta_key_revision_compacted, val);
     }
 
-    pub fn getRevisionMin(self: DbMeta, txn: lmdb.Txn) !u64 {
+    pub fn getRevisionMin(self: DbMeta, txn: mdb.Txn) !u64 {
         return self.db.getUint64(txn, meta_key_revision_min);
     }
 
-    pub fn setRevisionMin(self: DbMeta, txn: lmdb.Txn, val: u64) !void {
+    pub fn setRevisionMin(self: DbMeta, txn: mdb.Txn, val: u64) !void {
         return self.db.putUint64(txn, meta_key_revision_min, val);
     }
 
-    pub fn getTerm(self: DbMeta, txn: lmdb.Txn) !u64 {
+    pub fn getTerm(self: DbMeta, txn: mdb.Txn) !u64 {
         return self.db.getUint64(txn, meta_key_term);
     }
 
-    pub fn setTerm(self: DbMeta, txn: lmdb.Txn, val: u64) !void {
+    pub fn setTerm(self: DbMeta, txn: mdb.Txn, val: u64) !void {
         return self.db.putUint64(txn, meta_key_term, val);
     }
 };

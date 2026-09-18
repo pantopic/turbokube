@@ -4,8 +4,8 @@
     .minimum_zig_version = "0.16.0",
     .fingerprint = 0x9d4ac85a78de4647,
     .dependencies = .{
-        .lmdb_sdk_zig = .{
-            .path = "../../../wazero-lmdb/sdk-zig",
+        .mdb_sdk_zig = .{
+            .path = "../../../ext-mdb/sdk-zig",
         },
         .atomic_sdk_zig = .{
             .path = "../../../wazero-atomic/sdk-zig",
