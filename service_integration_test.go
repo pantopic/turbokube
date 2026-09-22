@@ -36,6 +36,7 @@ import (
 	"github.com/pantopic/ext-buffer/host-wazero"
 	"github.com/pantopic/ext-grpc-server/host-wazero"
 	"github.com/pantopic/ext-mdb/host-wazero-lmdb"
+	"github.com/pantopic/ext-raft/host-wazero"
 	"github.com/pantopic/wazero-atomic/host"
 	"github.com/pantopic/wazero-cluster/host"
 	"github.com/pantopic/wazero-global/host"
@@ -43,7 +44,6 @@ import (
 	"github.com/pantopic/wazero-range-watch/host"
 	"github.com/pantopic/wazero-shard-client/host"
 	"github.com/pantopic/wazero-small-cache/host"
-	"github.com/pantopic/wazero-state-machine/host"
 
 	"github.com/pantopic/turbokube/embed"
 	"github.com/pantopic/turbokube/internal"
@@ -398,7 +398,7 @@ func setupCluster(t *testing.T) {
 		wazero_atomic.New(),
 		wazero_range_watch.New(),
 		wazero_small_cache.New(),
-		wazero_state_machine.New(),
+		wazero_raft.New(),
 	}
 	var storageCtxCopy []ContextCopy
 	for _, m := range storageExtensions {
@@ -407,16 +407,15 @@ func setupCluster(t *testing.T) {
 		}
 		storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
 	}
-	cfg := wazero.NewModuleConfig().WithStdout(os.Stdout)
 	kvWasm := turbokube.StorageKvDevWasm
 	if zig {
 		kvWasm = turbokube.StorageKvZigDevWasm
 	}
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, kvWasm,
-		wazeropool.WithModuleConfig(cfg),
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithBurst(runtime.NumCPU()),
-		// wazeropool.WithMemoryLimit(32<<20),
+		wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.StorageKvName),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
@@ -452,7 +451,7 @@ func setupCluster(t *testing.T) {
 		poolProvider := func(shardID uint64) wazeropool.Instance {
 			return poolStorageKv
 		}
-		fsm := wazero_state_machine.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
+		fsm := wazero_raft.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
 		agents[i].StateMachineRegister(Uri, fsm)
 		go func() {
 			if err = agents[i].Start(ctx); err != nil {
@@ -486,7 +485,7 @@ func setupCluster(t *testing.T) {
 		poolProvider := func(shardID uint64) wazeropool.Instance {
 			return poolStorageKv
 		}
-		fsm := wazero_state_machine.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
+		fsm := wazero_raft.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
 		nonvoting[i].StateMachineRegister(Uri, fsm)
 		go func() {
 			if err = nonvoting[i].Start(ctx); err != nil {
@@ -569,7 +568,7 @@ func setupCluster(t *testing.T) {
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, svcWasm,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
 		wazeropool.WithLimit(runtime.NumCPU()),
-		// wazeropool.WithMemoryLimit(32<<20),
+		wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.ServiceGrpcName),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {

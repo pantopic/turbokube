@@ -3,7 +3,7 @@ const atomic = @import("atomic");
 const mdb = @import("mdb");
 const range_watch = @import("range_watch");
 const small_cache = @import("small_cache");
-const statemachine = @import("statemachine");
+const raft = @import("raft");
 const pb = @import("pb/etcdserverpb.pb.zig");
 
 const dbs = @import("db.zig");
@@ -27,14 +27,6 @@ fn arena() std.mem.Allocator {
 fn decode(comptime T: type, b: []const u8) !T {
     var reader = std.Io.Reader.fixed(b);
     return T.decode(&reader, arena());
-}
-
-pub fn printStdout(comptime fmt: []const u8, args: anytype) void {
-    var buf: [64]u8 = undefined;
-    const msg = std.fmt.bufPrint(&buf, fmt, args) catch return;
-    const iovs = [_]std.os.wasi.ciovec_t{.{ .base = msg.ptr, .len = msg.len }};
-    var nwritten: usize = undefined;
-    _ = std.os.wasi.fd_write(1, &iovs, iovs.len, &nwritten);
 }
 
 pub fn open() void {
@@ -62,7 +54,7 @@ pub fn recv(data: []u8) void {
             range_watch.stop(&watch_id_bytes) catch {};
             module.watchCache.del(&watch_id_bytes);
             module.watchRev.del(util.u64Of(cr.watch_id));
-            statemachine.streamSend(util.u64Of(cr.watch_id), &[_]u8{types.WatchMessageType_CANCELED});
+            raft.streamSend(util.u64Of(cr.watch_id), &[_]u8{types.WatchMessageType_CANCELED});
         },
         .progress_request => {
             var rev: u64 = 0;
@@ -80,7 +72,7 @@ pub fn recv(data: []u8) void {
             if (min_watch_id_bytes.len == 8) {
                 min_watch_id = std.mem.readInt(u64, min_watch_id_bytes[0..8], .big);
             }
-            printStdout("progress request {d} {d}\n", .{ min_watch_id, rev });
+            util.printStdout("progress request {d} {d}\n", .{ min_watch_id, rev });
             sendCodeHeader(min_watch_id, types.WatchMessageType_NOTIFY, rev);
         },
     };
@@ -105,7 +97,7 @@ fn watchStart(req: *pb.WatchCreateRequest) void {
     } else {
         std.mem.writeInt(u64, &watch_id_bytes, util.u64Of(req.watch_id), .big);
         range_watch.reserve(&watch_id_bytes) catch {
-            statemachine.streamSend(1, &[_]u8{types.WatchMessageType_ERR_EXISTS});
+            raft.streamSend(1, &[_]u8{types.WatchMessageType_ERR_EXISTS});
             return;
         };
     }
@@ -153,7 +145,7 @@ fn watchStart(req: *pb.WatchCreateRequest) void {
         };
     }
     if (req.progress_notify) {
-        printStdout("progress watchStart notify {d} {d}\n", .{ req.watch_id, res.rev });
+        util.printStdout("progress watchStart notify {d} {d}\n", .{ req.watch_id, res.rev });
         sendCodeHeader(util.u64Of(req.watch_id), types.WatchMessageType_NOTIFY, res.rev);
     }
 }
@@ -349,7 +341,7 @@ pub fn rangeWatchRecv(notices: []range_watch.Notice) void {
     while (reqs_it.next()) |entry| {
         const watch_id = entry.key_ptr.*;
         if ((sent.get(watch_id) orelse 0) == 0 and entry.value_ptr.progress_notify) {
-            printStdout("progress rangeWatchRecv notify {d} {d}\n", .{ watch_id, revs[revs.len - 1] });
+            util.printStdout("progress rangeWatchRecv notify {d} {d}\n", .{ watch_id, revs[revs.len - 1] });
             sendCodeHeader(watch_id, types.WatchMessageType_NOTIFY, revs[revs.len - 1]);
         }
     }
@@ -364,7 +356,7 @@ fn sendCodeHeader(val: u64, code: u8, rev: u64) void {
     h.encode(&writer, arena()) catch |err| {
         std.debug.panic("Error marshaling header: {s}", .{@errorName(err)});
     };
-    statemachine.streamSend(val, buf[0 .. 1 + writer.buffered().len]);
+    raft.streamSend(val, buf[0 .. 1 + writer.buffered().len]);
 }
 
 fn sendCodeMsg(val: u64, code: u8, msg: anytype) void {
@@ -373,5 +365,5 @@ fn sendCodeMsg(val: u64, code: u8, msg: anytype) void {
     msg.encode(&writer, arena()) catch |err| {
         std.debug.panic("Error serializing message: {s}", .{@errorName(err)});
     };
-    statemachine.streamSend(val, out[0 .. 1 + writer.buffered().len]);
+    raft.streamSend(val, out[0 .. 1 + writer.buffered().len]);
 }

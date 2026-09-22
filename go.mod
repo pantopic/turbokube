@@ -11,7 +11,9 @@ require (
 	github.com/logbn/byteinterval v0.0.2
 	github.com/logbn/zongzi v0.0.21
 	github.com/pantopic/ext-buffer/host-wazero v0.0.2
-	github.com/pantopic/ext-grpc-server/host-wazero v0.0.0-20260825184516-817255fbbbd9
+	github.com/pantopic/ext-grpc-server/host-wazero v0.0.16
+	github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.10
+	github.com/pantopic/ext-raft/host-wazero v0.0.2
 	github.com/pantopic/wazero-atomic/host v0.0.3
 	github.com/pantopic/wazero-cluster/host v0.0.0-20260703160550-ba6a44a5f868
 	github.com/pantopic/wazero-global/host v0.0.2
@@ -19,7 +21,6 @@ require (
 	github.com/pantopic/wazero-range-watch/host v0.0.4
 	github.com/pantopic/wazero-shard-client/host v0.0.2
 	github.com/pantopic/wazero-small-cache/host v0.0.1
-	github.com/pantopic/wazero-state-machine/host v0.0.1
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.11.1
 	github.com/tetratelabs/wazero v1.11.0
@@ -63,6 +64,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
+	github.com/puzpuzpuz/xsync/v4 v4.4.0 // indirect
 	github.com/rdleal/intervalst v1.4.1 // indirect
 	github.com/rogpeppe/go-internal v1.13.1 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect

@@ -26,6 +26,7 @@ import (
 	"github.com/pantopic/ext-buffer/host-wazero"
 	"github.com/pantopic/ext-grpc-server/host-wazero"
 	"github.com/pantopic/ext-mdb/host-wazero-lmdb"
+	"github.com/pantopic/ext-raft/host-wazero"
 	"github.com/pantopic/wazero-atomic/host"
 	"github.com/pantopic/wazero-cluster/host"
 	"github.com/pantopic/wazero-global/host"
@@ -33,7 +34,6 @@ import (
 	"github.com/pantopic/wazero-range-watch/host"
 	"github.com/pantopic/wazero-shard-client/host"
 	"github.com/pantopic/wazero-small-cache/host"
-	"github.com/pantopic/wazero-state-machine/host"
 
 	"github.com/pantopic/turbokube"
 	"github.com/pantopic/turbokube/embed"
@@ -81,7 +81,7 @@ func main() {
 		wazero_atomic.New(),
 		wazero_range_watch.New(),
 		wazero_small_cache.New(),
-		wazero_state_machine.New(),
+		wazero_raft.New(),
 	}
 	var ctxCopy []func(dst, src context.Context) context.Context
 	for _, m := range storageExtensions {
@@ -116,7 +116,7 @@ func main() {
 	poolProvider := func(shardID uint64) wazeropool.Instance {
 		return poolStorageKv
 	}
-	fsmFactory := wazero_state_machine.FactoryPersistent(ctx, ctxInit, ctxCopy, logger, poolProvider, hostModLMDB)
+	fsmFactory := wazero_raft.FactoryPersistent(ctx, ctxInit, ctxCopy, logger, poolProvider, hostModLMDB)
 	agent.StateMachineRegister(turbokube.StorageKvName, fsmFactory)
 	go func() {
 		for {

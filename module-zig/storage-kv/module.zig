@@ -4,7 +4,7 @@ const global = @import("global");
 const mdb = @import("mdb");
 const range_watch = @import("range_watch");
 const small_cache = @import("small_cache");
-const statemachine = @import("statemachine");
+const raft = @import("raft");
 const pb = @import("pb/etcdserverpb.pb.zig");
 
 const dbs = @import("db.zig");
@@ -61,7 +61,7 @@ var read_arena_state = std.heap.ArenaAllocator.init(std.heap.wasm_allocator);
 var out: [2 * 1024 * 1024]u8 = undefined;
 
 comptime {
-    _ = statemachine;
+    _ = raft;
     _ = mdb;
     _ = atomic;
     _ = global;
@@ -71,8 +71,8 @@ comptime {
 
 export fn _start() void {
     range_watch.init(read_arena_state.allocator());
-    statemachine.persistent(&open, &update, &finish, &read);
-    statemachine.streaming(&stream.open, &stream.recv, &stream.close);
+    raft.persistent(&open, &update, &finish, &read);
+    raft.streaming(&stream.open, &stream.recv, &stream.close);
     range_watch.receive(&stream.rangeWatchRecv) catch unreachable;
 }
 
@@ -108,7 +108,7 @@ fn open() u64 {
     return index;
 }
 
-fn update(index: u64, cmd: []u8) statemachine.Result {
+fn update(index: u64, cmd: []u8) raft.Result {
     new_index = index;
     if (txn.id == 0) {
         txn = mdb.begin(0) catch |err| {
@@ -194,7 +194,7 @@ fn update(index: u64, cmd: []u8) statemachine.Result {
                 return .{ .data = invalidCommand(arena, cmd) };
             };
             const success = txnCompare(txn, arena, req.compare.items) catch {
-                std.debug.print("txn compare fail\n", .{});
+                // std.debug.print("txn compare fail\n", .{});
                 return .{};
             };
             var res = pb.TxnResponse{
@@ -365,7 +365,7 @@ fn finish() void {
     txn = .{ .id = 0 };
 }
 
-fn read(query: []u8) statemachine.Result {
+fn read(query: []u8) raft.Result {
     defer _ = read_arena_state.reset(.retain_capacity);
     const arena = read_arena_state.allocator();
     var rev: u64 = 0;
@@ -437,7 +437,7 @@ fn read(query: []u8) statemachine.Result {
             const data = encodeToOut(resp, arena) catch |err| {
                 return .{ .data = errors.msg(err) };
             };
-            stream.printStdout("progress query {d} {d}\n", .{ 0, rev });
+            util.printStdout("progress query {d} {d}\n", .{ 0, rev });
             return .{ .value = 1, .data = data };
         },
         types.QUERY_HEADER => {
@@ -472,7 +472,7 @@ fn cmdPut(
 ) !PutOut {
     var res = pb.PutResponse{};
     const pr = kvStore.put(t, arena, rev, subrev, util.u64Of(req.lease), epoch_, req.key, req.value, req.ignore_value, req.ignore_lease) catch |err| {
-        std.debug.print("put err {s}\n", .{errors.msg(err)});
+        // std.debug.print("put err {s}\n", .{errors.msg(err)});
         return err;
     };
     const prev = pr.prev;
@@ -812,7 +812,7 @@ fn queryLeaseTimeToLive(t: mdb.Txn, req: *const pb.LeaseTimeToLiveRequest) !pb.L
 pub fn responseHeader(revision: u64) pb.ResponseHeader {
     return .{
         .revision = util.i64Of(revision),
-        .cluster_id = statemachine.shard_id,
-        .member_id = statemachine.replica_id,
+        .cluster_id = raft.shardID(),
+        .member_id = raft.replicaID(),
     };
 }

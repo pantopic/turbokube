@@ -1,5 +1,3 @@
-//! Mirrors module/service-grpc/main.go
-
 const std = @import("std");
 const buffer = @import("buffer");
 const grpc_server = @import("grpc_server");

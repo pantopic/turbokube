@@ -13,8 +13,14 @@
         .global_sdk_zig = .{
             .path = "../../../wazero-global/sdk-zig",
         },
+        .raft_sdk_zig = .{
+            .path = "../../../ext-raft/sdk-zig",
+        },
         .range_watch_sdk_zig = .{
             .path = "../../../wazero-range-watch/sdk-zig",
+        },
+        .small_cache_sdk_zig = .{
+            .path = "../../../wazero-small-cache/sdk-zig",
         },
         .protobuf = .{
             .url = "git+https://github.com/Arwalk/zig-protobuf?ref=v5.0.0#1f6cb06156b3ff4f52f98bc14f829c0b8393a6fc",

@@ -5,8 +5,8 @@ import (
 	"encoding/binary"
 
 	"github.com/pantopic/ext-mdb/sdk-go"
+	"github.com/pantopic/ext-raft/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
-	"github.com/pantopic/wazero-state-machine/sdk-go"
 
 	internal "github.com/pantopic/turbokube/module/storage-kv/internal"
 )
@@ -42,7 +42,7 @@ func streamRecv(data []byte) {
 		range_watch.Stop(watchIdBytes)
 		watchCache.Del(watchIdBytes)
 		watchRev.Del(uint64(req.WatchId))
-		statemachine.StreamSend(uint64(req.WatchId), []byte{WatchMessageType_CANCELED})
+		raft.StreamSend(uint64(req.WatchId), []byte{WatchMessageType_CANCELED})
 	case *internal.WatchRequest_ProgressRequest:
 		var rev uint64
 		err := mdb.View(func(txn mdb.Txn) (err error) {
@@ -81,7 +81,7 @@ func watchStart(req *internal.WatchCreateRequest) (err error) {
 		binary.BigEndian.PutUint64(watchIdBytes, uint64(req.WatchId))
 		err = range_watch.Reserve(watchIdBytes)
 		if err != nil {
-			statemachine.StreamSend(1, append([]byte(nil), WatchMessageType_ERR_EXISTS))
+			raft.StreamSend(1, append([]byte(nil), WatchMessageType_ERR_EXISTS))
 			return
 		}
 	}
@@ -329,7 +329,7 @@ func sendCodeHeader(val uint64, code byte, rev uint64) {
 	if err != nil {
 		panic("Error marshaling header: " + err.Error())
 	}
-	statemachine.StreamSend(val, data)
+	raft.StreamSend(val, data)
 }
 
 func sendCodeMsg(val uint64, code byte, msg Message) {
@@ -338,5 +338,5 @@ func sendCodeMsg(val uint64, code byte, msg Message) {
 	if _, err := msg.MarshalToSizedBufferVT(data[1:]); err != nil {
 		panic("Error serializing event kv: " + err.Error())
 	}
-	statemachine.StreamSend(val, data)
+	raft.StreamSend(val, data)
 }

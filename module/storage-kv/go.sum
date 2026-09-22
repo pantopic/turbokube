@@ -6,6 +6,8 @@ github.com/pantopic/ext-grpc-server/sdk-go v0.0.15 h1:tU6/l5etV3UkNvMv6haW7+qRCo
 github.com/pantopic/ext-grpc-server/sdk-go v0.0.15/go.mod h1:80sYV0H/vv9updbQp1sY8HQDjIEYk9U8SfizwJP4bQo=
 github.com/pantopic/ext-mdb/sdk-go v0.0.10 h1:Y7Ol0SfuzGhZjp0EbUZ5pmQlCbReM3Lg9MUX/dw/SdA=
 github.com/pantopic/ext-mdb/sdk-go v0.0.10/go.mod h1:+YVZl8fiN/Jkk1nrpCJJl0iCYdY90zOrzjrBd+kuJhE=
+github.com/pantopic/ext-raft/sdk-go v0.0.2 h1:AIpu3g4nVT5U/CngHNYgi69S5bSbNrQ7FTXq1sY3/WI=
+github.com/pantopic/ext-raft/sdk-go v0.0.2/go.mod h1:0M9h4aTiRIk9LAF1bMb/yoWPVN8BpbfLFT6e5YY+04Q=
 github.com/pantopic/wazero-atomic/sdk-go v0.0.3 h1:bFRWDzHGBIabQw/v5I53kaAZT3REhTtTk98ya5FV6Oo=
 github.com/pantopic/wazero-atomic/sdk-go v0.0.3/go.mod h1:IAoBYxydbgxUXIecfZM/rJOL9lFgZt0QyLj5KgI9lH8=
 github.com/pantopic/wazero-global/sdk-go v0.0.2 h1:AEKINPqUInItWyLyE+hzNFN1ww2f/2Gzp6Qnft+yUWI=
@@ -14,5 +16,3 @@ github.com/pantopic/wazero-range-watch/sdk-go v0.0.6 h1:sFf5q4SuOKJgph97Y0owCn9d
 github.com/pantopic/wazero-range-watch/sdk-go v0.0.6/go.mod h1:yzzfsLJnHJmYCfTdIIj1JCjKrQi8KTZKeE5AiTtKHz0=
 github.com/pantopic/wazero-small-cache/sdk-go v0.0.1 h1:uF5sR9+9mUBNiENCRkQPApbzO1ehQZcwbD2oAylLyas=
 github.com/pantopic/wazero-small-cache/sdk-go v0.0.1/go.mod h1:8L3C98Ev6RHZ3jXuJBqO3B+cPVtFfQwnZEI6cZmaLqE=
-github.com/pantopic/wazero-state-machine/sdk-go v0.0.1 h1:6E7XCR+Gb6x/fuo6vCUZwokZPctRYdR6z/Sm9jnjy9o=
-github.com/pantopic/wazero-state-machine/sdk-go v0.0.1/go.mod h1:NP9GvVIm9pTT5By8S/H0gx8ZUQAyxmZFlYu7EVxB2Yg=

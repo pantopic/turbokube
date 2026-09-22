@@ -9,23 +9,13 @@ pub fn build(b: *std.Build) void {
     const optimize = b.standardOptimizeOption(.{
         .preferred_optimize_mode = .ReleaseSmall,
     });
-    const protobuf_dep = b.dependency("protobuf", .{});
-    const mdb_dep = b.dependency("mdb_sdk_zig", .{});
     const atomic_dep = b.dependency("atomic_sdk_zig", .{});
     const global_dep = b.dependency("global_sdk_zig", .{});
+    const mdb_dep = b.dependency("mdb_sdk_zig", .{});
+    const protobuf_dep = b.dependency("protobuf", .{});
+    const raft_dep = b.dependency("raft_sdk_zig", .{});
     const range_watch_dep = b.dependency("range_watch_sdk_zig", .{});
-    // SDKs without build.zig packaging are imported by source path,
-    // matching wazero-state-machine's `-Mstatemachine=../sdk-zig/statemachine.zig`.
-    const statemachine_mod = b.createModule(.{
-        .root_source_file = b.path("../../../wazero-state-machine/sdk-zig/statemachine.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
-    const small_cache_mod = b.createModule(.{
-        .root_source_file = b.path("../../../wazero-small-cache/sdk-zig/src/lib.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+    const small_cache_dep = b.dependency("small_cache_sdk_zig", .{});
     const exe = b.addExecutable(.{
         .name = "storage-kv",
         .root_module = b.createModule(.{
@@ -33,13 +23,13 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "mdb", .module = mdb_dep.module("mdb") },
                 .{ .name = "atomic", .module = atomic_dep.module("atomic") },
                 .{ .name = "global", .module = global_dep.module("global") },
-                .{ .name = "range_watch", .module = range_watch_dep.module("range_watch") },
-                .{ .name = "statemachine", .module = statemachine_mod },
-                .{ .name = "small_cache", .module = small_cache_mod },
+                .{ .name = "mdb", .module = mdb_dep.module("mdb") },
                 .{ .name = "protobuf", .module = protobuf_dep.module("protobuf") },
+                .{ .name = "raft", .module = raft_dep.module("raft") },
+                .{ .name = "range_watch", .module = range_watch_dep.module("range_watch") },
+                .{ .name = "small_cache", .module = small_cache_dep.module("small_cache") },
             },
         }),
     });

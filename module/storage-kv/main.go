@@ -4,10 +4,10 @@ import (
 	"bytes"
 
 	"github.com/pantopic/ext-mdb/sdk-go"
+	"github.com/pantopic/ext-raft/sdk-go"
 	"github.com/pantopic/wazero-atomic/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
 	"github.com/pantopic/wazero-small-cache/sdk-go"
-	"github.com/pantopic/wazero-state-machine/sdk-go"
 
 	internal "github.com/pantopic/turbokube/module/storage-kv/internal"
 )
@@ -40,8 +40,8 @@ var (
 )
 
 func init() {
-	statemachine.Persistent(open, update, finish, read)
-	statemachine.Streaming(streamOpen, streamRecv, streamClosed)
+	raft.Persistent(open, update, finish, read)
+	raft.Streaming(streamOpen, streamRecv, streamClosed)
 	range_watch.Receive(rangeWatchRecv)
 }
 
@@ -853,7 +853,7 @@ func queryLeaseTimeToLive(
 func responseHeader(revision uint64) *internal.ResponseHeader {
 	return &internal.ResponseHeader{
 		Revision:  int64(revision),
-		ClusterId: statemachine.ShardID,
-		MemberId:  statemachine.ReplicaID,
+		ClusterId: raft.ShardID,
+		MemberId:  raft.ReplicaID,
 	}
 }

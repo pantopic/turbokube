@@ -11,5 +11,6 @@ require (
 	github.com/pantopic/wazero-global/sdk-go v0.0.2
 	github.com/pantopic/wazero-range-watch/sdk-go v0.0.6
 	github.com/pantopic/wazero-small-cache/sdk-go v0.0.1
-	github.com/pantopic/wazero-state-machine/sdk-go v0.0.1
 )
+
+require github.com/pantopic/ext-raft/sdk-go v0.0.2

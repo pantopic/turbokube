@@ -68,6 +68,14 @@ pub fn u64Of(i: i64) u64 {
     return @bitCast(i);
 }
 
+pub fn printStdout(comptime fmt: []const u8, args: anytype) void {
+    var buf: [64]u8 = undefined;
+    const msg = std.fmt.bufPrint(&buf, fmt, args) catch return;
+    const iovs = [_]std.os.wasi.ciovec_t{.{ .base = msg.ptr, .len = msg.len }};
+    var nwritten: usize = undefined;
+    _ = std.os.wasi.fd_write(1, &iovs, iovs.len, &nwritten);
+}
+
 test "uvarint round trip" {
     var buf: [max_varint_len]u8 = undefined;
     for ([_]u64{ 0, 1, 127, 128, 300, 1 << 32, std.math.maxInt(u64) }) |x| {
