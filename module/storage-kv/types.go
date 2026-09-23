@@ -5,7 +5,8 @@ import (
 	"time"
 
 	"github.com/aperturerobotics/protobuf-go-lite"
-	"github.com/pantopic/wazero-global/sdk-go"
+
+	"github.com/pantopic/ext-global/sdk-go"
 )
 
 type (

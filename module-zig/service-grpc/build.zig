@@ -12,11 +12,7 @@ pub fn build(b: *std.Build) void {
     const protobuf_dep = b.dependency("protobuf", .{});
     const grpc_dep = b.dependency("grpc_sdk_zig", .{});
     const buffer_dep = b.dependency("buffer_sdk_zig", .{});
-    const shard_client_mod = b.createModule(.{
-        .root_source_file = b.path("../../../wazero-shard-client/sdk-zig/src/root.zig"),
-        .target = target,
-        .optimize = optimize,
-    });
+    const shard_client_dep = b.dependency("shard_client_sdk_zig", .{});
     const exe = b.addExecutable(.{
         .name = "service-grpc",
         .root_module = b.createModule(.{
@@ -26,7 +22,7 @@ pub fn build(b: *std.Build) void {
             .imports = &.{
                 .{ .name = "grpc_server", .module = grpc_dep.module("grpc_server") },
                 .{ .name = "buffer", .module = buffer_dep.module("buffer") },
-                .{ .name = "shard_client", .module = shard_client_mod },
+                .{ .name = "shard_client", .module = shard_client_dep.module("shard_client") },
                 .{ .name = "protobuf", .module = protobuf_dep.module("protobuf") },
             },
         }),

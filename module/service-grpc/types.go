@@ -4,7 +4,7 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/pantopic/wazero-global/sdk-go"
+	"github.com/pantopic/ext-global/sdk-go"
 )
 
 const (

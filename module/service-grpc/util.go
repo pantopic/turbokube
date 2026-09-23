@@ -4,7 +4,7 @@ import (
 	"github.com/pantopic/ext-grpc-server/sdk-go"
 	"github.com/pantopic/ext-grpc-server/sdk-go/codes"
 	"github.com/pantopic/ext-grpc-server/sdk-go/status"
-	"github.com/pantopic/wazero-shard-client/sdk-go"
+	"github.com/pantopic/ext-shard-client/sdk-go"
 )
 
 var (

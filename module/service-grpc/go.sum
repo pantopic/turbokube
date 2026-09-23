@@ -2,9 +2,9 @@ github.com/aperturerobotics/protobuf-go-lite v0.17.0 h1:paEC3KNvw+JnIyKAQZlMLh2h
 github.com/aperturerobotics/protobuf-go-lite v0.17.0/go.mod h1:3Ay/E7iaw2KWLirK3+dDdNJZHK0hu8Y1/kKeYeUa+8s=
 github.com/pantopic/ext-buffer/sdk-go v0.0.3 h1:xA8vrMMrry4TLDHfuaBuF4fVmPFE9OOnG0tKvdIk4HU=
 github.com/pantopic/ext-buffer/sdk-go v0.0.3/go.mod h1:ZYPD6qhPxvxTDHsr69nWwVgz8/Vq/XQSTubzRGT5qjs=
+github.com/pantopic/ext-global/sdk-go v0.0.3 h1:aa3JHXzNMcOFHqeypbeiimazY+pqxzZUcNs7pRZaSak=
+github.com/pantopic/ext-global/sdk-go v0.0.3/go.mod h1:/ntwF+/A6/xLGHulre9KMQ09gdRBqhuHZvCaXMpN7Lk=
 github.com/pantopic/ext-grpc-server/sdk-go v0.0.16 h1:dZ/mwszwrM5uuD+S/AsAshdhv8E4+8tXf/H2bF76bu4=
 github.com/pantopic/ext-grpc-server/sdk-go v0.0.16/go.mod h1:80sYV0H/vv9updbQp1sY8HQDjIEYk9U8SfizwJP4bQo=
-github.com/pantopic/wazero-global/sdk-go v0.0.2 h1:AEKINPqUInItWyLyE+hzNFN1ww2f/2Gzp6Qnft+yUWI=
-github.com/pantopic/wazero-global/sdk-go v0.0.2/go.mod h1:1ZC9ZxiDCX2V6AdgCS0UNjkpHNzVr5HbYTNHgPqHjTA=
-github.com/pantopic/wazero-shard-client/sdk-go v0.0.1 h1:xJhDEJwvZpYk3p8GJiQFZEZ+nHqi2595I4rgIlJsOyw=
-github.com/pantopic/wazero-shard-client/sdk-go v0.0.1/go.mod h1:bAwjgvpHsSnfjRNbxgI/dg3aAhUzQ0Que8B71UCLQfc=
+github.com/pantopic/ext-shard-client/sdk-go v0.0.3 h1:XrbLKuylFWS0OBDud4ZJjw6+lDx1eXQ0bCZ2eSnWQg0=
+github.com/pantopic/ext-shard-client/sdk-go v0.0.3/go.mod h1:c2Duo6U63dbZgWQckX3fu8NLd+CMjgX9vaOur8I4q3Q=

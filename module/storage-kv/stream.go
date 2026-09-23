@@ -6,7 +6,7 @@ import (
 
 	"github.com/pantopic/ext-mdb/sdk-go"
 	"github.com/pantopic/ext-raft/sdk-go"
-	"github.com/pantopic/wazero-range-watch/sdk-go"
+	"github.com/pantopic/ext-range-watch/sdk-go"
 
 	internal "github.com/pantopic/turbokube/module/storage-kv/internal"
 )

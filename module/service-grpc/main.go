@@ -3,7 +3,7 @@ package main
 import (
 	"github.com/pantopic/ext-buffer/sdk-go"
 	"github.com/pantopic/ext-grpc-server/sdk-go"
-	"github.com/pantopic/wazero-shard-client/sdk-go"
+	"github.com/pantopic/ext-shard-client/sdk-go"
 )
 
 const (
