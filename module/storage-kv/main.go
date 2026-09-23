@@ -3,9 +3,9 @@ package main
 import (
 	"bytes"
 
+	"github.com/pantopic/ext-atomic/sdk-go"
 	"github.com/pantopic/ext-mdb/sdk-go"
 	"github.com/pantopic/ext-raft/sdk-go"
-	"github.com/pantopic/wazero-atomic/sdk-go"
 	"github.com/pantopic/wazero-range-watch/sdk-go"
 	"github.com/pantopic/wazero-small-cache/sdk-go"
 

@@ -8,7 +8,7 @@
             .path = "../../../ext-mdb/sdk-zig",
         },
         .atomic_sdk_zig = .{
-            .path = "../../../wazero-atomic/sdk-zig",
+            .path = "../../../ext-atomic/sdk-zig",
         },
         .global_sdk_zig = .{
             .path = "../../../wazero-global/sdk-zig",

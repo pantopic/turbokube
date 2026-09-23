@@ -23,11 +23,11 @@ import (
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/keepalive"
 
+	"github.com/pantopic/ext-atomic/host-wazero"
 	"github.com/pantopic/ext-buffer/host-wazero"
 	"github.com/pantopic/ext-grpc-server/host-wazero"
 	"github.com/pantopic/ext-mdb/host-wazero-lmdb"
 	"github.com/pantopic/ext-raft/host-wazero"
-	"github.com/pantopic/wazero-atomic/host"
 	"github.com/pantopic/wazero-cluster/host"
 	"github.com/pantopic/wazero-global/host"
 	"github.com/pantopic/wazero-pool"

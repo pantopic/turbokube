@@ -300,6 +300,8 @@ github.com/onsi/ginkgo v1.12.1/go.mod h1:zj2OWP4+oCPe1qIXoGWkgMRwljMUYCdkwsT2108
 github.com/onsi/ginkgo v1.13.0/go.mod h1:+REjRxOmWfHCjfv9TTWB1jD1Frx4XydAD3zm1lskyM0=
 github.com/onsi/gomega v1.7.1/go.mod h1:XdKZgCCFLUoM/7CFJVPcG8C1xQ1AJ0vpAezJrB7JYyY=
 github.com/onsi/gomega v1.10.1/go.mod h1:iN09h71vgCQne3DLsj+A5owkum+a2tYe+TOCB1ybHNo=
+github.com/pantopic/ext-atomic/host-wazero v0.0.4 h1:Uf3Om1Wn9lu8EdHxYCh0ktmspSXrW5qu2phlizCccbI=
+github.com/pantopic/ext-atomic/host-wazero v0.0.4/go.mod h1:Amg6dekel/62yZmrHV6Yqz2z176f3V9l4K8AEnVkMTc=
 github.com/pantopic/ext-buffer/host-wazero v0.0.2 h1:vShNiSGTDAQBsqdDbZ2p5EN2ZK2Frk0KnZBumNuHMCQ=
 github.com/pantopic/ext-buffer/host-wazero v0.0.2/go.mod h1:VWcdo/rMCB9vrOIWJX+kUQrIgZBZt6yfApA8dFM4Ls8=
 github.com/pantopic/ext-grpc-server/host-wazero v0.0.16 h1:n2Di+pNvwEGc3OCxTSgNF773tgeFEwAvbJtp/mRxr8Q=

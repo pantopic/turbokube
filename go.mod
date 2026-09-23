@@ -10,11 +10,11 @@ require (
 	github.com/kevburnsjr/batchy v0.0.1
 	github.com/logbn/byteinterval v0.0.2
 	github.com/logbn/zongzi v0.0.21
+	github.com/pantopic/ext-atomic/host-wazero v0.0.4
 	github.com/pantopic/ext-buffer/host-wazero v0.0.2
 	github.com/pantopic/ext-grpc-server/host-wazero v0.0.16
 	github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.10
 	github.com/pantopic/ext-raft/host-wazero v0.0.2
-	github.com/pantopic/wazero-atomic/host v0.0.3
 	github.com/pantopic/wazero-cluster/host v0.0.0-20260703160550-ba6a44a5f868
 	github.com/pantopic/wazero-global/host v0.0.2
 	github.com/pantopic/wazero-pool v0.0.6
