@@ -14,7 +14,7 @@ require (
 	github.com/pantopic/ext-buffer/host-wazero v0.0.2
 	github.com/pantopic/ext-cluster/host-wazero v0.0.1
 	github.com/pantopic/ext-global/host-wazero v0.0.3
-	github.com/pantopic/ext-grpc-server/host-wazero v0.0.16
+	github.com/pantopic/ext-grpc-server/host-wazero v0.0.17
 	github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.10
 	github.com/pantopic/ext-raft/host-wazero v0.0.2
 	github.com/pantopic/ext-range-watch/host-wazero v0.0.7
