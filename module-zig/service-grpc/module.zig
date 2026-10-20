@@ -1,15 +1,15 @@
-const std = @import("std");
 const buffer = @import("buffer");
 const grpc_server = @import("grpc_server");
 const shard_client = @import("shard_client");
+const std = @import("std");
 
 const cluster = @import("service_cluster.zig");
 const kv = @import("service_kv.zig");
 const lease = @import("service_lease.zig");
 const maintenance = @import("service_maintenance.zig");
 const types = @import("types.zig");
-const watch = @import("service_watch.zig");
 const util = @import("util.zig");
+const watch = @import("service_watch.zig");
 
 pub const BUFFER_POOL_WATCH_EVENT: u64 = 0;
 
@@ -88,7 +88,10 @@ comptime {
     _ = shard_client.abi; // emit the SDK's __shard_client* exports
 }
 
+var read_arena_state = std.heap.ArenaAllocator.init(std.heap.wasm_allocator);
+
 export fn _start() void {
+    shard_client.init(read_arena_state.allocator());
     shard_client.RegisterStreamRecv(&watch.shardRecv) catch |err| {
         std.debug.panic("RegisterStreamRecv failed: {s}", .{@errorName(err)});
     };
@@ -102,9 +105,10 @@ export fn _start() void {
 }
 
 pub fn asyncRecv(name: []const u8, data: []const u8, val: u64, err: ?[]const u8) void {
+    defer _ = read_arena_state.reset(.retain_capacity);
     _ = name;
     util.autoSend(val, data, err) catch |e| {
-        std.debug.panic("autoSend failed: {s}", .{@errorName(e)});
+        std.debug.print("autoSend failed: {s}\n", .{@errorName(e)});
     };
 }
 

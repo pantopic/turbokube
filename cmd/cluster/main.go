@@ -46,8 +46,8 @@ type extension interface {
 }
 
 var (
-	wasmKv  = turbokube.StorageKvWasm
-	wasmSvc = turbokube.ServiceGrpcWasm
+	wasmKv  = turbokube.StorageKvDevWasm
+	wasmSvc = turbokube.ServiceGrpcDevWasm
 )
 
 func main() {
@@ -91,9 +91,8 @@ func main() {
 		ctxCopy = append(ctxCopy, m.ContextCopy)
 	}
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmKv,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
-		// wazeropool.WithBurst(runtime.NumCPU()),
 		wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.StorageKvName),
 		wazeropool.WithVersion(turbokube.Version))
@@ -185,8 +184,9 @@ func main() {
 		svcCtxCopy = append(svcCtxCopy, m.ContextCopy)
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmSvc,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
+		wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.ServiceGrpcName),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {

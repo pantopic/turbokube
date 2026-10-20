@@ -55,10 +55,7 @@ pub const watchProgress = atomic.Uint64Set
 pub const watchRev = atomic.Uint64Set
     .init(@intFromEnum(ATOMIC_UINT64_SET.WATCH_REV));
 
-var batch_arena_state = std.heap.ArenaAllocator.init(std.heap.wasm_allocator);
-var read_arena_state = std.heap.ArenaAllocator.init(std.heap.wasm_allocator);
-
-var out: [2 * 1024 * 1024]u8 = undefined;
+var arena_state = std.heap.ArenaAllocator.init(std.heap.wasm_allocator);
 
 comptime {
     _ = raft;
@@ -70,7 +67,7 @@ comptime {
 }
 
 export fn _start() void {
-    range_watch.init(read_arena_state.allocator());
+    range_watch.init(arena_state.allocator());
     raft.persistent(&open, &update, &finish, &read);
     raft.streaming(&stream.open, &stream.recv, &stream.close);
     range_watch.receive(&stream.rangeWatchRecv) catch unreachable;
@@ -82,9 +79,9 @@ fn decode(comptime T: type, allocator: std.mem.Allocator, b: []const u8) !T {
 }
 
 fn encodeToOut(msg: anytype, allocator: std.mem.Allocator) ![]const u8 {
-    var writer = std.Io.Writer.fixed(&out);
-    try msg.encode(&writer, allocator);
-    return writer.buffered();
+    var writer: std.Io.Writer.Allocating = .init(allocator);
+    try msg.encode(&writer.writer, allocator);
+    return writer.written();
 }
 
 fn invalidCommand(allocator: std.mem.Allocator, cmd: []const u8) []const u8 {
@@ -109,8 +106,11 @@ fn open() u64 {
 }
 
 fn update(index: u64, cmd: []u8) raft.Result {
+    defer _ = arena_state.reset(.retain_capacity);
+    const arena = arena_state.allocator();
     new_index = index;
     if (txn.id == 0) {
+        // arena_state.reset(.retain_capacity);
         txn = mdb.begin(0) catch |err| {
             std.debug.panic("Unable to open txn: {s}", .{@errorName(err)});
         };
@@ -123,7 +123,6 @@ fn update(index: u64, cmd: []u8) raft.Result {
         new_rev = rev;
         old_rev = rev;
     }
-    const arena = batch_arena_state.allocator();
     switch (cmd[cmd.len - 1]) {
         types.CMD_KV_PUT => {
             const req = decode(pb.PutRequest, arena, cmd[0 .. cmd.len - 1]) catch {
@@ -346,7 +345,6 @@ fn update(index: u64, cmd: []u8) raft.Result {
 }
 
 fn finish() void {
-    defer _ = batch_arena_state.reset(.retain_capacity);
     dbMeta.setIndex(txn, new_index) catch |err| {
         range_watch.clear() catch unreachable;
         std.debug.panic("Unable to set index: {s}", .{@errorName(err)});
@@ -362,12 +360,12 @@ fn finish() void {
         std.debug.panic("Unable to commit transaction: {s}", .{@errorName(err)});
     };
     range_watch.flush() catch unreachable;
-    txn = .{ .id = 0 };
+    txn.id = 0;
 }
 
 fn read(query: []u8) raft.Result {
-    defer _ = read_arena_state.reset(.retain_capacity);
-    const arena = read_arena_state.allocator();
+    defer _ = arena_state.reset(.retain_capacity);
+    const arena = arena_state.allocator();
     var rev: u64 = 0;
     switch (query[query.len - 1]) {
         types.QUERY_KV_RANGE => {

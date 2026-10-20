@@ -412,7 +412,7 @@ func setupCluster(t *testing.T) {
 		kvWasm = turbokube.StorageKvZigDevWasm
 	}
 	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, kvWasm,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithBurst(runtime.NumCPU()),
 		wazeropool.WithMemoryLimit(32<<20),
@@ -566,7 +566,7 @@ func setupCluster(t *testing.T) {
 		svcWasm = turbokube.ServiceGrpcZigDevWasm
 	}
 	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, svcWasm,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout)),
+		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithMemoryLimit(32<<20),
 		wazeropool.WithName(turbokube.ServiceGrpcName),
@@ -674,20 +674,20 @@ func testInsert(t *testing.T) {
 		})
 		// TODO: Test value size overflow after moving from static to dynamic buffering
 		//
-		// t.Run("failure", func(t *testing.T) {
-		// 	resp, err := svcKv.Put(ctx, &internal.PutRequest{
-		// 		Key:   []byte("z"),
-		// 		Value: []byte(strings.Repeat("0123456789abcdef", 128*1024)), // 1.5MB
-		// 	})
-		// 	if parity {
-		// 		require.Nil(t, err)
-		// 		assert.NotNil(t, resp)
-		// 	} else {
-		// 		require.NotNil(t, err)
-		// 		assert.Nil(t, resp)
-		// 		assert.Contains(t, err.Error(), "message too large")
-		// 	}
-		// })
+		t.Run("failure", func(t *testing.T) {
+			resp, err := svcKv.Put(ctx, &internal.PutRequest{
+				Key:   []byte("z"),
+				Value: []byte(strings.Repeat("0123456789abcdef", 128*1024)), // 1.5MB
+			})
+			if parity {
+				require.Nil(t, err)
+				assert.NotNil(t, resp)
+			} else {
+				require.NotNil(t, err)
+				assert.Nil(t, resp)
+				assert.Contains(t, err.Error(), "message too large")
+			}
+		})
 	})
 	t.Run("empty-key", func(t *testing.T) {
 		t.Run("failure", func(t *testing.T) {
@@ -1120,7 +1120,7 @@ func testRange(t *testing.T) {
 	})
 	t.Run("huge-response", func(t *testing.T) {
 		var revs []int64
-		for i := range 100 {
+		for i := range 256 {
 			resp, err := svcKv.Put(ctx, &internal.PutRequest{
 				Key:   fmt.Appendf(nil, `test-huge-%03d`, i),
 				Value: bytes.Repeat([]byte(`0123456789abcdef`), 1<<10),
@@ -1130,7 +1130,7 @@ func testRange(t *testing.T) {
 		}
 		resp, err := svcKv.Range(ctx, &internal.RangeRequest{
 			Key:      []byte(`test-huge-000`),
-			RangeEnd: []byte(`test-huge-100`),
+			RangeEnd: []byte(`test-huge-999`),
 		})
 		require.Nil(t, err, err)
 		assert.NotNil(t, resp)

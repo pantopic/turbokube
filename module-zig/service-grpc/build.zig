@@ -20,10 +20,10 @@ pub fn build(b: *std.Build) void {
             .target = target,
             .optimize = optimize,
             .imports = &.{
-                .{ .name = "grpc_server", .module = grpc_dep.module("grpc_server") },
                 .{ .name = "buffer", .module = buffer_dep.module("buffer") },
-                .{ .name = "shard_client", .module = shard_client_dep.module("shard_client") },
+                .{ .name = "grpc_server", .module = grpc_dep.module("grpc_server") },
                 .{ .name = "protobuf", .module = protobuf_dep.module("protobuf") },
+                .{ .name = "shard_client", .module = shard_client_dep.module("shard_client") },
             },
         }),
     });

@@ -50,11 +50,11 @@ pub fn recv(data: []u8) void {
         },
         .cancel_request => |cr| {
             var watch_id_bytes: [8]u8 = undefined;
-            std.mem.writeInt(u64, &watch_id_bytes, util.u64Of(cr.watch_id), .big);
+            std.mem.writeInt(u64, &watch_id_bytes, @bitCast(cr.watch_id), .big);
             range_watch.stop(&watch_id_bytes) catch {};
             module.watchCache.del(&watch_id_bytes);
-            module.watchRev.del(util.u64Of(cr.watch_id));
-            raft.streamSend(util.u64Of(cr.watch_id), &[_]u8{types.WatchMessageType_CANCELED});
+            module.watchRev.del(@bitCast(cr.watch_id));
+            raft.streamSend(@bitCast(cr.watch_id), &[_]u8{types.WatchMessageType_CANCELED});
         },
         .progress_request => {
             var rev: u64 = 0;
@@ -72,7 +72,6 @@ pub fn recv(data: []u8) void {
             if (min_watch_id_bytes.len == 8) {
                 min_watch_id = std.mem.readInt(u64, min_watch_id_bytes[0..8], .big);
             }
-            util.printStdout("progress request {d} {d}\n", .{ min_watch_id, rev });
             sendCodeHeader(min_watch_id, types.WatchMessageType_NOTIFY, rev);
         },
     };
@@ -84,18 +83,18 @@ const WatchScanResult = struct {
 };
 
 fn watchStart(req: *pb.WatchCreateRequest) void {
-    const since = util.u64Of(req.start_revision);
+    const since: u64 = @bitCast(req.start_revision);
     var min: u64 = 0;
     var watch_id_bytes: [8]u8 = undefined;
     if (req.watch_id == 0) {
         while (true) {
-            req.watch_id = util.i64Of(module.watchID.add(1));
-            std.mem.writeInt(u64, &watch_id_bytes, util.u64Of(req.watch_id), .big);
+            req.watch_id = @bitCast(module.watchID.add(1));
+            std.mem.writeInt(u64, &watch_id_bytes, @bitCast(req.watch_id), .big);
             range_watch.reserve(&watch_id_bytes) catch continue;
             break;
         }
     } else {
-        std.mem.writeInt(u64, &watch_id_bytes, util.u64Of(req.watch_id), .big);
+        std.mem.writeInt(u64, &watch_id_bytes, @bitCast(req.watch_id), .big);
         range_watch.reserve(&watch_id_bytes) catch {
             raft.streamSend(1, &[_]u8{types.WatchMessageType_ERR_EXISTS});
             return;
@@ -115,7 +114,7 @@ fn watchStart(req: *pb.WatchCreateRequest) void {
         }
     }
     if (compacted) {
-        sendCodeHeader(util.u64Of(req.watch_id), types.WatchMessageType_ERR_COMPACTED, min);
+        sendCodeHeader(@bitCast(req.watch_id), types.WatchMessageType_ERR_COMPACTED, min);
         return;
     }
     var res = watchScan(req, since, true) catch |err| {
@@ -126,7 +125,7 @@ fn watchStart(req: *pb.WatchCreateRequest) void {
         std.debug.panic("Error marshaling watch create request: {s}", .{@errorName(err)});
     };
     if (since == 0) {
-        module.watchRev.store(util.u64Of(req.watch_id), res.rev);
+        module.watchRev.store(@bitCast(req.watch_id), res.rev);
         module.watchCache.put(&watch_id_bytes, writer.buffered());
         range_watch.openstart(&watch_id_bytes, req.key, req.range_end) catch |err| {
             std.debug.panic("Error starting range watch: {s}", .{@errorName(err)});
@@ -138,15 +137,14 @@ fn watchStart(req: *pb.WatchCreateRequest) void {
         res = watchScan(req, res.rev + 1, false) catch |err| {
             std.debug.panic("Error in event scan 2: {s}", .{@errorName(err)});
         };
-        module.watchRev.store(util.u64Of(req.watch_id), res.rev);
+        module.watchRev.store(@bitCast(req.watch_id), res.rev);
         module.watchCache.put(&watch_id_bytes, writer.buffered());
         range_watch.start(&watch_id_bytes) catch |err| {
             std.debug.panic("Error starting range watch: {s}", .{@errorName(err)});
         };
     }
     if (req.progress_notify) {
-        util.printStdout("progress watchStart notify {d} {d}\n", .{ req.watch_id, res.rev });
-        sendCodeHeader(util.u64Of(req.watch_id), types.WatchMessageType_NOTIFY, res.rev);
+        sendCodeHeader(@bitCast(req.watch_id), types.WatchMessageType_NOTIFY, res.rev);
     }
 }
 
@@ -157,7 +155,7 @@ fn watchScan(req: *const pb.WatchCreateRequest, since: u64, start: bool) !WatchS
         defer txn.abort();
         res.rev = try dbMeta.getRevision(txn);
         if (start) {
-            sendCodeHeader(util.u64Of(req.watch_id), types.WatchMessageType_INIT, res.rev);
+            sendCodeHeader(@bitCast(req.watch_id), types.WatchMessageType_INIT, res.rev);
         }
         if (since == 0) {
             return res;
@@ -202,7 +200,7 @@ fn watchScan(req: *const pb.WatchCreateRequest, since: u64, start: bool) !WatchS
             watchEventBatch.revision = res.rev;
             watchEventBatch.watch_ids = try std.ArrayList(i64).initCapacity(scan_arena_state.allocator(), 1);
             watchEventBatch.watch_ids.appendAssumeCapacity(req.watch_id);
-            sendCodeMsg(util.u64Of(req.watch_id), types.WatchMessageType_EVENT_BATCH, watchEventBatch);
+            sendCodeMsg(@bitCast(req.watch_id), types.WatchMessageType_EVENT_BATCH, watchEventBatch);
             res.sent += 1;
         }
     }
@@ -232,7 +230,7 @@ pub fn rangeWatchRecv(notices: []range_watch.Notice) void {
         prev_counts[ni] = 0;
         for (notice.ids) |watch_id_bytes| {
             const watch_id = std.mem.readInt(u64, watch_id_bytes[0..8], .big);
-            watch_event_sync.IDs.append(arena(), util.i64Of(watch_id)) catch |err| {
+            watch_event_sync.IDs.append(arena(), @bitCast(watch_id)) catch |err| {
                 std.debug.panic("Error appending sync watch id: {s}", .{@errorName(err)});
             };
             if (!reqs.contains(watch_id)) {
@@ -314,11 +312,11 @@ pub fn rangeWatchRecv(notices: []range_watch.Notice) void {
                     .eq => {},
                 }
                 if (!req.prev_kv) {
-                    watch_event_batch.watch_ids.append(arena(), util.i64Of(watch_id)) catch |err| {
+                    watch_event_batch.watch_ids.append(arena(), @bitCast(watch_id)) catch |err| {
                         std.debug.panic("Error appending watch id: {s}", .{@errorName(err)});
                     };
                 } else {
-                    watch_event_batch.watch_ids_prev.append(arena(), util.i64Of(watch_id)) catch |err| {
+                    watch_event_batch.watch_ids_prev.append(arena(), @bitCast(watch_id)) catch |err| {
                         std.debug.panic("Error appending watch id: {s}", .{@errorName(err)});
                     };
                 }

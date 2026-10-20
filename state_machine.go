@@ -507,7 +507,6 @@ func (sm *stateMachine) Query(ctx context.Context, query []byte) (res *Result) {
 			return
 		}
 		res.Value = 1
-		println(`progress request`, rev)
 	case QUERY_HEADER:
 		err := sm.env.View(func(txn *lmdb.Txn) (err error) {
 			rev, err = sm.dbMeta.getRevision(txn)

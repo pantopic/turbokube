@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/pantopic/ext-buffer/sdk-go"
 	"github.com/pantopic/ext-grpc-server/sdk-go"
+	"github.com/pantopic/ext-grpc-server/sdk-go/codes"
 	"github.com/pantopic/ext-shard-client/sdk-go"
 )
 
@@ -57,7 +58,29 @@ func main() {
 }
 
 func asyncRecv(name, data []byte, val uint64, err error) {
-	autoSend(grpcError(val, data, err))
+	switch string(name) {
+	case `maintenanceStatus`:
+		out, err := grpcError(val, data, err)
+		if err != nil {
+			return
+		}
+		err = statusResp.Header.UnmarshalVT(out)
+		if err != nil {
+			grpc_server.SendErr(codes.Unknown, []byte(err.Error()))
+			return
+		}
+		statusResp.Leader = statusResp.Header.MemberId
+		statusResp.RaftIndex = uint64(statusResp.Header.Revision)
+		statusResp.RaftTerm = 1
+		statusResp.RaftAppliedIndex = uint64(statusResp.Header.Revision)
+		out, err = statusResp.MarshalVT()
+		if err != nil {
+			return
+		}
+		grpc_server.Send(out)
+	default:
+		autoSend(grpcError(val, data, err))
+	}
 }
 
 func httpHandler(method, path, body []byte) (code int, res []byte) {
