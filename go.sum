@@ -210,8 +210,8 @@ github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+o
 github.com/klauspost/compress v1.8.2/go.mod h1:RyIbtBH6LamlWaDj8nUwkbUhJ87Yi3uG0guNDohfE1A=
 github.com/klauspost/compress v1.9.0/go.mod h1:RyIbtBH6LamlWaDj8nUwkbUhJ87Yi3uG0guNDohfE1A=
 github.com/klauspost/compress v1.11.7/go.mod h1:aoV0uJVorq1K+umq18yTdKaF57EivdYsUV+/s2qKfXs=
-github.com/klauspost/compress v1.18.0 h1:c/Cqfb0r+Yi+JtIEq73FWXVkRonBlf0CRNYc8Zttxdo=
-github.com/klauspost/compress v1.18.0/go.mod h1:2Pp+KzxcywXVXMr50+X0Q/Lsb43OQHYWRCY2AiWywWQ=
+github.com/klauspost/compress v1.18.7 h1:aUyZsS4kH3QTKurYhAOwAHxllVPnOthb3vPfnF1Ehjw=
+github.com/klauspost/compress v1.18.7/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
 github.com/klauspost/cpuid v1.2.1/go.mod h1:Pj4uuM528wm8OyEC2QMXAi2YiTZ96dNQPGgoMS4s3ek=
 github.com/konsorten/go-windows-terminal-sequences v1.0.1/go.mod h1:T0+1ngSBFLxvqU3pZ+m/2kptfBszLMUkC4ZK/EgS/cQ=
 github.com/kr/logfmt v0.0.0-20140226030751-b84e30acd515/go.mod h1:+0opPa2QZZtGFBFZlji/RkVcI2GknAs/DXo4wKdlNEc=
@@ -273,8 +273,8 @@ github.com/pantopic/ext-cluster/host-wazero v0.0.1 h1:aCJOISjjW9jUXM0m4vV81Gsfg0
 github.com/pantopic/ext-cluster/host-wazero v0.0.1/go.mod h1:gpRuT9u5chSDaOJuuzDpHhGND5ROzOP0HZt1p09chi4=
 github.com/pantopic/ext-global/host-wazero v0.0.3 h1:RHzVw1nVXz7yUxKHaw7pUtghbrBlmdPGzPfWK/YLVd0=
 github.com/pantopic/ext-global/host-wazero v0.0.3/go.mod h1:n5iyH0OqBQMGz5386pnns831s6FVzVXkVCwlYw1NG3A=
-github.com/pantopic/ext-grpc-server/host-wazero v0.0.16 h1:n2Di+pNvwEGc3OCxTSgNF773tgeFEwAvbJtp/mRxr8Q=
-github.com/pantopic/ext-grpc-server/host-wazero v0.0.16/go.mod h1:yDN3sG1LR0HS8DQxhYfYuzB7/BgCswh8zggrNYw8zlk=
+github.com/pantopic/ext-grpc-server/host-wazero v0.0.17 h1:aTYTGK1g14YwCc53okthVozwj8n7YLSBtXm1eRoIH3A=
+github.com/pantopic/ext-grpc-server/host-wazero v0.0.17/go.mod h1:WDTtzPU4ZlwZb3hUvP5RiEGx7tnY6CxfFRxWy3eWI3Y=
 github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.10 h1:I1bMqTvPpRqJVc2bIQQmQVv+OBoaYlqR+ZYuCcPW0hE=
 github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.10/go.mod h1:NkH1T12zRexz98Xi5fR+V8e7uenBqDPbOdKQ2TNbOZ8=
 github.com/pantopic/ext-raft/host-wazero v0.0.2 h1:xLN1G36ZF8EdewLUGLfvRQovMeQtMgRrGStlaJmF9Rs=
@@ -285,8 +285,6 @@ github.com/pantopic/ext-shard-client/host-wazero v0.0.3 h1:8OvJhEDcVoeXcxSHeOdjC
 github.com/pantopic/ext-shard-client/host-wazero v0.0.3/go.mod h1:BjhO9up8jbOwy9JekQgoK5rESo4p7fdt18/tzuXVNIw=
 github.com/pantopic/ext-small-cache/host-wazero v0.0.3 h1:SXY7Y8rruhm1UBe+KzOCO4SFvluJqdzolaDvXUmrhO0=
 github.com/pantopic/ext-small-cache/host-wazero v0.0.3/go.mod h1:oz1nHEKPPr4SqgE1BxXGV66Yg/MjOTUqZPCPbu0PJdQ=
-github.com/pantopic/wazero-atomic/host v0.0.3 h1:2AIGN2XdFGmXIeCJvtk9H3wBon42pUgv/yGunIZ0Iz0=
-github.com/pantopic/wazero-atomic/host v0.0.3/go.mod h1:zQwA7GIrf1Ixj9EqvhfQ4cuw/MpllNaqJ0KOUN5+6X0=
 github.com/pantopic/wazero-cluster/host v0.0.0-20260711151336-9bd8f3a69a34 h1:Z33IfAIu6rSsi6A3PeNet85B1wiQ/8KGm2KokWmTHWo=
 github.com/pantopic/wazero-cluster/host v0.0.0-20260711151336-9bd8f3a69a34/go.mod h1:jzKOOZXDZXYTg5xXmyFBS6RJ5ueaaLMwVRfYPfzUfS4=
 github.com/pantopic/wazero-pool v0.0.7 h1:ySBZ7vDOqrFeV9EGn70SbGN2LOO8ySePym5zgWoKOCw=
