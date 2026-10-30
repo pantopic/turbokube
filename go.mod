@@ -9,16 +9,16 @@ require (
 	github.com/golang/snappy v1.0.0
 	github.com/kevburnsjr/batchy v0.0.1
 	github.com/logbn/byteinterval v0.0.2
-	github.com/logbn/zongzi v0.0.21
+	github.com/logbn/zongzi v0.0.22
 	github.com/pantopic/ext-atomic/host-wazero v0.0.4
 	github.com/pantopic/ext-buffer/host-wazero v0.0.2
 	github.com/pantopic/ext-cluster/host-wazero v0.0.1
 	github.com/pantopic/ext-global/host-wazero v0.0.3
 	github.com/pantopic/ext-grpc-server/host-wazero v0.0.17
 	github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.10
-	github.com/pantopic/ext-raft/host-wazero v0.0.2
+	github.com/pantopic/ext-raft/host-wazero v0.0.4
 	github.com/pantopic/ext-range-watch/host-wazero v0.0.7
-	github.com/pantopic/ext-shard-client/host-wazero v0.0.3
+	github.com/pantopic/ext-shard-client/host-wazero v0.0.4
 	github.com/pantopic/ext-small-cache/host-wazero v0.0.3
 	github.com/pantopic/wazero-pool v0.0.7
 	github.com/soheilhy/cmux v0.1.5
@@ -54,14 +54,13 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/hashicorp/golang-lru/v2 v2.0.7 // indirect
 	github.com/hashicorp/memberlist v0.3.1 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
+	github.com/klauspost/compress v1.18.7 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
-	github.com/lni/dragonboat/v4 v4.0.0-20231222133740-1d6e2d76cd57 // indirect
+	github.com/lni/dragonboat/v4 v4.0.0-20250723143628-076c7f6497dc // indirect
 	github.com/lni/goutils v1.4.0 // indirect
 	github.com/lni/vfs v0.2.1-0.20220616104132-8852fd867376 // indirect
 	github.com/miekg/dns v1.1.26 // indirect
-	github.com/pantopic/wazero-cluster/host v0.0.0-20260711151336-9bd8f3a69a34 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
