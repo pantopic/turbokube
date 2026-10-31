@@ -400,7 +400,7 @@ func setupCluster(t *testing.T) {
 		wazero_small_cache.New(),
 		wazero_raft.New(),
 	}
-	var storageCtxCopy []ContextCopy
+	var storageCtxCopy []wazero_cluster.ContextCopy
 	for _, m := range storageExtensions {
 		if err = m.Register(ctx, runtimeStorageKv); err != nil {
 			panic(err)
@@ -554,7 +554,7 @@ func setupCluster(t *testing.T) {
 		wazero_buffer.New(),
 		wazero_shard_client.New(agents[0]),
 	}
-	var svcCtxCopiers []wazero_grpc_server.ContextCopy
+	var svcCtxCopiers []wazero_cluster.ContextCopy
 	for _, m := range serviceExtensions {
 		if err = m.Register(ctx, runtimeSvcGrpc); err != nil {
 			panic(err)
@@ -992,8 +992,8 @@ func testRange(t *testing.T) {
 	var modRevs []int64
 	for i := range 100 {
 		resp, err := svcKv.Put(ctx, &internal.PutRequest{
-			Key:   []byte(fmt.Sprintf(`test-range-%03d`, i)),
-			Value: []byte(fmt.Sprintf(`value-range-%03d`, i+100)),
+			Key:   fmt.Appendf(nil, `test-range-%03d`, i),
+			Value: fmt.Appendf(nil, `value-range-%03d`, i+100),
 		})
 		modRevs = append(modRevs, resp.Header.Revision)
 		require.Nil(t, err, err)
@@ -1190,7 +1190,7 @@ func testDelete(t *testing.T) {
 	t.Run("range", func(t *testing.T) {
 		for i := range 10 {
 			_, err = svcKv.Put(ctx, &internal.PutRequest{
-				Key:   []byte(fmt.Sprintf(`test-key-delete-%02d`, i)),
+				Key:   fmt.Appendf(nil, `test-key-delete-%02d`, i),
 				Value: []byte(`-------------------`),
 			})
 			require.Nil(t, err, err)
@@ -1233,7 +1233,7 @@ func testCompact(t *testing.T) {
 		// Put 10 test keys
 		for i := range 10 {
 			resp, err := svcKv.Put(ctx, &internal.PutRequest{
-				Key:   []byte(fmt.Sprintf(`test-key-compact-%02d`, i)),
+				Key:   fmt.Appendf(nil, `test-key-compact-%02d`, i),
 				Value: []byte(`-------------------`),
 			})
 			require.Nil(t, err, err)
@@ -1250,7 +1250,7 @@ func testCompact(t *testing.T) {
 		// Delete all test keys
 		for i := range 10 {
 			resp, err := svcKv.DeleteRange(ctx, &internal.DeleteRangeRequest{
-				Key: []byte(fmt.Sprintf(`test-key-compact-%02d`, i)),
+				Key: fmt.Appendf(nil, `test-key-compact-%02d`, i),
 			})
 			require.Nil(t, err, err)
 			revs = append(revs, resp.Header.Revision)

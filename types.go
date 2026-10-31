@@ -167,4 +167,4 @@ type (
 	Result = zongzi.Result
 )
 
-type ContextCopy = func(dst, src context.Context) context.Context
+type ContextCopier = func(dst, src context.Context) context.Context
