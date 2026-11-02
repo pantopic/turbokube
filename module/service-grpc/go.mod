@@ -7,5 +7,5 @@ require (
 	github.com/pantopic/ext-buffer/sdk-go v0.0.4
 	github.com/pantopic/ext-global/sdk-go v0.0.3
 	github.com/pantopic/ext-grpc-server/sdk-go v0.0.17
-	github.com/pantopic/ext-shard-client/sdk-go v0.0.3
+	github.com/pantopic/ext-shard-client/sdk-go v0.0.5
 )

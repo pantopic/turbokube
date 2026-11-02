@@ -6,8 +6,8 @@ github.com/pantopic/ext-atomic/sdk-go v0.0.4 h1:sJpF+FvLKpIty8uBKhdPk5CcMBcBUvvl
 github.com/pantopic/ext-atomic/sdk-go v0.0.4/go.mod h1:74gdfg5hX1vVnDCbE+Px+fua5KvalUgmNUPm3nG2XoI=
 github.com/pantopic/ext-global/sdk-go v0.0.3 h1:aa3JHXzNMcOFHqeypbeiimazY+pqxzZUcNs7pRZaSak=
 github.com/pantopic/ext-global/sdk-go v0.0.3/go.mod h1:/ntwF+/A6/xLGHulre9KMQ09gdRBqhuHZvCaXMpN7Lk=
-github.com/pantopic/ext-grpc-server/sdk-go v0.0.15 h1:tU6/l5etV3UkNvMv6haW7+qRCoquM6FwMEDpuPIDzE8=
-github.com/pantopic/ext-grpc-server/sdk-go v0.0.15/go.mod h1:80sYV0H/vv9updbQp1sY8HQDjIEYk9U8SfizwJP4bQo=
+github.com/pantopic/ext-grpc-server/sdk-go v0.0.17 h1:zBzGEINrF/2qelZeuE5NdoWOKwGSjyWMMYZFLP8ykQ4=
+github.com/pantopic/ext-grpc-server/sdk-go v0.0.17/go.mod h1:80sYV0H/vv9updbQp1sY8HQDjIEYk9U8SfizwJP4bQo=
 github.com/pantopic/ext-mdb/sdk-go v0.0.10 h1:Y7Ol0SfuzGhZjp0EbUZ5pmQlCbReM3Lg9MUX/dw/SdA=
 github.com/pantopic/ext-mdb/sdk-go v0.0.10/go.mod h1:+YVZl8fiN/Jkk1nrpCJJl0iCYdY90zOrzjrBd+kuJhE=
 github.com/pantopic/ext-raft/sdk-go v0.0.2 h1:AIpu3g4nVT5U/CngHNYgi69S5bSbNrQ7FTXq1sY3/WI=

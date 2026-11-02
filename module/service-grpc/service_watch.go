@@ -14,7 +14,6 @@ import (
 var evtPool = sync.Pool{New: func() any { return &internal.Event{} }}
 var watchEventBatch = &internal.WatchEventBatch{Event: &internal.Event{}}
 var watchEventSync = &internal.WatchEventSync{}
-var watch_buffer = make([]byte, PCB_RESPONSE_SIZE_MAX())
 
 func shardRecv(_, data []byte, id uint64) {
 	var err error

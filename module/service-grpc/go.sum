@@ -6,5 +6,5 @@ github.com/pantopic/ext-global/sdk-go v0.0.3 h1:aa3JHXzNMcOFHqeypbeiimazY+pqxzZU
 github.com/pantopic/ext-global/sdk-go v0.0.3/go.mod h1:/ntwF+/A6/xLGHulre9KMQ09gdRBqhuHZvCaXMpN7Lk=
 github.com/pantopic/ext-grpc-server/sdk-go v0.0.17 h1:zBzGEINrF/2qelZeuE5NdoWOKwGSjyWMMYZFLP8ykQ4=
 github.com/pantopic/ext-grpc-server/sdk-go v0.0.17/go.mod h1:80sYV0H/vv9updbQp1sY8HQDjIEYk9U8SfizwJP4bQo=
-github.com/pantopic/ext-shard-client/sdk-go v0.0.3 h1:XrbLKuylFWS0OBDud4ZJjw6+lDx1eXQ0bCZ2eSnWQg0=
-github.com/pantopic/ext-shard-client/sdk-go v0.0.3/go.mod h1:c2Duo6U63dbZgWQckX3fu8NLd+CMjgX9vaOur8I4q3Q=
+github.com/pantopic/ext-shard-client/sdk-go v0.0.5 h1:3WiLLE5YCAKfYecQm/n9FRkHu/0rNjnsk/nRs56j6Wo=
+github.com/pantopic/ext-shard-client/sdk-go v0.0.5/go.mod h1:c2Duo6U63dbZgWQckX3fu8NLd+CMjgX9vaOur8I4q3Q=
