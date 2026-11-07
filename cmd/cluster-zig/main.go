@@ -112,8 +112,8 @@ func main() {
 		dir := fmt.Sprintf("%s/data/%d/%d", cfg.Dir, shardID, replicaID)
 		return wazero_lmdb.EnvRegisterDir(ctx, dir)
 	}
-	poolProvider := func(shardID uint64) wazeropool.Instance {
-		return poolStorageKv
+	poolProvider := func(shardID uint64) (wazeropool.Instance, context.Context) {
+		return poolStorageKv, ctx
 	}
 	fsmFactory := wazero_raft.FactoryPersistent(ctx, ctxInit, ctxCopy, logger, poolProvider, hostModLMDB)
 	agent.StateMachineRegister(turbokube.StorageKvName, fsmFactory)

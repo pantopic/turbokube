@@ -10,6 +10,13 @@ const (
 	Version         = 0
 )
 
+func Register(runtimeService, runtimeStorage, runtimeControl interface {
+	Register(name string, wasm []byte)
+}) {
+	runtimeService.Register(ServiceGrpcName, ServiceGrpcDevWasm)
+	runtimeStorage.Register(StorageKvName, StorageKvDevWasm)
+}
+
 //go:embed service\-grpc\.wasm
 var ServiceGrpcWasm []byte
 

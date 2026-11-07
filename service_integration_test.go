@@ -448,8 +448,8 @@ func setupCluster(t *testing.T) {
 		); err != nil {
 			panic(err)
 		}
-		poolProvider := func(shardID uint64) wazeropool.Instance {
-			return poolStorageKv
+		poolProvider := func(shardID uint64) (wazeropool.Instance, context.Context) {
+			return poolStorageKv, ctx
 		}
 		fsm := wazero_raft.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
 		agents[i].StateMachineRegister(Uri, fsm)
@@ -482,8 +482,8 @@ func setupCluster(t *testing.T) {
 		); err != nil {
 			panic(err)
 		}
-		poolProvider := func(shardID uint64) wazeropool.Instance {
-			return poolStorageKv
+		poolProvider := func(shardID uint64) (wazeropool.Instance, context.Context) {
+			return poolStorageKv, ctx
 		}
 		fsm := wazero_raft.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
 		nonvoting[i].StateMachineRegister(Uri, fsm)
