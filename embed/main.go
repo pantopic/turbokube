@@ -5,38 +5,46 @@ import (
 )
 
 const (
-	ServiceGrpcName = "pantopic/turbokube/service/grpc"
-	StorageKvName   = "pantopic/turbokube/storage/kv"
-	Version         = 0
+	ControlBasicName = "pantopic/turbokube/control/basic"
+	ServiceGrpcName  = "pantopic/turbokube/service/grpc"
+	StorageKvName    = "pantopic/turbokube/storage/kv"
+	Version          = 0
 )
 
 func Register(runtimeService, runtimeStorage, runtimeControl interface {
 	Register(name string, wasm []byte)
 }) {
+	runtimeControl.Register(ControlBasicName, ControlBasicDevWasm)
 	runtimeService.Register(ServiceGrpcName, ServiceGrpcDevWasm)
 	runtimeStorage.Register(StorageKvName, StorageKvDevWasm)
 }
 
-//go:embed service\-grpc\.wasm
+//go:embed control-basic.wasm
+var ControlBasicWasm []byte
+
+//go:embed control-basic.dev.wasm
+var ControlBasicDevWasm []byte
+
+//go:embed service\-grpc.wasm
 var ServiceGrpcWasm []byte
 
-//go:embed service\-grpc\.dev\.wasm
+//go:embed service\-grpc.dev.wasm
 var ServiceGrpcDevWasm []byte
 
-//go:embed storage\-kv\.wasm
+//go:embed storage\-kv.wasm
 var StorageKvWasm []byte
 
-//go:embed storage\-kv\.dev\.wasm
+//go:embed storage\-kv.dev.wasm
 var StorageKvDevWasm []byte
 
-//go:embed service\-grpc\.zig\.wasm
+//go:embed service\-grpc.zig.wasm
 var ServiceGrpcZigWasm []byte
 
-//go:embed service\-grpc\.zig\.dev\.wasm
+//go:embed service\-grpc.zig.dev.wasm
 var ServiceGrpcZigDevWasm []byte
 
-//go:embed storage\-kv\.zig\.wasm
+//go:embed storage\-kv.zig.wasm
 var StorageKvZigWasm []byte
 
-//go:embed storage\-kv\.zig\.dev\.wasm
+//go:embed storage\-kv.zig.dev.wasm
 var StorageKvZigDevWasm []byte

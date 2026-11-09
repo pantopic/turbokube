@@ -93,6 +93,10 @@ gen-install:
 gen-lite-install:
 	go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@latest
 
+wasm-control-basic:
+	@cd module/control-basic && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/control-basic.wasm -no-debug
+wasm-control-basic-dev:
+	@cd module/control-basic && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/control-basic.dev.wasm
 wasm-storage-kv:
 	@cd module/storage-kv && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/storage-kv.wasm -no-debug
 wasm-storage-kv-dev:
@@ -101,8 +105,9 @@ wasm-service-grpc:
 	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/service-grpc.wasm -no-debug
 wasm-service-grpc-dev:
 	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/service-grpc.dev.wasm
-wasm-dev: wasm-storage-kv-dev wasm-service-grpc-dev
-wasm-prod: wasm-storage-kv wasm-service-grpc
+wasm-dev: wasm-control-basic-dev wasm-storage-kv-dev wasm-service-grpc-dev
+wasm-prod: wasm-control-basic wasm-storage-kv wasm-service-grpc
+wasm-control: wasm-control-basic wasm-control-basic-dev
 wasm-storage: wasm-storage-kv wasm-storage-kv-dev
 wasm-service: wasm-service-grpc wasm-service-grpc-dev
 wasm-go: wasm-dev wasm-prod
