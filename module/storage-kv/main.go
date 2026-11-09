@@ -40,7 +40,7 @@ var (
 )
 
 func init() {
-	raft.Persistent(open, update, finish, read)
+	raft.Persistent(open, read, update, commit, abort)
 	raft.Streaming(streamOpen, streamRecv, streamClosed)
 	range_watch.Receive(rangeWatchRecv)
 }
@@ -351,7 +351,7 @@ func update(index uint64, cmd []byte) (value uint64, data []byte) {
 	return
 }
 
-func finish() {
+func commit() {
 	var err error
 	if err = dbMeta.setIndex(txn, newIndex); err != nil {
 		panic(`Unable to set index: ` + err.Error())
@@ -367,6 +367,14 @@ func finish() {
 	}
 	range_watch.Flush()
 	txn = 0
+}
+
+func abort() {
+	range_watch.Clear()
+	if txn != 0 {
+		txn.Abort()
+		txn = 0
+	}
 }
 
 func read(query []byte) (value uint64, data []byte) {

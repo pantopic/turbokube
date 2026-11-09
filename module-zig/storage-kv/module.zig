@@ -68,7 +68,7 @@ comptime {
 
 export fn _start() void {
     range_watch.init(arena_state.allocator());
-    raft.persistent(&open, &update, &finish, &read);
+    raft.persistent(&open, &read, &update, &commit, &abort);
     raft.streaming(&stream.open, &stream.recv, &stream.close);
     range_watch.receive(&stream.rangeWatchRecv) catch unreachable;
 }
@@ -344,7 +344,7 @@ fn update(index: u64, cmd: []u8) raft.Result {
     }
 }
 
-fn finish() void {
+fn commit() void {
     dbMeta.setIndex(txn, new_index) catch |err| {
         range_watch.clear() catch unreachable;
         std.debug.panic("Unable to set index: {s}", .{@errorName(err)});
@@ -361,6 +361,14 @@ fn finish() void {
     };
     range_watch.flush() catch unreachable;
     txn.id = 0;
+}
+
+fn abort() void {
+    range_watch.clear() catch unreachable;
+    if (txn.id != 0) {
+        txn.abort();
+        txn.id = 0;
+    }
 }
 
 fn read(query: []u8) raft.Result {
