@@ -85,6 +85,7 @@ gen-lite:
 		--go-lite_opt=features=marshal+unmarshal+size \
 		-I internal
 	@cp module/service-grpc/internal/* module/storage-kv/internal
+	@cp module/service-grpc/internal/* module/storage-lease/internal
 
 gen-install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
@@ -93,42 +94,25 @@ gen-install:
 gen-lite-install:
 	go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@latest
 
-wasm-control-basic:
-	@cd module/control-basic && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/control-basic.wasm -no-debug
-wasm-control-basic-dev:
-	@cd module/control-basic && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/control-basic.dev.wasm
-wasm-storage-kv:
-	@cd module/storage-kv && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/storage-kv.wasm -no-debug
-wasm-storage-kv-dev:
-	@cd module/storage-kv && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/storage-kv.dev.wasm
-wasm-service-grpc:
-	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/service-grpc.wasm -no-debug
-wasm-service-grpc-dev:
-	@cd module/service-grpc && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/service-grpc.dev.wasm
-wasm-dev: wasm-control-basic-dev wasm-storage-kv-dev wasm-service-grpc-dev
-wasm-prod: wasm-control-basic wasm-storage-kv wasm-service-grpc
-wasm-control: wasm-control-basic wasm-control-basic-dev
-wasm-storage: wasm-storage-kv wasm-storage-kv-dev
-wasm-service: wasm-service-grpc wasm-service-grpc-dev
-wasm-go: wasm-dev wasm-prod
+WASM_MODULES := control-basic storage-kv storage-lease service-grpc relay-lease relay-cron
 
-wasm-zig-storage-kv:
-	@cd module-zig/storage-kv && zig build --release=small
-	@cp module-zig/storage-kv/zig-out/bin/storage-kv.wasm embed/storage-kv.zig.wasm
-wasm-zig-storage-kv-dev:
-	@cd module-zig/storage-kv && zig build
-	@cp module-zig/storage-kv/zig-out/bin/storage-kv.wasm embed/storage-kv.zig.dev.wasm
-wasm-zig-service-grpc:
-	@cd module-zig/service-grpc && zig build --release=small
-	@cp module-zig/service-grpc/zig-out/bin/service-grpc.wasm embed/service-grpc.zig.wasm
-wasm-zig-service-grpc-dev:
-	@cd module-zig/service-grpc && zig build
-	@cp module-zig/service-grpc/zig-out/bin/service-grpc.wasm embed/service-grpc.zig.dev.wasm
-wasm-zig-dev: wasm-zig-storage-kv-dev wasm-zig-service-grpc-dev
-wasm-zig-prod: wasm-zig-storage-kv wasm-zig-service-grpc
-wasm-zig-storage: wasm-zig-storage-kv wasm-zig-storage-kv-dev
-wasm-zig-service: wasm-zig-service-grpc wasm-zig-service-grpc-dev
-wasm-zig: wasm-zig-dev wasm-zig-prod
+define WASM_BUILD_GO
+cd module/$(1) && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/wasm/$(1).dev.wasm && cd ../..;
+cd module/$(1) && tinygo build -buildmode=wasi-legacy -target=wasi -opt=s -gc=leaking -scheduler=none -o ../../embed/wasm/$(1).wasm -no-debug && cd ../..;
+endef
+
+wasm-go:
+	$(foreach mod,$(WASM_MODULES),$(call WASM_BUILD_GO,$(mod)))
+
+WASM_MODULES_ZIG := storage-kv service-grpc
+
+define WASM_BUILD_ZIG
+cd module-zig/$(1) && zig build --release=small && cp zig-out/bin/$(1).wasm ../../embed/wasm/$(1).zig.wasm && cd ../..;
+cd module-zig/$(1) && zig build && cp zig-out/bin/$(1).wasm ../../embed/wasm/$(1).zig.dev.wasm && cd ../..;
+endef
+
+wasm-zig:
+	$(foreach mod,$(WASM_MODULES_ZIG),$(call WASM_BUILD_ZIG,$(mod)))
 
 wasm: wasm-go wasm-zig
 

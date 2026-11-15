@@ -26,6 +26,7 @@ import (
 	"github.com/pantopic/ext-atomic/host-wazero"
 	"github.com/pantopic/ext-buffer/host-wazero"
 	"github.com/pantopic/ext-cluster/host-wazero"
+	"github.com/pantopic/ext-cluster/host-wazero/pb"
 	"github.com/pantopic/ext-global/host-wazero"
 	"github.com/pantopic/ext-grpc-server/host-wazero"
 	"github.com/pantopic/ext-mdb/host-wazero-lmdb"
@@ -142,7 +143,21 @@ func main() {
 	if err = agent.ReplicaAwait(ctx, 30*time.Second, shard.ID); err != nil {
 		panic(err)
 	}
-	if err = ctrl.Start(agent.Client(shard.ID), shard); err != nil {
+	var ctrlOptions = []pcb.ControlOption{}
+	if cfg.LeaseAsync {
+		shardLease, _, err := agent.ShardCreate(ctx, turbokube.StorageLeaseName,
+			zongzi.WithName("default.turbokube.default.lease"),
+			zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
+			zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
+		if err != nil {
+			panic(err)
+		}
+		if err = agent.ReplicaAwait(ctx, 30*time.Second, shardLease.ID); err != nil {
+			panic(err)
+		}
+		ctrlOptions = append(ctrlOptions, pcb.WithLeaseAsync(agent.Client(shardLease.ID), shardLease))
+	}
+	if err = ctrl.Start(agent.Client(shard.ID), shard, ctrlOptions...); err != nil {
 		panic(err)
 	}
 
@@ -201,6 +216,15 @@ func main() {
 		}
 	})
 	svcCtxCopy = append(svcCtxCopy, wazero_cluster.NewResolver(`default`, `turbokube`))
+	resource := &pb.Resource{
+		Namespace: `default`,
+		Name:      `turbokube`,
+		Tags:      map[string]string{},
+	}
+	if cfg.LeaseAsync {
+		resource.Tags["turbokube:lease"] = "async"
+	}
+	ctx = wazero_cluster.ContextSetResource(ctx, resource)
 	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
 	if err != nil {
 		panic(err)

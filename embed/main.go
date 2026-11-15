@@ -8,43 +8,60 @@ const (
 	ControlBasicName = "pantopic/turbokube/control/basic"
 	ServiceGrpcName  = "pantopic/turbokube/service/grpc"
 	StorageKvName    = "pantopic/turbokube/storage/kv"
+	StorageLeaseName = "pantopic/turbokube/storage/lease"
 	Version          = 0
 )
 
-func Register(runtimeService, runtimeStorage, runtimeControl interface {
+type runtime interface {
 	Register(name string, wasm []byte)
-}) {
-	runtimeControl.Register(ControlBasicName, ControlBasicDevWasm)
-	runtimeService.Register(ServiceGrpcName, ServiceGrpcDevWasm)
-	runtimeStorage.Register(StorageKvName, StorageKvDevWasm)
 }
 
-//go:embed control-basic.wasm
+type cluster interface {
+	RuntimeControl() runtime
+	RuntimeService() runtime
+	RuntimeStorage() runtime
+	RuntimeRelay() runtime
+}
+
+func Register(c cluster) {
+	c.RuntimeControl().Register(ControlBasicName, ControlBasicDevWasm)
+	c.RuntimeService().Register(ServiceGrpcName, ServiceGrpcDevWasm)
+	c.RuntimeStorage().Register(StorageKvName, StorageKvDevWasm)
+	c.RuntimeStorage().Register(StorageLeaseName, StorageLeaseDevWasm)
+}
+
+//go:embed wasm/control-basic.wasm
 var ControlBasicWasm []byte
 
-//go:embed control-basic.dev.wasm
+//go:embed wasm/control-basic.dev.wasm
 var ControlBasicDevWasm []byte
 
-//go:embed service\-grpc.wasm
+//go:embed wasm/service-grpc.wasm
 var ServiceGrpcWasm []byte
 
-//go:embed service\-grpc.dev.wasm
+//go:embed wasm/service-grpc.dev.wasm
 var ServiceGrpcDevWasm []byte
 
-//go:embed storage\-kv.wasm
+//go:embed wasm/storage-kv.wasm
 var StorageKvWasm []byte
 
-//go:embed storage\-kv.dev.wasm
+//go:embed wasm/storage-kv.dev.wasm
 var StorageKvDevWasm []byte
 
-//go:embed service\-grpc.zig.wasm
+//go:embed wasm/storage-lease.wasm
+var StorageLeaseWasm []byte
+
+//go:embed wasm/storage-lease.dev.wasm
+var StorageLeaseDevWasm []byte
+
+//go:embed wasm/service-grpc.zig.wasm
 var ServiceGrpcZigWasm []byte
 
-//go:embed service\-grpc.zig.dev.wasm
+//go:embed wasm/service-grpc.zig.dev.wasm
 var ServiceGrpcZigDevWasm []byte
 
-//go:embed storage\-kv.zig.wasm
+//go:embed wasm/storage-kv.zig.wasm
 var StorageKvZigWasm []byte
 
-//go:embed storage\-kv.zig.dev.wasm
+//go:embed wasm/storage-kv.zig.dev.wasm
 var StorageKvZigDevWasm []byte

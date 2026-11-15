@@ -9,16 +9,19 @@ pub const CMD_KV_COMPACT: u8 = 2;
 pub const CMD_KV_DELETE_RANGE: u8 = 3;
 pub const CMD_KV_PUT: u8 = 4;
 pub const CMD_KV_TXN: u8 = 5;
-pub const CMD_LEASE_GRANT: u8 = 6;
-pub const CMD_LEASE_KEEP_ALIVE_BATCH: u8 = 7;
-pub const CMD_LEASE_KEEP_ALIVE: u8 = 8;
-pub const CMD_LEASE_REVOKE: u8 = 9;
+pub const CMD_LEASE_EXPIRE: u8 = 6;
+pub const CMD_LEASE_GRANT: u8 = 7;
+pub const CMD_LEASE_KEEP_ALIVE_BATCH: u8 = 8;
+pub const CMD_LEASE_KEEP_ALIVE: u8 = 9;
+pub const CMD_LEASE_REVOKE: u8 = 10;
+pub const CMD_LEASE_TICK: u8 = 11;
 
 pub const QUERY_HEADER: u8 = 0;
 pub const QUERY_KV_RANGE: u8 = 1;
-pub const QUERY_LEASE_LEASES: u8 = 2;
-pub const QUERY_LEASE_TIME_TO_LIVE: u8 = 3;
-pub const QUERY_WATCH_PROGRESS: u8 = 4;
+pub const QUERY_LEASE_EXISTS: u8 = 2;
+pub const QUERY_LEASE_LEASES: u8 = 3;
+pub const QUERY_LEASE_TIME_TO_LIVE: u8 = 4;
+pub const QUERY_WATCH_PROGRESS: u8 = 5;
 
 pub const WatchMessageType__UNKNOWN: u8 = 0;
 pub const WatchMessageType_CANCELED: u8 = 1;

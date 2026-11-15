@@ -15,22 +15,24 @@ import (
 
 // Controller operates background processes like epoch advancement and election notices
 type Controller interface {
-	Start(client zongzi.ShardClient, shard zongzi.Shard) (err error)
+	Start(client zongzi.ShardClient, shard zongzi.Shard, opts ...ControlOption) (err error)
 }
 
 type controller struct {
-	client    zongzi.ShardClient
-	ctx       context.Context
-	ctxCancel context.CancelFunc
-	clock     clock.Clock
-	index     uint64
-	isLeader  map[uint64]bool
-	log       *slog.Logger
-	mutex     sync.RWMutex
-	shard     zongzi.Shard
-	term      uint64
-	termSet   bool
-	wg        sync.WaitGroup
+	client      zongzi.ShardClient
+	clientLease zongzi.ShardClient
+	ctx         context.Context
+	ctxCancel   context.CancelFunc
+	clock       clock.Clock
+	index       uint64
+	isLeader    map[uint64]bool
+	log         *slog.Logger
+	mutex       sync.RWMutex
+	shard       zongzi.Shard
+	shardLease  zongzi.Shard
+	term        uint64
+	termSet     bool
+	wg          sync.WaitGroup
 }
 
 func NewController(ctx context.Context, log *slog.Logger) *controller {
@@ -44,9 +46,12 @@ func NewController(ctx context.Context, log *slog.Logger) *controller {
 
 var _ Controller = new(controller)
 
-func (c *controller) Start(client zongzi.ShardClient, shard zongzi.Shard) (err error) {
+func (c *controller) Start(client zongzi.ShardClient, shard zongzi.Shard, opts ...ControlOption) (err error) {
 	c.shard = shard
 	c.client = client
+	for _, opt := range opts {
+		opt(c)
+	}
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.ctx, c.ctxCancel = context.WithCancel(context.Background())
@@ -74,22 +79,75 @@ func (c *controller) tick() {
 	var hadErr bool
 	var index uint64
 	if c.isLeader[c.shard.ID] {
-		if !c.termSet && c.term > 0 {
-			cmd, _ := proto.Marshal(&internal.TermRequest{Term: c.term})
-			if _, _, err := c.client.Apply(c.ctx, append(cmd, CMD_INTERNAL_TERM)); err != nil {
-				c.log.Warn("Error setting term", "err", err.Error())
+		if c.clientLease == nil {
+			if !c.termSet && c.term > 0 {
+				cmd, _ := proto.Marshal(&internal.TermRequest{Term: c.term})
+				if _, _, err := c.client.Apply(c.ctx, append(cmd, CMD_INTERNAL_TERM)); err != nil {
+					c.log.Warn("Error setting term", "err", err.Error())
+				}
+				c.termSet = true
 			}
-			c.termSet = true
-		}
-		req := &internal.TickRequest{Term: c.term}
-		cmd, err := proto.Marshal(req)
-		if err != nil {
-			c.log.Error("Error marshaling proto", "err", err.Error())
-		}
-		index, _, err = c.client.Apply(c.ctx, append(cmd, CMD_INTERNAL_TICK))
-		if err != nil {
-			c.log.Error("Error applying tick", "err", err.Error())
-			hadErr = true
+			req := &internal.TickRequest{Term: c.term}
+			cmd, err := proto.Marshal(req)
+			if err != nil {
+				c.log.Error("Error marshaling proto", "err", err.Error())
+			}
+			index, _, err = c.client.Apply(c.ctx, append(cmd, CMD_INTERNAL_TICK))
+			if err != nil {
+				c.log.Error("Error applying tick", "err", err.Error())
+				hadErr = true
+			}
+		} else {
+			if !c.termSet && c.term > 0 {
+				cmd, _ := proto.Marshal(&internal.TermRequest{Term: c.term})
+				if _, _, err := c.client.Apply(c.ctx, append(cmd, CMD_INTERNAL_TERM)); err != nil {
+					c.log.Warn("Error setting term", "err", err.Error())
+				}
+				if _, _, err := c.clientLease.Apply(c.ctx, append(cmd, CMD_INTERNAL_TERM)); err != nil {
+					c.log.Warn("Error setting lease term", "err", err.Error())
+				}
+				c.termSet = true
+			}
+			var err error
+			var data []byte
+			cmd, _ := proto.Marshal(&internal.LeaseExpireRequest{})
+			if _, data, err = c.client.Apply(c.ctx, append(cmd, CMD_LEASE_EXPIRE)); err != nil {
+				c.log.Error("Error retriving expired leases", "err", err.Error())
+				return
+			}
+			var resp internal.LeaseExpireResponse
+			if err := proto.Unmarshal(data, &resp); err != nil {
+				c.log.Error("Error unmarshaling lease expire response", "err", err.Error())
+				return
+			}
+			req := &internal.TickRequest{
+				Term:          c.term,
+				LeaseEpoch:    resp.Epoch,
+				LeasesExpired: resp.Expired,
+			}
+			if cmd, err = proto.Marshal(req); err != nil {
+				c.log.Error("Error marshaling proto", "err", err.Error())
+				return
+			}
+			index, data, err = c.client.Apply(c.ctx, append(cmd, CMD_INTERNAL_TICK))
+			if err != nil {
+				c.log.Error("Error applying tick", "err", err.Error())
+				return
+			}
+			var tickResp internal.TickResponse
+			if err := proto.Unmarshal(data, &tickResp); err != nil {
+				c.log.Error("Error unmarshaling tick response", "err", err.Error())
+				return
+			}
+			cmd, _ = proto.Marshal(&internal.LeaseTickRequest{
+				Epoch: tickResp.Epoch,
+				Ids:   tickResp.LeaseIds,
+				Ttl:   tickResp.LeaseTtls,
+			})
+			if _, data, err = c.client.Apply(c.ctx, append(cmd, CMD_LEASE_TICK)); err != nil {
+				c.log.Error("Error saving new leases", "err", err.Error())
+				return
+			}
 		}
 	}
 	if !hadErr && index > c.index {
@@ -102,21 +160,10 @@ func (c *controller) LeaderUpdated(info zongzi.LeaderInfo) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	c.isLeader[info.ShardID] = info.LeaderID == info.ReplicaID
-	if c.shard.ID != 0 && c.isLeader[c.shard.ID] && c.term != info.Term {
-		req := &internal.TermRequest{
-			Term: info.Term,
-		}
-		cmd, err := proto.Marshal(req)
-		if err != nil {
-			c.log.Error("Error marshaling proto", "err", err.Error())
-		}
-		_, _, err = c.client.Apply(c.ctx, append(cmd, CMD_INTERNAL_TERM))
-		if err != nil {
-			c.log.Error("Error applying term", "err", err.Error())
-		}
-		c.termSet = true
+	if info.ShardID == c.shard.ID {
+		c.term = info.Term
+		c.termSet = false
 	}
-	c.term = info.Term
 }
 
 func (c *controller) Stop() {

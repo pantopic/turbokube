@@ -6,12 +6,29 @@ option go_package = "github.com/pantopic/turbokube/internal";
 
 import "api.proto";
 
+message LeaseExpireRequest {}
+message LeaseExpireResponse {
+  uint64 epoch = 1;
+  repeated uint64 expired = 2;
+}
+
 message TickRequest {
   uint64 term = 1;
+  uint64 lease_epoch = 2;
+  repeated uint64 leases_expired = 3;
 }
 message TickResponse {
   uint64 epoch = 1;
+  repeated uint64 lease_ids = 2;
+  repeated uint64 lease_ttls = 3;
 }
+
+message LeaseTickRequest {
+  uint64 epoch = 1;
+  repeated uint64 ids = 2;
+  repeated uint64 ttl = 3;
+}
+message LeaseTickResponse {}
 
 message TermRequest {
   uint64 term = 1;

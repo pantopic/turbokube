@@ -1,4 +1,4 @@
-module github.com/pantopic/turbokube 
+module github.com/pantopic/turbokube
 
 go 1.26.0
 

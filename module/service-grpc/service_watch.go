@@ -176,11 +176,11 @@ var watchResp = &internal.WatchResponse{
 var respHeader = &internal.ResponseHeader{}
 
 func watchOpen() (err error) {
-	return kvShard().StreamOpen([]byte(`watch`))
+	return shardKv().StreamOpen([]byte(`watch`))
 }
 
 func watchRecv(data []byte) (err error) {
-	return kvShard().StreamSend([]byte(`watch`), data)
+	return shardKv().StreamSend([]byte(`watch`), data)
 }
 
 func watchClose() (err error) {

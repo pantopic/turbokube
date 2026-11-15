@@ -386,6 +386,12 @@ func setupCluster(t *testing.T) {
 	}
 	var ctrl, ctrl2 []*controller
 	var shard zongzi.Shard
+	var wasmKv = turbokube.StorageKvDevWasm
+	var wasmSvc = turbokube.ServiceGrpcDevWasm
+	if zig {
+		wasmKv = turbokube.StorageKvZigDevWasm
+		wasmSvc = turbokube.ServiceGrpcZigDevWasm
+	}
 
 	// Wazero Storage Runtime
 	runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
@@ -407,11 +413,7 @@ func setupCluster(t *testing.T) {
 		}
 		storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
 	}
-	kvWasm := turbokube.StorageKvDevWasm
-	if zig {
-		kvWasm = turbokube.StorageKvZigDevWasm
-	}
-	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, kvWasm,
+	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmKv,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithBurst(runtime.NumCPU()),
@@ -561,11 +563,7 @@ func setupCluster(t *testing.T) {
 		}
 		svcCtxCopiers = append(svcCtxCopiers, m.ContextCopy)
 	}
-	svcWasm := turbokube.ServiceGrpcDevWasm
-	if zig {
-		svcWasm = turbokube.ServiceGrpcZigDevWasm
-	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, svcWasm,
+	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, wasmSvc,
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithMemoryLimit(32<<20),

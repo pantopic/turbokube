@@ -18,6 +18,7 @@ type config struct {
 	PortZongzi  uint16 `env:"PCB_PORT_ZONGZI"`
 	TlsCrt      string `env:"PCB_TLS_CRT"`
 	TlsKey      string `env:"PCB_TLS_KEY"`
+	LeaseAsync  bool   `env:"PCB_LEASE_ASYNC"`
 }
 
 func getConfig() config {

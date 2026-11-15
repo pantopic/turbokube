@@ -28,7 +28,7 @@ func maintenanceAlarm(in []byte) (err error) {
 }
 
 func maintenanceStatus(in []byte) (err error) {
-	kvShard().ReadAsync([]byte(`maintenanceStatus`), append(in, QUERY_HEADER), false)
+	shardKv().ReadAsync([]byte(`maintenanceStatus`), append(in, QUERY_HEADER), false)
 	return
 }
 

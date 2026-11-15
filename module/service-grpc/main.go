@@ -59,6 +59,18 @@ func main() {
 
 func asyncRecv(name, data []byte, val uint64, err error) {
 	switch string(name) {
+	case `leaseKeepaliveRecvAsync`:
+		if val == 2 {
+			shardKv().ReadAsync([]byte(`leaseExists`), append(data, QUERY_LEASE_EXISTS), false)
+		} else {
+			autoSend(grpcError(val, data, err))
+		}
+	case `leaseRevokeExternal`:
+		if val == 1 {
+			shardKv().ApplyAsync([]byte("leaseRevokeExternal"), append(data, CMD_LEASE_REVOKE))
+		} else {
+			autoSend(grpcError(val, data, err))
+		}
 	case `maintenanceStatus`:
 		out, err := grpcError(val, data, err)
 		if err != nil {

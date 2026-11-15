@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/pantopic/ext-cluster/sdk-go"
 	"github.com/pantopic/ext-grpc-server/sdk-go"
 	"github.com/pantopic/ext-grpc-server/sdk-go/codes"
 	"github.com/pantopic/ext-grpc-server/sdk-go/status"
@@ -8,8 +9,9 @@ import (
 )
 
 var (
-	componentName = []byte(`default`)
-	shardNameKv   = []byte(`kv`)
+	componentName  = []byte(`default`)
+	shardNameKv    = []byte(`kv`)
+	shardNameLease = []byte(`lease`)
 )
 
 func autoSend(out []byte, err error) error {
@@ -34,6 +36,14 @@ func grpcError(val uint64, out []byte, err error) ([]byte, error) {
 	return out, err
 }
 
-func kvShard() shard_client.Client {
+func shardKv() shard_client.Client {
 	return shard_client.New(componentName, shardNameKv)
+}
+
+func shardLease() shard_client.Client {
+	return shard_client.New(componentName, shardNameLease)
+}
+
+func leaseAsync() bool {
+	return cluster.ResourceTagged(`turbokube:lease:async`)
 }

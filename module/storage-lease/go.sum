@@ -1,0 +1,8 @@
+github.com/aperturerobotics/protobuf-go-lite v0.19.0 h1:7Veh1XY7pkswacItBnTR+skvPyNIFdOPg0tb3X0Yd/E=
+github.com/aperturerobotics/protobuf-go-lite v0.19.0/go.mod h1:3Ay/E7iaw2KWLirK3+dDdNJZHK0hu8Y1/kKeYeUa+8s=
+github.com/pantopic/ext-grpc-server/sdk-go v0.0.17 h1:zBzGEINrF/2qelZeuE5NdoWOKwGSjyWMMYZFLP8ykQ4=
+github.com/pantopic/ext-grpc-server/sdk-go v0.0.17/go.mod h1:80sYV0H/vv9updbQp1sY8HQDjIEYk9U8SfizwJP4bQo=
+github.com/pantopic/ext-mdb/sdk-go v0.0.12 h1:gGDwZpr6PRp4vYhrr6Af23OcHKqPJ7hgwo2mCqaO7qA=
+github.com/pantopic/ext-mdb/sdk-go v0.0.12/go.mod h1:+YVZl8fiN/Jkk1nrpCJJl0iCYdY90zOrzjrBd+kuJhE=
+github.com/pantopic/ext-raft/sdk-go v0.0.5 h1:EZaw5Oqm7Q5KUyoiyiZhhQovqA8ftu/pQ00QwgLqNT4=
+github.com/pantopic/ext-raft/sdk-go v0.0.5/go.mod h1:0M9h4aTiRIk9LAF1bMb/yoWPVN8BpbfLFT6e5YY+04Q=

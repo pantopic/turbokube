@@ -408,6 +408,22 @@ func read(query []byte) (value uint64, data []byte) {
 			}
 			value = 1
 		}
+	case QUERY_LEASE_EXISTS:
+		var req = &internal.LeaseKeepAliveRequest{}
+		if err := req.UnmarshalVT(query[:len(query)-1]); err != nil {
+			data = []byte("Invalid query: " + string(query))
+			return
+		}
+		res, val, err := queryLeaseExists(txn, epoch, req)
+		if err != nil {
+			panic(`Unable to keep lease alive: ` + err.Error())
+		}
+		res.Header = responseHeader(newRev)
+		data, err = res.MarshalVT()
+		if err != nil {
+			panic(`Unable to marshal response: ` + err.Error())
+		}
+		value = val
 	case QUERY_LEASE_LEASES:
 		var req = &internal.LeaseLeasesRequest{}
 		if err := req.UnmarshalVT(query[:len(query)-1]); err != nil {
@@ -548,8 +564,6 @@ func cmdDeleteRange(
 	}
 	return
 }
-
-var subTxn = new(mdb.Txn)
 
 func txnOps(
 	txn mdb.Txn, rev, epoch uint64,
@@ -819,6 +833,23 @@ func queryRange(
 		}
 		res.More = more
 	}
+	return
+}
+
+func queryLeaseExists(
+	txn mdb.Txn, epoch uint64,
+	req *internal.LeaseKeepAliveRequest,
+) (res *internal.LeaseKeepAliveResponse, val uint64, err error) {
+	res = &internal.LeaseKeepAliveResponse{ID: req.ID}
+	val = 1
+	var item lease
+	if item, err = dbLease.get(txn, uint64(req.ID)); err != nil {
+		return
+	}
+	if item.id == 0 {
+		return
+	}
+	res.TTL = int64(item.expires - item.renewed)
 	return
 }
 

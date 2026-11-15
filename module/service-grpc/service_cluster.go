@@ -28,7 +28,7 @@ func clusterMemberUpdate(in []byte) (err error) {
 }
 
 func clusterMemberList(in []byte) (err error) {
-	out, err := grpcError(kvShard().Read(append(in, QUERY_HEADER), false))
+	out, err := grpcError(shardKv().Read(append(in, QUERY_HEADER), false))
 	if err != nil {
 		return
 	}

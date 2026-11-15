@@ -1,14 +1,10 @@
 package main
 
 import (
-	"maps"
+	"strings"
 
 	"github.com/pantopic/ext-cluster/sdk-go"
 	"github.com/pantopic/ext-cluster/sdk-go/pb"
-)
-
-const (
-	ShardTypeKv = "pantopic/turbokube/storage/kv"
 )
 
 func init() {
@@ -21,27 +17,36 @@ func main() {
 }
 
 func reconcile(component *pb.Component) uint32 {
-	name := component.Namespace + `.` + component.Resource + `.` + component.Name
-	var found bool
-	var s *pb.Shard
-	for s = range cluster.ShardIter() {
-		if s.Name == name+`.kv` {
-			found = true
-			break
+	var err error
+	var shardKv *pb.Shard
+	var shardLease *pb.Shard
+	for s := range cluster.ShardIter() {
+		switch s.Name[strings.LastIndex(s.Name, `.`)+1:] {
+		case `kv`:
+			shardKv = s
+		case `lease`:
+			shardLease = s
 		}
 	}
-	if !found {
-		tags := make(map[string]string)
-		maps.Copy(tags, component.Tags)
-		tags[`pantopic:module`] = ShardTypeKv
-		_, err := cluster.ShardCreate(&pb.Shard{
-			Name: `kv`,
-			Type: "pantopic/ext-raft",
-			Tags: tags,
-		})
+	if shardKv == nil {
+		shardKv, err = cluster.ShardCreate(&pb.Shard{Name: `kv`},
+			cluster.WithTag(`pantopic:module`, "pantopic/turbokube/storage/kv"),
+			cluster.WithTag(`pantopic:relay:cron`, "pantopic/turbokube/relay/cron"))
 		if err != nil {
 			println(err)
 			return cluster.StatusPending
+		}
+	}
+	if cluster.ResourceTagged(`turbokube:lease:async`) {
+		if shardLease == nil {
+			_, err := cluster.ShardCreate(&pb.Shard{Name: `lease`},
+				cluster.WithTag(`pantopic:module`, "pantopic/turbokube/storage/lease"),
+				cluster.WithTag(`pantopic:relay:lease`, "pantopic/turbokube/relay/lease"),
+				cluster.WithTag(`placement:bind`, "kv"))
+			if err != nil {
+				println(err)
+				return cluster.StatusPending
+			}
 		}
 	}
 	return cluster.StatusActive
