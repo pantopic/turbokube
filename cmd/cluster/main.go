@@ -94,7 +94,7 @@ func main() {
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithMemoryLimit(32<<20),
-		wazeropool.WithName(turbokube.StorageKvName),
+		wazeropool.WithName(turbokube.StorageKv),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
 		panic(err)
@@ -112,7 +112,7 @@ func main() {
 		return poolStorageKv, ctx
 	}
 	fsmFactory := wazero_raft.FactoryPersistent(ctx, ctxCopy, logger, poolProvider)
-	agent.StateMachineRegister(turbokube.StorageKvName, fsmFactory)
+	agent.StateMachineRegister(turbokube.StorageKv, fsmFactory)
 	go func() {
 		for {
 			time.Sleep(5 * time.Second)
@@ -128,7 +128,7 @@ func main() {
 		panic(err)
 	}
 	// TODO - Replace shard create with resource create
-	shard, _, err := agent.ShardCreate(ctx, turbokube.StorageKvName,
+	shard, _, err := agent.ShardCreate(ctx, turbokube.StorageKv,
 		zongzi.WithName("default.turbokube.default.kv"),
 		zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
 		zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
@@ -140,7 +140,7 @@ func main() {
 	}
 	var ctrlOptions = []pcb.ControlOption{}
 	if cfg.LeaseAsync {
-		shardLease, _, err := agent.ShardCreate(ctx, turbokube.StorageLeaseName,
+		shardLease, _, err := agent.ShardCreate(ctx, turbokube.StorageLease,
 			zongzi.WithName("default.turbokube.default.lease"),
 			zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
 			zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
@@ -198,7 +198,7 @@ func main() {
 		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
 		wazeropool.WithLimit(runtime.NumCPU()),
 		wazeropool.WithMemoryLimit(32<<20),
-		wazeropool.WithName(turbokube.ServiceGrpcName),
+		wazeropool.WithName(turbokube.ServiceGrpc),
 		wazeropool.WithVersion(turbokube.Version))
 	if err != nil {
 		panic(err)

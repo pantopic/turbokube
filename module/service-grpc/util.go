@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	componentName  = []byte(`default`)
+	bankName       = []byte(`default`)
 	shardNameKv    = []byte(`kv`)
 	shardNameLease = []byte(`lease`)
 )
@@ -38,13 +38,13 @@ func grpcError(val uint64, out []byte, err error) ([]byte, error) {
 }
 
 func shardKv() shard_client.Client {
-	return shard_client.New(componentName, shardNameKv)
+	return shard_client.New(bankName, shardNameKv)
 }
 
 func shardLease() shard_client.Client {
-	return shard_client.New(componentName, shardNameLease)
+	return shard_client.New(bankName, shardNameLease)
 }
 
 func leaseAsync() bool {
-	return cluster.ResourceTagged(`turbokube:lease:async`)
+	return cluster.ResourceTagged(`kv`, `turbokube:lease:async`)
 }

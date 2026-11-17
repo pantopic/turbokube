@@ -1,6 +1,6 @@
 github.com/aperturerobotics/protobuf-go-lite v0.19.0 h1:7Veh1XY7pkswacItBnTR+skvPyNIFdOPg0tb3X0Yd/E=
 github.com/aperturerobotics/protobuf-go-lite v0.19.0/go.mod h1:3Ay/E7iaw2KWLirK3+dDdNJZHK0hu8Y1/kKeYeUa+8s=
+github.com/pantopic/ext-bridge/sdk-go v0.0.0-20261117171614-92851483dab3 h1:rQAMH61np1Cq4ImybZ9DlDFFSldNrJhcm7RQLkmcohM=
+github.com/pantopic/ext-bridge/sdk-go v0.0.0-20261117171614-92851483dab3/go.mod h1:32wpkMFVOB2/3+xt+QKQMIk8AhO4M80hgdGyxzpBW/I=
 github.com/pantopic/ext-cluster/sdk-go v0.0.2 h1:mRnF103KsDseN1rT/FcomW1Z7/BF7PYt9dEUNAqF+Qo=
 github.com/pantopic/ext-cluster/sdk-go v0.0.2/go.mod h1:s+faiSKUcJJ5PehmoMS2CVPf0ZL1Vi8sk2OqgYk3CTg=
-github.com/pantopic/ext-relay/sdk-go v0.0.0-20261115141053-982a359a17d8 h1:+Pjbr/r+cpeNgoG8iMTZxrb2CLemyWsUBcnaprmwu04=
-github.com/pantopic/ext-relay/sdk-go v0.0.0-20261115141053-982a359a17d8/go.mod h1:LQ/++x6FCnaQvcghCf8WFARWOphGZ41nV78uABYxbfA=

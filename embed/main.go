@@ -7,22 +7,22 @@ import (
 )
 
 const (
-	ControlBasicName = "pantopic/turbokube/control/basic"
-	RelayCronName    = "pantopic/turbokube/relay/cron"
-	RelayLeaseName   = "pantopic/turbokube/relay/lease"
-	ServiceGrpcName  = "pantopic/turbokube/service/grpc"
-	StorageKvName    = "pantopic/turbokube/storage/kv"
-	StorageLeaseName = "pantopic/turbokube/storage/lease"
-	Version          = 0
+	BridgeCron   = "pantopic/turbokube/bridge/cron"
+	BridgeLease  = "pantopic/turbokube/bridge/lease"
+	ControlBasic = "pantopic/turbokube/control/basic"
+	ServiceGrpc  = "pantopic/turbokube/service/grpc"
+	StorageKv    = "pantopic/turbokube/storage/kv"
+	StorageLease = "pantopic/turbokube/storage/lease"
+	Version      = 0
 )
 
 func register(c pantopic.ModuleRegistry, wasm ...[]byte) {
-	c.RegisterControl(ControlBasicName, wasm[0])
-	c.RegisterService(ServiceGrpcName, wasm[1])
-	c.RegisterStorage(StorageKvName, wasm[2])
-	c.RegisterStorage(StorageLeaseName, wasm[3])
-	c.RegisterRelay(RelayLeaseName, wasm[4])
-	c.RegisterRelay(RelayCronName, wasm[5])
+	c.RegisterBridge(BridgeCron, wasm[5])
+	c.RegisterBridge(BridgeLease, wasm[4])
+	c.RegisterControl(ControlBasic, wasm[0])
+	c.RegisterService(ServiceGrpc, wasm[1])
+	c.RegisterStorage(StorageKv, wasm[2])
+	c.RegisterStorage(StorageLease, wasm[3])
 }
 
 func Register(c pantopic.ModuleRegistry) {
@@ -31,8 +31,8 @@ func Register(c pantopic.ModuleRegistry) {
 		ServiceGrpcWasm,
 		StorageKvWasm,
 		StorageLeaseWasm,
-		RelayLeaseWasm,
-		RelayCronWasm,
+		BridgeLeaseWasm,
+		BridgeCronWasm,
 	)
 }
 
@@ -42,8 +42,8 @@ func RegisterDev(c pantopic.ModuleRegistry) {
 		ServiceGrpcDevWasm,
 		StorageKvDevWasm,
 		StorageLeaseDevWasm,
-		RelayLeaseDevWasm,
-		RelayCronDevWasm,
+		BridgeLeaseDevWasm,
+		BridgeCronDevWasm,
 	)
 }
 
@@ -53,8 +53,8 @@ func RegisterZig(c pantopic.ModuleRegistry) {
 		ServiceGrpcZigWasm,
 		StorageKvZigWasm,
 		StorageLeaseWasm,
-		RelayLeaseWasm,
-		RelayCronWasm,
+		BridgeLeaseWasm,
+		BridgeCronWasm,
 	)
 }
 
@@ -64,8 +64,8 @@ func RegisterZigDev(c pantopic.ModuleRegistry) {
 		ServiceGrpcZigDevWasm,
 		StorageKvZigDevWasm,
 		StorageLeaseDevWasm,
-		RelayLeaseDevWasm,
-		RelayCronDevWasm,
+		BridgeLeaseDevWasm,
+		BridgeCronDevWasm,
 	)
 }
 
@@ -105,28 +105,28 @@ var StorageKvZigWasm []byte
 //go:embed wasm/storage-kv.zig.dev.wasm
 var StorageKvZigDevWasm []byte
 
-//go:embed wasm/relay-lease.wasm
-var RelayLeaseWasm []byte
+//go:embed wasm/bridge-lease.wasm
+var BridgeLeaseWasm []byte
 
-//go:embed wasm/relay-lease.dev.wasm
-var RelayLeaseDevWasm []byte
+//go:embed wasm/bridge-lease.dev.wasm
+var BridgeLeaseDevWasm []byte
 
-//go:embed wasm/relay-cron.wasm
-var RelayCronWasm []byte
+//go:embed wasm/bridge-cron.wasm
+var BridgeCronWasm []byte
 
-//go:embed wasm/relay-cron.dev.wasm
-var RelayCronDevWasm []byte
+//go:embed wasm/bridge-cron.dev.wasm
+var BridgeCronDevWasm []byte
 
 /*
-//go:embed wasm/relay-lease.zig.wasm
-var RelayLeaseZigWasm []byte
+//go:embed wasm/bridge-lease.zig.wasm
+var BridgeLeaseZigWasm []byte
 
-//go:embed wasm/relay-lease.zig.dev.wasm
-var RelayLeaseZigDevWasm []byte
+//go:embed wasm/bridge-lease.zig.dev.wasm
+var BridgeLeaseZigDevWasm []byte
 
-//go:embed wasm/relay-cron.zig.wasm
-var RelayCronZigWasm []byte
+//go:embed wasm/bridge-cron.zig.wasm
+var BridgeCronZigWasm []byte
 
-//go:embed wasm/relay-cron.zig.dev.wasm
-var RelayCronZigDevWasm []byte
+//go:embed wasm/bridge-cron.zig.dev.wasm
+var BridgeCronZigDevWasm []byte
 */

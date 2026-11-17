@@ -423,8 +423,9 @@ func setupCluster(t *testing.T) {
 			Type:      "pantopic/turbokube",
 		}
 		service := &pb.Service{
-			Namespace: "default",
+			Namespace: resource.Namespace,
 			Resource:  resource.Name,
+			Cluster:   cfg.ClusterName,
 			Name:      "api",
 			Type:      "grpc",
 			Port:      uint64(port),
@@ -433,8 +434,8 @@ func setupCluster(t *testing.T) {
 				"placement:cover": "host:class=service",
 			},
 		}
-		component := &pb.Component{
-			Namespace: "default",
+		bank := &pb.Bank{
+			Namespace: resource.Namespace,
 			Resource:  resource.Name,
 			Cluster:   cfg.ClusterName,
 			Name:      "default",
@@ -467,16 +468,16 @@ func setupCluster(t *testing.T) {
 			require.Equal(t, service.Name, putResp.Item.Name)
 			require.Equal(t, service.Type, putResp.Item.Type)
 		})
-		t.Run(`component`, func(t *testing.T) {
-			putResp, err := ctrlClient.ComponentPut(ctx, &pb.ComponentPutRequest{
-				Item: component,
+		t.Run(`bank`, func(t *testing.T) {
+			putResp, err := ctrlClient.BankPut(ctx, &pb.BankPutRequest{
+				Item: bank,
 			})
 			require.Nil(t, err, err)
 			require.Equal(t, uint64(0), putResp.Code, putResp.Error)
-			require.Equal(t, component.Namespace, putResp.Item.Namespace)
-			require.Equal(t, component.Name, putResp.Item.Name)
-			require.Equal(t, component.Resource, putResp.Item.Resource)
-			require.Equal(t, component.Type, putResp.Item.Type)
+			require.Equal(t, bank.Namespace, putResp.Item.Namespace)
+			require.Equal(t, bank.Name, putResp.Item.Name)
+			require.Equal(t, bank.Resource, putResp.Item.Resource)
+			require.Equal(t, bank.Type, putResp.Item.Type)
 		})
 		t.Run(`active`, func(t *testing.T) {
 			t.Run(`service`, func(t *testing.T) {
@@ -496,22 +497,22 @@ func setupCluster(t *testing.T) {
 				require.Equal(t, 1, len(svcListResp.Item))
 				require.Equal(t, service.Type, svcListResp.Item[0].Type)
 			})
-			t.Run(`component`, func(t *testing.T) {
-				compListReq := &pb.ComponentListRequest{
+			t.Run(`bank`, func(t *testing.T) {
+				compListReq := &pb.BankListRequest{
 					Namespace: resource.Namespace,
 					Resource:  resource.Name,
 				}
-				var compListResp *pb.ComponentListResponse
-				// 10s - component is created and active
+				var compListResp *pb.BankListResponse
+				// 10s - bank is created and active
 				require.True(t, await(10, 100, func() bool {
-					compListResp, err = ctrlClient.ComponentList(ctx, compListReq)
+					compListResp, err = ctrlClient.BankList(ctx, compListReq)
 					return err == nil &&
 						compListResp.Code == cluster.ResultSuccess &&
 						len(compListResp.Item) > 0 &&
 						compListResp.Item[0].Status == cluster.Status_Active
 				}), err)
 				require.Equal(t, 1, len(compListResp.Item))
-				require.Equal(t, component.Type, compListResp.Item[0].Type)
+				require.Equal(t, bank.Type, compListResp.Item[0].Type)
 			})
 		})
 	})

@@ -92,16 +92,16 @@ gen-lite-install:
 	go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@latest
 
 WASM_MODULES := \
+	bridge-cron \
+	bridge-lease \
 	control-basic \
-	storage-kv \
-	storage-lease \
 	service-grpc \
-	relay-lease \
-	relay-cron
+	storage-kv \
+	storage-lease 
 
 WASM_MODULES_ZIG := \
-	storage-kv \
-	service-grpc
+	service-grpc \
+	storage-kv 
 
 define WASM_BUILD_GO
 cd module/$(1) && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/wasm/$(1).dev.wasm && cd ../..;
@@ -113,6 +113,10 @@ wasm-go:
 
 wasm-go-mod:
 	$(call WASM_BUILD_GO,$(filter-out $@,$(MAKECMDGOALS)))
+
+# Catch-all target to prevent Make from failing on unknown targets (ie. arguments to wasm-go-mod)
+%:
+	@true
 
 define WASM_BUILD_ZIG
 cd module-zig/$(1) && zig build --release=small && cp zig-out/bin/$(1).wasm ../../embed/wasm/$(1).zig.wasm && cd ../..;
@@ -136,6 +140,3 @@ gen-zig:
 	@cd module-zig/storage-kv && zig build gen-proto
 
 .PHONY: test
-
-%:
-	@true
