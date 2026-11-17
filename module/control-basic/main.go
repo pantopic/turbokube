@@ -29,24 +29,25 @@ func reconcile(component *pb.Component) uint32 {
 		}
 	}
 	if shardKv == nil {
-		shardKv, err = cluster.ShardCreate(&pb.Shard{Name: `kv`},
+		shardKv, err = cluster.ShardCreatePersistent(&pb.Shard{Name: `kv`},
 			cluster.WithTag(`pantopic:module`, "pantopic/turbokube/storage/kv"),
-			cluster.WithTag(`pantopic:relay:cron`, "pantopic/turbokube/relay/cron"))
+			// cluster.WithTag(`pantopic:relay:cron`, "pantopic/turbokube/relay/cron"),
+		)
 		if err != nil {
-			println(err)
+			println(`Failed to create shard kv`, err)
 			return cluster.StatusPending
 		}
 	}
 	if cluster.ResourceTagged(`turbokube:lease:async`) {
 		if shardLease == nil {
-			_, err := cluster.ShardCreate(&pb.Shard{Name: `lease`},
-				cluster.WithTag(`pantopic:module`, "pantopic/turbokube/storage/lease"),
-				cluster.WithTag(`pantopic:relay:lease`, "pantopic/turbokube/relay/lease"),
-				cluster.WithTag(`placement:bind`, "kv"))
-			if err != nil {
-				println(err)
-				return cluster.StatusPending
-			}
+			// _, err := cluster.ShardCreatePersistent(&pb.Shard{Name: `lease`},
+			// 	cluster.WithTag(`pantopic:module`, "pantopic/turbokube/storage/lease"),
+			// 	cluster.WithTag(`pantopic:relay:lease`, "pantopic/turbokube/relay/lease"),
+			// 	cluster.WithTag(`placement:bind`, "kv"))
+			// if err != nil {
+			// 	println(`Failed to create shard lease`, err)
+			// 	return cluster.StatusPending
+			// }
 		}
 	}
 	return cluster.StatusActive

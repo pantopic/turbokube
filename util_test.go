@@ -3,25 +3,25 @@ package pcb
 func withGlobal(flag *bool, val bool, fn func()) {
 	prev := *flag
 	*flag = val
-	if globalSet != nil {
+	if globalTemp != nil {
 		var gval = uint64(0)
 		if val {
 			gval = 1
 		}
-		globalSet(flagName[flag], gval)
-		defer globalDel(flagName[flag])
+		globalTemp(flagName[flag], gval, fn)
+	} else {
+		fn()
 	}
-	fn()
 	*flag = prev
 }
 
 func withGlobalInt(flag *int, val int, fn func()) {
 	prev := *flag
 	*flag = val
-	if globalSet != nil {
-		globalSet(flagNameInt[flag], uint64(val))
-		defer globalDel(flagNameInt[flag])
+	if globalTemp != nil {
+		globalTemp(flagNameInt[flag], uint64(val), fn)
+	} else {
+		fn()
 	}
-	fn()
 	*flag = prev
 }

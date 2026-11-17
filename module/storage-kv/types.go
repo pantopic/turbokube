@@ -111,7 +111,7 @@ var (
 
 	// RESPONSE_SIZE_MAX sets the maximum request and response size.
 	// Matches etcd by default.
-	RESPONSE_SIZE_MAX = 10 << 20
+	RESPONSE_SIZE_MAX = 10 << 20 // 10 MiB
 
 	// WATCH_PROGRESS_NOTIFY_INTERVAL sets the duration of periodic watch progress notification.
 	// Matches etcd by default.

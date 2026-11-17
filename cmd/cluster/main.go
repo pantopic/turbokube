@@ -75,9 +75,8 @@ func main() {
 	hostModGlobal := wazero_global.New()
 	runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
 	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
-	hostModLMDB := wazero_lmdb.New()
 	storageExtensions := []extension{
-		hostModLMDB,
+		wazero_lmdb.New(wazero_lmdb.WithDirLocal(cfg.Dir + "/local")),
 		hostModGlobal,
 		wazero_atomic.New(),
 		wazero_range_watch.New(),
@@ -109,14 +108,10 @@ func main() {
 		}
 	})
 	logger := zongzi.GetLogger(`statemachine`)
-	ctxInit := func(ctx context.Context, shardID, replicaID uint64) context.Context {
-		dir := fmt.Sprintf("%s/data/%d/%d", cfg.Dir, shardID, replicaID)
-		return wazero_lmdb.EnvRegisterDir(ctx, dir)
-	}
 	poolProvider := func(shardID uint64) (wazeropool.Instance, context.Context) {
 		return poolStorageKv, ctx
 	}
-	fsmFactory := wazero_raft.FactoryPersistent(ctx, ctxInit, ctxCopy, logger, poolProvider, hostModLMDB)
+	fsmFactory := wazero_raft.FactoryPersistent(ctx, ctxCopy, logger, poolProvider)
 	agent.StateMachineRegister(turbokube.StorageKvName, fsmFactory)
 	go func() {
 		for {
@@ -190,6 +185,7 @@ func main() {
 		hostModGrpcServer,
 		wazero_buffer.New(),
 		wazero_shard_client.New(agent),
+		wazero_cluster.New(agent),
 	}
 	var svcCtxCopy []func(dst, src context.Context) context.Context
 	for _, m := range serviceExtensions {

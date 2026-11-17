@@ -14,7 +14,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"runtime"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -24,38 +24,27 @@ import (
 	"github.com/soheilhy/cmux"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/keepalive"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/logbn/zongzi"
-	"github.com/pantopic/ext-atomic/host-wazero"
-	"github.com/pantopic/ext-buffer/host-wazero"
-	"github.com/pantopic/ext-cluster/host-wazero"
-	"github.com/pantopic/ext-global/host-wazero"
-	"github.com/pantopic/ext-grpc-server/host-wazero"
-	"github.com/pantopic/ext-mdb/host-wazero-lmdb"
-	"github.com/pantopic/ext-raft/host-wazero"
-	"github.com/pantopic/ext-range-watch/host-wazero"
-	"github.com/pantopic/ext-shard-client/host-wazero"
-	"github.com/pantopic/ext-small-cache/host-wazero"
-	"github.com/pantopic/wazero-pool"
+	"github.com/pantopic/cluster"
+	"github.com/pantopic/cluster/pb"
 
 	"github.com/pantopic/turbokube/embed"
 	"github.com/pantopic/turbokube/internal"
 )
 
 var (
-	ctx     = context.Background()
-	cluster = os.Getenv("CLUSTER_CHECK") == "true"
-	parity  = os.Getenv("PARITY_CHECK") == "true"
-	debug   = os.Getenv("LOG_LEVEL") == "debug"
-	zig     = os.Getenv("ZIG") == "true"
-	wait    func(time.Duration)
+	ctx          = context.Background()
+	clusterCheck = os.Getenv("CLUSTER_CHECK") == "true"
+	parity       = os.Getenv("PARITY_CHECK") == "true"
+	leaseAsync   = os.Getenv("LEASE_ASYNC") == "true"
+	debug        = os.Getenv("LOG_LEVEL") == "debug"
+	zig          = os.Getenv("ZIG") == "true"
+	wait         func(time.Duration)
 
 	err            error
 	svcKv          internal.KVServer
@@ -64,9 +53,9 @@ var (
 	svcCluster     internal.ClusterServer
 	svcMaintenance internal.MaintenanceServer
 
-	globalSet func(key string, val uint64)
-	globalDel func(key string)
+	globalTemp func(key string, val uint64, fn func())
 
+	port       = 2379
 	addr       = "127.0.0.1:2379"
 	httpClient = &http.Client{Timeout: time.Second}
 	tick       = func() {}
@@ -78,7 +67,7 @@ func TestService(t *testing.T) {
 	}()
 	if parity {
 		t.Run("setup-parity", setupParity)
-	} else if cluster {
+	} else if clusterCheck {
 		t.Run("setup-cluster", setupCluster)
 	} else {
 		t.Run("setup-pcb", setupPcb)
@@ -336,45 +325,62 @@ func setupPcb(t *testing.T) {
 	}
 }
 
-type extStorage interface {
-	Register(context.Context, wazero.Runtime) error
-	InitContext(context.Context, api.Module) (context.Context, error)
-	ContextCopy(dst, src context.Context) context.Context
-}
-
-type extService interface {
-	Register(context.Context, wazero.Runtime) error
-	InitContext(context.Context, api.Module) (context.Context, error)
-	ContextCopy(dst, src context.Context) context.Context
-}
-
-// Run integration tests against bootstrapped pcb cluster instance(s)
+// Run integration tests against bootstrapped cluster hosts
 func setupCluster(t *testing.T) {
-	logLevel := new(slog.LevelVar)
-	if debug {
-		logLevel.Set(slog.LevelDebug)
-	} else {
-		logLevel.Set(slog.LevelInfo)
-	}
-	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{
-		Level: logLevel,
-	}))
-	// TODO - Replace zongzi agents w/ cluster agents
-	var (
-		agents    = make([]*zongzi.Agent, 3)
-		nonvoting = make([]*zongzi.Agent, 3)
-		dir       = "/tmp/pcb/test-cluster"
-		host      = "127.0.0.1"
-		port      = 19000
-		peers     = []string{
-			fmt.Sprintf(host+":%d", port+3),
-			fmt.Sprintf(host+":%d", port+13),
-			fmt.Sprintf(host+":%d", port+23),
-		}
-	)
-	zongzi.SetLogLevel(zongzi.LogLevelWarning)
-	if err = os.RemoveAll(dir); err != nil {
+	var cfg = cluster.EnvConfig()
+	cfg.HostName = "127.0.0.1"
+	cfg.LogLevel = "info"
+	cfg.HostPeers = strings.Join([]string{
+		fmt.Sprintf("%s:%d", cfg.HostName, 18011),
+		fmt.Sprintf("%s:%d", cfg.HostName, 18021),
+		fmt.Sprintf("%s:%d", cfg.HostName, 18031),
+	}, ",")
+	var basedir = "/tmp/pcb/test-cluster"
+	if err = os.RemoveAll(basedir); err != nil {
 		panic(err)
+	}
+	var n = 0
+	start := func(t *testing.T, class string, portSets ...[]uint16) (hosts []*cluster.Host) {
+		for i, ports := range portSets {
+			cfg := cfg
+			cfg.DirBlock = fmt.Sprintf(basedir+"/%d/block", n)
+			cfg.DirLocal = fmt.Sprintf(basedir+"/%d/local", n)
+			cfg.DirRaft = fmt.Sprintf(basedir+`/%d/raft`, n)
+			cfg.DirWAL = fmt.Sprintf(basedir+`/%d/wal`, n)
+			cfg.PortApi = ports[0]
+			cfg.PortZongzi = ports[1]
+			cfg.PortRaft = ports[2]
+			cfg.PortGossip = ports[3]
+			cfg.HostTags = strings.Join([]string{
+				`cluster:member`,
+				`cluster:host`,
+				`host:class=` + class,
+				`host:id=` + strconv.Itoa(n),
+				`geo:zone=test-` + strconv.Itoa(i%3),
+			}, "|")
+			host := cluster.New(ctx, cfg)
+			if zig {
+				turbokube.RegisterZigDev(host)
+			} else {
+				turbokube.RegisterDev(host)
+			}
+			if err := host.Start(); err != nil {
+				panic(err)
+			}
+			hosts = append(hosts, host)
+			n++
+		}
+		time.Sleep(time.Second)
+		// 10 seconds to start the cluster.
+		require.True(t, await(10, 100, func() bool {
+			for j := range hosts {
+				if hosts[j] == nil || hosts[j].Agent().Status() != zongzi.AgentStatus_Ready {
+					return false
+				}
+			}
+			return true
+		}), `%v`, hosts[0])
+		return
 	}
 	clk := clock.NewMock()
 	wait = func(t time.Duration) {
@@ -384,211 +390,157 @@ func setupCluster(t *testing.T) {
 			time.Sleep(10 * time.Millisecond)
 		}
 	}
-	var ctrl, ctrl2 []*controller
-	var shard zongzi.Shard
-	var wasmKv = turbokube.StorageKvDevWasm
-	var wasmSvc = turbokube.ServiceGrpcDevWasm
-	if zig {
-		wasmKv = turbokube.StorageKvZigDevWasm
-		wasmSvc = turbokube.ServiceGrpcZigDevWasm
-	}
-
-	// Wazero Storage Runtime
-	runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
-	extLmdb := wazero_lmdb.New()
-	extGlobal := wazero_global.New()
-	storageExtensions := []extStorage{
-		extLmdb,
-		extGlobal,
-		wazero_atomic.New(),
-		wazero_range_watch.New(),
-		wazero_small_cache.New(),
-		wazero_raft.New(),
-	}
-	var storageCtxCopy []wazero_cluster.ContextCopy
-	for _, m := range storageExtensions {
-		if err = m.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
-		}
-		storageCtxCopy = append(storageCtxCopy, m.ContextCopy)
-	}
-	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmKv,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
-		wazeropool.WithLimit(runtime.NumCPU()),
-		wazeropool.WithBurst(runtime.NumCPU()),
-		wazeropool.WithMemoryLimit(32<<20),
-		wazeropool.WithName(turbokube.StorageKvName),
-		wazeropool.WithVersion(turbokube.Version))
-	if err != nil {
-		panic(err)
-	}
-	ctx = wazeropool.ContextSet(ctx, poolStorageKv)
-	poolStorageKv.Run(func(mod api.Module) {
-		for _, m := range storageExtensions {
-			if ctx, err = m.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-		}
+	var members = []*cluster.Host{}
+	var nonvoting = []*cluster.Host{}
+	t.Run(`start`, func(t *testing.T) {
+		members = start(t, `storage`,
+			[]uint16{19010, 18011, 18012, 18013},
+			[]uint16{19020, 18021, 18022, 18023},
+			[]uint16{19030, 18031, 18032, 18033},
+		)
+		nonvoting = start(t, `service`,
+			[]uint16{19040, 18111, 18112, 18113},
+		)
 	})
-	ctxInit := func(ctx context.Context, shardID, replicaID uint64) context.Context {
-		dir := fmt.Sprintf("%s/data/%d/%d", dir, shardID, replicaID)
-		return wazero_lmdb.EnvRegisterDir(ctx, dir)
-	}
-	logger := zongzi.GetLogger(`statemachine`)
-	for i := range len(agents) {
-		ctrl = append(ctrl, &controller{ctx: ctx, log: log, clock: clk, isLeader: map[uint64]bool{}})
-		dir := fmt.Sprintf("%s/%03d", dir, i)
-		if agents[i], err = zongzi.NewAgent("pcb000", peers,
-			zongzi.WithDirRaft(dir+"/raft"),
-			zongzi.WithDirWAL(dir+"/wal"),
-			zongzi.WithAddrGossip(fmt.Sprintf(host+":%d", port+(i*10)+1)),
-			zongzi.WithAddrRaft(fmt.Sprintf(host+":%d", port+(i*10)+2)),
-			zongzi.WithAddrApi(fmt.Sprintf(host+":%d", port+(i*10)+3)),
-			zongzi.WithHostTags(`pantopic/turbokube=member`),
-			zongzi.WithRaftEventListener(ctrl[i]),
-		); err != nil {
-			panic(err)
+	hosts := append(members, nonvoting...)
+	host := members[0]
+	ctrlClient := host.ControlClient()
+	t.Run(`cluster`, func(t *testing.T) {
+		// 10 seconds for namespaces to be created
+		var resp *pb.NamespaceGetResponse
+		var err error
+		require.True(t, await(10, 100, func() bool {
+			resp, err = ctrlClient.NamespaceGet(ctx, &pb.NamespaceGetRequest{
+				Name: "default",
+			})
+			return err == nil && resp != nil && resp.Item != nil && resp.Item.Name == `default`
+		}), `%v, %#v`, err, resp)
+	})
+	t.Run(`provision`, func(t *testing.T) {
+		resource := &pb.Resource{
+			Namespace: "default",
+			Name:      "turbokube-test",
+			Type:      "pantopic/turbokube",
 		}
-		poolProvider := func(shardID uint64) (wazeropool.Instance, context.Context) {
-			return poolStorageKv, ctx
+		service := &pb.Service{
+			Namespace: "default",
+			Resource:  resource.Name,
+			Name:      "api",
+			Type:      "grpc",
+			Port:      uint64(port),
+			Status:    cluster.Status_Active,
+			Tags: map[string]string{
+				"placement:cover": "host:class=service",
+			},
 		}
-		fsm := wazero_raft.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
-		agents[i].StateMachineRegister(Uri, fsm)
-		go func() {
-			if err = agents[i].Start(ctx); err != nil {
-				panic(err)
-			}
-		}()
-	}
-	// 10 seconds to start the cluster.
-	require.True(t, await(10, 100, func() bool {
-		for _, agent := range agents {
-			if agent.Status() != zongzi.AgentStatus_Ready {
-				return false
-			}
+		component := &pb.Component{
+			Namespace: "default",
+			Resource:  resource.Name,
+			Cluster:   cfg.ClusterName,
+			Name:      "default",
+			Type:      "basic",
+			Tags: map[string]string{
+				"placement:member": "3;host:class=storage",
+				"placement:vary":   "geo:zone",
+			},
 		}
-		return true
-	}), `%#v`, agents)
-	for i := range len(nonvoting) {
-		ctrl2 = append(ctrl2, &controller{ctx: ctx, log: log, clock: clk, isLeader: map[uint64]bool{}})
-		dir := fmt.Sprintf("%s/%03d", dir, i+100)
-		if nonvoting[i], err = zongzi.NewAgent("pcb000", peers,
-			zongzi.WithDirRaft(dir+"/raft"),
-			zongzi.WithDirWAL(dir+"/wal"),
-			zongzi.WithAddrGossip(fmt.Sprintf(host+":%d", port+100+(i*10)+1)),
-			zongzi.WithAddrRaft(fmt.Sprintf(host+":%d", port+100+(i*10)+2)),
-			zongzi.WithAddrApi(fmt.Sprintf(host+":%d", port+100+(i*10)+3)),
-			zongzi.WithHostTags(`pantopic/turbokube=nonvoting`),
-			zongzi.WithRaftEventListener(ctrl2[i]),
-		); err != nil {
-			panic(err)
+		if leaseAsync {
+			resource.Tags["turbokube:lease"] = "async"
 		}
-		poolProvider := func(shardID uint64) (wazeropool.Instance, context.Context) {
-			return poolStorageKv, ctx
-		}
-		fsm := wazero_raft.FactoryPersistent(ctx, ctxInit, storageCtxCopy, logger, poolProvider, extLmdb)
-		nonvoting[i].StateMachineRegister(Uri, fsm)
-		go func() {
-			if err = nonvoting[i].Start(ctx); err != nil {
-				panic(err)
-			}
-		}()
-	}
-	// 10 seconds to start the replicas.
-	require.True(t, await(10, 100, func() bool {
-		for _, agent := range nonvoting {
-			if agent.Status() != zongzi.AgentStatus_Ready {
-				return false
-			}
-		}
-		return true
-	}), `%#v`, nonvoting)
-	// Start shard
-	// TODO - Replace shard creation with resource creation
-	shard, _, err = agents[0].ShardCreate(ctx, Uri,
-		zongzi.WithName("default.pcb.default.kv"),
-		zongzi.WithPlacementMembers(3, `pantopic/turbokube=member`),
-		zongzi.WithPlacementCover(`pantopic/turbokube=nonvoting`))
-	if err != nil {
-		panic(err)
-	}
-	// 10 seconds for shard to have active leader
-	require.True(t, await(10, 100, func() bool {
-		agents[0].StateLocal(func(s *zongzi.State) {
-			if found, ok := s.Shard(shard.ID); ok {
-				shard = found
-			}
+		t.Run(`resource`, func(t *testing.T) {
+			putResp, err := ctrlClient.ResourcePut(ctx, &pb.ResourcePutRequest{
+				Item: resource,
+			})
+			require.Nil(t, err, err)
+			require.Equal(t, uint64(0), putResp.Code, putResp.Error)
+			require.Equal(t, resource.Namespace, putResp.Item.Namespace)
+			require.Equal(t, resource.Name, putResp.Item.Name)
+			require.Equal(t, resource.Type, putResp.Item.Type)
 		})
-		return shard.Leader > 0
-	}))
-	// 5 seconds for shard to have 6 active replicas
-	require.True(t, await(10, 100, func() bool {
-		n := 0
-		agents[0].State(ctx, func(s *zongzi.State) {
-			s.ReplicaIterateByShardID(shard.ID, func(r zongzi.Replica) bool {
-				if r.Status == zongzi.ReplicaStatus_Active {
-					n++
+		t.Run(`service`, func(t *testing.T) {
+			putResp, err := ctrlClient.ServicePut(ctx, &pb.ServicePutRequest{
+				Item: service,
+			})
+			require.Nil(t, err, err)
+			require.Equal(t, uint64(0), putResp.Code, putResp.Error)
+			require.Equal(t, service.Namespace, putResp.Item.Namespace)
+			require.Equal(t, service.Name, putResp.Item.Name)
+			require.Equal(t, service.Type, putResp.Item.Type)
+		})
+		t.Run(`component`, func(t *testing.T) {
+			putResp, err := ctrlClient.ComponentPut(ctx, &pb.ComponentPutRequest{
+				Item: component,
+			})
+			require.Nil(t, err, err)
+			require.Equal(t, uint64(0), putResp.Code, putResp.Error)
+			require.Equal(t, component.Namespace, putResp.Item.Namespace)
+			require.Equal(t, component.Name, putResp.Item.Name)
+			require.Equal(t, component.Resource, putResp.Item.Resource)
+			require.Equal(t, component.Type, putResp.Item.Type)
+		})
+		t.Run(`active`, func(t *testing.T) {
+			t.Run(`service`, func(t *testing.T) {
+				svcListReq := &pb.ServiceListRequest{
+					Namespace: resource.Namespace,
+					Resource:  resource.Name,
 				}
-				return true
+				var svcListResp *pb.ServiceListResponse
+				// 10s - service is created and active
+				require.True(t, await(10, 100, func() bool {
+					svcListResp, err = ctrlClient.ServiceList(ctx, svcListReq)
+					return err == nil &&
+						svcListResp.Code == cluster.ResultSuccess &&
+						len(svcListResp.Item) > 0 &&
+						svcListResp.Item[0].Status == cluster.Status_Active
+				}), "%#v, %#v", svcListResp, err)
+				require.Equal(t, 1, len(svcListResp.Item))
+				require.Equal(t, service.Type, svcListResp.Item[0].Type)
+			})
+			t.Run(`component`, func(t *testing.T) {
+				compListReq := &pb.ComponentListRequest{
+					Namespace: resource.Namespace,
+					Resource:  resource.Name,
+				}
+				var compListResp *pb.ComponentListResponse
+				// 10s - component is created and active
+				require.True(t, await(10, 100, func() bool {
+					compListResp, err = ctrlClient.ComponentList(ctx, compListReq)
+					return err == nil &&
+						compListResp.Code == cluster.ResultSuccess &&
+						len(compListResp.Item) > 0 &&
+						compListResp.Item[0].Status == cluster.Status_Active
+				}), err)
+				require.Equal(t, 1, len(compListResp.Item))
+				require.Equal(t, component.Type, compListResp.Item[0].Type)
 			})
 		})
-		return n == 6
-	}))
-	for i := range agents {
-		if err = ctrl[i].Start(agents[i].Client(shard.ID), shard); err != nil {
-			panic(err)
-		}
-	}
-	for i := range nonvoting {
-		if err = ctrl2[i].Start(nonvoting[i].Client(shard.ID), shard); err != nil {
-			panic(err)
-		}
-	}
-
-	// Wazero Service Runtime
-	runtimeSvcGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeSvcGrpc)
-	hostModGrpcServer := wazero_grpc_server.New()
-	serviceExtensions := []extService{
-		extGlobal,
-		hostModGrpcServer,
-		wazero_buffer.New(),
-		wazero_shard_client.New(agents[0]),
-	}
-	var svcCtxCopiers []wazero_cluster.ContextCopy
-	for _, m := range serviceExtensions {
-		if err = m.Register(ctx, runtimeSvcGrpc); err != nil {
-			panic(err)
-		}
-		svcCtxCopiers = append(svcCtxCopiers, m.ContextCopy)
-	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeSvcGrpc, wasmSvc,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
-		wazeropool.WithLimit(runtime.NumCPU()),
-		wazeropool.WithMemoryLimit(32<<20),
-		wazeropool.WithName(turbokube.ServiceGrpcName),
-		wazeropool.WithVersion(turbokube.Version))
-	if err != nil {
-		panic(err)
-	}
-	ctx = wazeropool.ContextSet(ctx, poolServiceGrpc)
-	poolServiceGrpc.Run(func(mod api.Module) {
-		for _, m := range serviceExtensions {
-			if ctx, err = m.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-		}
 	})
-	svcCtxCopiers = append(svcCtxCopiers, wazero_cluster.NewResolver(`default`, `pcb`))
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		panic(err)
-	}
-	hostModGrpcServer.ServerStart(ctx, lis, "", "", poolServiceGrpc, svcCtxCopiers...)
+	var c = &http.Client{}
+	var res *http.Response
+	t.Run(`healthcheck`, func(t *testing.T) {
+		assert.True(t, await(5, 10, func() bool {
+			res, err = c.Get(fmt.Sprintf("http://%s/health", addr))
+			return err == nil && res.StatusCode == 200
+		}), "timeout")
+		require.Nil(t, err, err)
+		require.NotNil(t, res)
+		body, err := io.ReadAll(res.Body)
+		require.Equal(t, http.StatusOK, res.StatusCode, "%s", string(body))
+		require.Nil(t, err, err)
+		require.Equal(t, `{"health":"true","reason":""}`, string(body))
+		defer res.Body.Close()
+	})
+	var shard zongzi.Shard
 
-	globalSet = extGlobal.Set
-	globalDel = extGlobal.Del
+	globalTemp = func(k string, v uint64, fn func()) {
+		for _, h := range hosts {
+			h.GlobalSet(k, v)
+		}
+		fn()
+		for _, h := range hosts {
+			h.GlobalDel(k)
+		}
+	}
 	conn, err := grpc.NewClient(addr,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 		grpc.WithDefaultCallOptions(
@@ -605,7 +557,7 @@ func setupCluster(t *testing.T) {
 	svcMaintenance = newParityMaintenanceService(conn)
 	tick = func() {
 		cmd, _ := proto.Marshal(&internal.TickRequest{Term: 1e7})
-		val, data, err := agents[0].Client(shard.ID).Apply(ctx, append(cmd, CMD_INTERNAL_TICK))
+		val, data, err := host.Agent().Client(shard.ID).Apply(ctx, append(cmd, CMD_INTERNAL_TICK))
 		if val == 0 || err != nil {
 			println(`tick`, val, data, err)
 		}
@@ -618,7 +570,13 @@ func testInsert(t *testing.T) {
 		Value: []byte(`test-value`),
 	}
 	t.Run("put", func(t *testing.T) {
-		resp, err := svcKv.Put(ctx, put)
+		var resp *internal.PutResponse
+		assert.True(t, await(5, 10, func() bool {
+			ctx, cancel := context.WithTimeout(ctx, time.Second)
+			defer cancel()
+			resp, err = svcKv.Put(ctx, put)
+			return err == nil && resp != nil
+		}), "timeout")
 		require.Nil(t, err, err)
 		assert.NotNil(t, resp)
 		assert.Greater(t, resp.Header.Revision, int64(0))
@@ -670,8 +628,6 @@ func testInsert(t *testing.T) {
 			require.Nil(t, err)
 			assert.NotNil(t, resp)
 		})
-		// TODO: Test value size overflow after moving from static to dynamic buffering
-		//
 		t.Run("failure", func(t *testing.T) {
 			resp, err := svcKv.Put(ctx, &internal.PutRequest{
 				Key:   []byte("z"),
@@ -1126,9 +1082,13 @@ func testRange(t *testing.T) {
 			revs = append(revs, resp.Header.Revision)
 			require.Nil(t, err, err)
 		}
-		resp, err := svcKv.Range(ctx, &internal.RangeRequest{
-			Key:      []byte(`test-huge-000`),
-			RangeEnd: []byte(`test-huge-999`),
+		var resp *internal.RangeResponse
+		var err error
+		timeout(t, time.Second, func() {
+			resp, err = svcKv.Range(ctx, &internal.RangeRequest{
+				Key:      []byte(`test-huge-000`),
+				RangeEnd: []byte(`test-huge-999`),
+			})
 		})
 		require.Nil(t, err, err)
 		assert.NotNil(t, resp)
@@ -1618,82 +1578,86 @@ func testTransaction(t *testing.T) {
 		assert.True(t, resp.Succeeded)
 	})
 	t.Run("multi-write", func(t *testing.T) {
-		withGlobal(&PCB_TXN_MULTI_WRITE_ENABLED, false, func() {
-			resp, err := svcKv.Txn(ctx, &internal.TxnRequest{
-				Success: []*internal.RequestOp{
-					putOp(&internal.PutRequest{
-						Key:   []byte(`test-txn-03`),
-						Value: []byte(`-----------`),
-					}),
-					putOp(&internal.PutRequest{
-						Key:   []byte(`test-txn-03`),
-						Value: []byte(`-----------`),
-					}),
-				},
-			})
-			require.NotNil(t, err, err)
-			assert.Nil(t, resp)
-			resp, err = svcKv.Txn(ctx, &internal.TxnRequest{
-				Success: []*internal.RequestOp{
-					putOp(&internal.PutRequest{
-						Key:   []byte(`test-txn-03`),
-						Value: []byte(`-----------`),
-					}),
-					delOp(&internal.DeleteRangeRequest{
-						Key: []byte(`test-txn-03`),
-					}),
-				},
-			})
-			require.NotNil(t, err, err)
-			assert.Nil(t, resp)
-		})
-		withGlobal(&PCB_TXN_MULTI_WRITE_ENABLED, true, func() {
-			if parity {
-				return
-			}
-			for _, k := range []string{
-				`test-txn-03`, // Existent
-				`test-txn-04`, // Non-existent
-			} {
+		t.Run("disabled", func(t *testing.T) {
+			withGlobal(&PCB_TXN_MULTI_WRITE_ENABLED, false, func() {
 				resp, err := svcKv.Txn(ctx, &internal.TxnRequest{
 					Success: []*internal.RequestOp{
 						putOp(&internal.PutRequest{
-							Key:   []byte(k),
-							Value: []byte(`a`),
+							Key:   []byte(`test-txn-03`),
+							Value: []byte(`-----------`),
 						}),
 						putOp(&internal.PutRequest{
-							Key:   []byte(k),
-							Value: []byte(`b`),
+							Key:   []byte(`test-txn-03`),
+							Value: []byte(`-----------`),
+						}),
+					},
+				})
+				require.NotNil(t, err, err)
+				assert.Nil(t, resp)
+				resp, err = svcKv.Txn(ctx, &internal.TxnRequest{
+					Success: []*internal.RequestOp{
+						putOp(&internal.PutRequest{
+							Key:   []byte(`test-txn-03`),
+							Value: []byte(`-----------`),
+						}),
+						delOp(&internal.DeleteRangeRequest{
+							Key: []byte(`test-txn-03`),
+						}),
+					},
+				})
+				require.NotNil(t, err, err)
+				assert.Nil(t, resp)
+			})
+		})
+		t.Run("enabled", func(t *testing.T) {
+			withGlobal(&PCB_TXN_MULTI_WRITE_ENABLED, true, func() {
+				if parity {
+					return
+				}
+				for _, k := range []string{
+					`test-txn-03`, // Existent
+					`test-txn-04`, // Non-existent
+				} {
+					resp, err := svcKv.Txn(ctx, &internal.TxnRequest{
+						Success: []*internal.RequestOp{
+							putOp(&internal.PutRequest{
+								Key:   []byte(k),
+								Value: []byte(`a`),
+							}),
+							putOp(&internal.PutRequest{
+								Key:   []byte(k),
+								Value: []byte(`b`),
+							}),
+						},
+					})
+					require.Nil(t, err, err)
+					assert.Len(t, resp.Responses, 2)
+					resp2, err := svcKv.Range(ctx, &internal.RangeRequest{
+						Key: []byte(k),
+					})
+					require.Nil(t, err, err)
+					assert.Equal(t, 1, len(resp2.Kvs))
+					assert.Equal(t, []byte(`b`), resp2.Kvs[0].Value)
+				}
+				resp, err := svcKv.Txn(ctx, &internal.TxnRequest{
+					Success: []*internal.RequestOp{
+						putOp(&internal.PutRequest{
+							Key:   []byte(`test-txn-03`),
+							Value: []byte(`a`),
+						}),
+						delOp(&internal.DeleteRangeRequest{
+							Key: []byte(`test-txn-03`),
 						}),
 					},
 				})
 				require.Nil(t, err, err)
 				assert.Len(t, resp.Responses, 2)
 				resp2, err := svcKv.Range(ctx, &internal.RangeRequest{
-					Key: []byte(k),
+					Key: []byte(`test-txn-03`),
 				})
 				require.Nil(t, err, err)
-				assert.Equal(t, 1, len(resp2.Kvs))
-				assert.Equal(t, []byte(`b`), resp2.Kvs[0].Value)
-			}
-			resp, err := svcKv.Txn(ctx, &internal.TxnRequest{
-				Success: []*internal.RequestOp{
-					putOp(&internal.PutRequest{
-						Key:   []byte(`test-txn-03`),
-						Value: []byte(`a`),
-					}),
-					delOp(&internal.DeleteRangeRequest{
-						Key: []byte(`test-txn-03`),
-					}),
-				},
+				assert.Equal(t, 0, len(resp2.Kvs))
 			})
-			require.Nil(t, err, err)
-			assert.Len(t, resp.Responses, 2)
-			resp2, err := svcKv.Range(ctx, &internal.RangeRequest{
-				Key: []byte(`test-txn-03`),
-			})
-			require.Nil(t, err, err)
-			assert.Equal(t, 0, len(resp2.Kvs))
 		})
 	})
 	t.Run("non-existent", func(t *testing.T) {

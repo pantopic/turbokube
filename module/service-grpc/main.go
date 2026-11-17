@@ -2,6 +2,7 @@ package main
 
 import (
 	"github.com/pantopic/ext-buffer/sdk-go"
+	"github.com/pantopic/ext-cluster/sdk-go"
 	"github.com/pantopic/ext-grpc-server/sdk-go"
 	"github.com/pantopic/ext-grpc-server/sdk-go/codes"
 	"github.com/pantopic/ext-shard-client/sdk-go"
@@ -19,6 +20,7 @@ func init() {
 	shard_client.RegisterStreamRecv(shardRecv)
 	shard_client.RegisterAsyncRecv(asyncRecv)
 	bufferPoolWatchEvent = buffer.NewMultiValueSet(BUFFER_POOL_WATCH_EVENT)
+	cluster.Init()
 	grpc_server.Init(
 		grpc_server.WithBufferCap(256, 1.5*1024*1024),
 		grpc_server.WithHttpHandler(httpHandler),

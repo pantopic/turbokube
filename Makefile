@@ -41,9 +41,6 @@ scp:
 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@etcd-0:/usr/bin/pcb
 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@etcd-1:/usr/bin/pcb
 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@etcd-2:/usr/bin/pcb
-# 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@apiserver-0:/usr/bin/pcb
-# 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@apiserver-1:/usr/bin/pcb
-# 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@apiserver-2:/usr/bin/pcb
 
 scp-0:
 	@scp -o "StrictHostKeyChecking=accept-new" ./_dist/pcb root@etcd-0:/usr/bin/pcb
@@ -94,7 +91,17 @@ gen-install:
 gen-lite-install:
 	go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@latest
 
-WASM_MODULES := control-basic storage-kv storage-lease service-grpc relay-lease relay-cron
+WASM_MODULES := \
+	control-basic \
+	storage-kv \
+	storage-lease \
+	service-grpc \
+	relay-lease \
+	relay-cron
+
+WASM_MODULES_ZIG := \
+	storage-kv \
+	service-grpc
 
 define WASM_BUILD_GO
 cd module/$(1) && tinygo build -buildmode=wasi-legacy -target=wasi -opt=2 -gc=leaking -scheduler=none -o ../../embed/wasm/$(1).dev.wasm && cd ../..;
@@ -104,7 +111,8 @@ endef
 wasm-go:
 	$(foreach mod,$(WASM_MODULES),$(call WASM_BUILD_GO,$(mod)))
 
-WASM_MODULES_ZIG := storage-kv service-grpc
+wasm-go-mod:
+	$(call WASM_BUILD_GO,$(filter-out $@,$(MAKECMDGOALS)))
 
 define WASM_BUILD_ZIG
 cd module-zig/$(1) && zig build --release=small && cp zig-out/bin/$(1).wasm ../../embed/wasm/$(1).zig.wasm && cd ../..;
@@ -116,8 +124,18 @@ wasm-zig:
 
 wasm: wasm-go wasm-zig
 
+define GO_WORK_USE
+go work use module/$(1);
+endef
+
+work:
+	$(foreach mod,$(WASM_MODULES),$(call GO_WORK_USE,$(mod)))
+
 gen-zig:
 	@cd module-zig/service-grpc && zig build gen-proto
 	@cd module-zig/storage-kv && zig build gen-proto
 
 .PHONY: test
+
+%:
+	@true
