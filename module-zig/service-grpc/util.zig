@@ -6,7 +6,7 @@ const shard_client = @import("shard_client");
 const errors = @import("error.zig");
 const module = @import("module.zig");
 
-pub const bank_name = "default";
+pub const component_name = "default";
 pub const shard_name_kv = "kv";
 
 var suffix_buf: [(2 << 20) + 1]u8 = undefined;
@@ -28,5 +28,5 @@ pub fn autoSend(val: u64, res: []const u8, err: ?[]const u8) anyerror!void {
 }
 
 pub fn kvShard() shard_client.Client {
-    return shard_client.New(bank_name, shard_name_kv);
+    return shard_client.New(component_name, shard_name_kv);
 }

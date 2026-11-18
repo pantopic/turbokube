@@ -17,55 +17,55 @@ const (
 )
 
 func register(c pantopic.ModuleRegistry, wasm ...[]byte) {
-	c.RegisterBridge(BridgeCron, wasm[5])
-	c.RegisterBridge(BridgeLease, wasm[4])
-	c.RegisterControl(ControlBasic, wasm[0])
-	c.RegisterService(ServiceGrpc, wasm[1])
-	c.RegisterStorage(StorageKv, wasm[2])
-	c.RegisterStorage(StorageLease, wasm[3])
+	c.RegisterBridge(BridgeCron, wasm[0])
+	c.RegisterBridge(BridgeLease, wasm[1])
+	c.RegisterControl(ControlBasic, wasm[2])
+	c.RegisterService(ServiceGrpc, wasm[3])
+	c.RegisterStorage(StorageKv, wasm[4])
+	c.RegisterStorage(StorageLease, wasm[5])
 }
 
 func Register(c pantopic.ModuleRegistry) {
 	register(c,
+		BridgeCronWasm,
+		BridgeLeaseWasm,
 		ControlBasicWasm,
 		ServiceGrpcWasm,
 		StorageKvWasm,
 		StorageLeaseWasm,
-		BridgeLeaseWasm,
-		BridgeCronWasm,
 	)
 }
 
 func RegisterDev(c pantopic.ModuleRegistry) {
 	register(c,
+		BridgeCronDevWasm,
+		BridgeLeaseDevWasm,
 		ControlBasicDevWasm,
 		ServiceGrpcDevWasm,
 		StorageKvDevWasm,
 		StorageLeaseDevWasm,
-		BridgeLeaseDevWasm,
-		BridgeCronDevWasm,
 	)
 }
 
 func RegisterZig(c pantopic.ModuleRegistry) {
 	register(c,
+		BridgeCronWasm,
+		BridgeLeaseWasm,
 		ControlBasicWasm,
 		ServiceGrpcZigWasm,
 		StorageKvZigWasm,
 		StorageLeaseWasm,
-		BridgeLeaseWasm,
-		BridgeCronWasm,
 	)
 }
 
 func RegisterZigDev(c pantopic.ModuleRegistry) {
 	register(c,
+		BridgeCronDevWasm,
+		BridgeLeaseDevWasm,
 		ControlBasicDevWasm,
 		ServiceGrpcZigDevWasm,
 		StorageKvZigDevWasm,
 		StorageLeaseDevWasm,
-		BridgeLeaseDevWasm,
-		BridgeCronDevWasm,
 	)
 }
 

@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	bankName       = []byte(`default`)
+	componentName  = []byte(`default`)
 	shardNameKv    = []byte(`kv`)
 	shardNameLease = []byte(`lease`)
 )
@@ -21,7 +21,6 @@ func autoSend(out []byte, err error) error {
 		grpc_server.SendErr(grpcErr.Code(), []byte(grpcErr.Message()))
 	} else {
 		grpc_server.SendErr(codes.Unknown, []byte(err.Error()))
-		// panic(err.Error())
 	}
 	return err
 }
@@ -38,11 +37,11 @@ func grpcError(val uint64, out []byte, err error) ([]byte, error) {
 }
 
 func shardKv() shard_client.Client {
-	return shard_client.New(bankName, shardNameKv)
+	return shard_client.New(componentName, shardNameKv)
 }
 
 func shardLease() shard_client.Client {
-	return shard_client.New(bankName, shardNameLease)
+	return shard_client.New(componentName, shardNameLease)
 }
 
 func leaseAsync() bool {

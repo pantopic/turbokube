@@ -4,3 +4,5 @@ github.com/pantopic/ext-bridge/sdk-go v0.0.0-20261117171614-92851483dab3 h1:rQAM
 github.com/pantopic/ext-bridge/sdk-go v0.0.0-20261117171614-92851483dab3/go.mod h1:32wpkMFVOB2/3+xt+QKQMIk8AhO4M80hgdGyxzpBW/I=
 github.com/pantopic/ext-cluster/sdk-go v0.0.2 h1:mRnF103KsDseN1rT/FcomW1Z7/BF7PYt9dEUNAqF+Qo=
 github.com/pantopic/ext-cluster/sdk-go v0.0.2/go.mod h1:s+faiSKUcJJ5PehmoMS2CVPf0ZL1Vi8sk2OqgYk3CTg=
+github.com/pantopic/ext-cron/sdk-go v0.0.0-20261118000840-341ec3a02db6 h1:tMt2OUGS1yOQpCz3mpt/IX64Q4SCTLQIBPi/Y10rUJI=
+github.com/pantopic/ext-cron/sdk-go v0.0.0-20261118000840-341ec3a02db6/go.mod h1:Z8D7xfK+UogDqSDRN1u0K4GhruFgZ3C6W6Vlt8FCKBw=
