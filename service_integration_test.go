@@ -327,13 +327,11 @@ func setupPcb(t *testing.T) {
 
 // Run integration tests against bootstrapped cluster hosts
 func setupCluster(t *testing.T) {
-	var cfg = cluster.EnvConfig()
-	cfg.HostName = "127.0.0.1"
-	cfg.LogLevel = "info"
-	cfg.HostPeers = strings.Join([]string{
-		fmt.Sprintf("%s:%d", cfg.HostName, 18011),
-		fmt.Sprintf("%s:%d", cfg.HostName, 18021),
-		fmt.Sprintf("%s:%d", cfg.HostName, 18031),
+	hostname := "127.0.0.1"
+	var hostpeers = strings.Join([]string{
+		fmt.Sprintf("%s:%d", hostname, 18011),
+		fmt.Sprintf("%s:%d", hostname, 18021),
+		fmt.Sprintf("%s:%d", hostname, 18031),
 	}, ",")
 	var basedir = "/tmp/pcb/test-cluster"
 	if err = os.RemoveAll(basedir); err != nil {
@@ -342,24 +340,25 @@ func setupCluster(t *testing.T) {
 	var n = 0
 	start := func(t *testing.T, class string, portSets ...[]uint16) (hosts []*cluster.Host) {
 		for i, ports := range portSets {
-			dir := fmt.Sprintf(basedir+"/%d", n)
-			cfg := cfg
-			cfg.DirBlock = dir + "/block"
-			cfg.DirLocal = dir + "/local"
-			cfg.DirRaft = dir + `/raft`
-			cfg.DirWAL = dir + `/wal`
-			cfg.PortApi = ports[0]
-			cfg.PortZongzi = ports[1]
-			cfg.PortRaft = ports[2]
-			cfg.PortGossip = ports[3]
-			cfg.HostTags = strings.Join([]string{
-				`cluster:member`,
-				`cluster:host`,
-				`host:class=` + class,
-				`host:id=` + strconv.Itoa(n),
-				`geo:zone=test-` + strconv.Itoa(i%3),
-			}, "|")
-			host := cluster.New(ctx, cfg)
+			host := cluster.New(ctx, cluster.EnvConfig(
+				cluster.WithDefault(cluster.Config{
+					ClusterName: "turbokube",
+					HostName:    hostname,
+					HostPeers:   hostpeers,
+					Dir:         fmt.Sprintf(basedir+"/%d", n),
+					PortApi:     ports[0],
+					PortZongzi:  ports[1],
+					PortRaft:    ports[2],
+					PortGossip:  ports[3],
+					HostTags: strings.Join([]string{
+						`cluster:member`,
+						`cluster:host`,
+						`host:class=` + class,
+						`host:id=` + strconv.Itoa(n),
+						`geo:zone=test-` + strconv.Itoa(i%3),
+					}, "|"),
+				}),
+			))
 			if zig {
 				turbokube.RegisterZigDev(host)
 			} else {
@@ -426,7 +425,7 @@ func setupCluster(t *testing.T) {
 		service := &pb.Service{
 			Namespace: resource.Namespace,
 			Resource:  resource.Name,
-			Cluster:   cfg.ClusterName,
+			Cluster:   "turbokube",
 			Name:      "api",
 			Type:      "grpc",
 			Port:      uint64(port),
@@ -438,7 +437,7 @@ func setupCluster(t *testing.T) {
 		component := &pb.Component{
 			Namespace: resource.Namespace,
 			Resource:  resource.Name,
-			Cluster:   cfg.ClusterName,
+			Cluster:   "turbokube",
 			Name:      "default",
 			Type:      "basic",
 			Tags: map[string]string{

@@ -7,6 +7,9 @@ cluster:
 cluster-zig:
 	@go build -ldflags="-s -w" -o _dist/cluster-zig ./cmd/cluster-zig && cd cmd/cluster-zig && docker compose up --build
 
+clean:
+	@rm -rf /var/lib/pantopic/turbokube
+
 build:
 	@go build -ldflags="-s -w" -o _dist/pcb ./cmd/standalone
 

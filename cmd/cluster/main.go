@@ -3,52 +3,24 @@ package main
 import (
 	"context"
 	_ "embed"
-	"fmt"
 	"log/slog"
-	"net"
 	"net/http"
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
-	"runtime"
-	"strings"
 	"syscall"
 	"time"
 
 	"github.com/logbn/zongzi"
-	"github.com/tetratelabs/wazero"
-	"github.com/tetratelabs/wazero/api"
-	"github.com/tetratelabs/wazero/imports/wasi_snapshot_preview1"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials"
-	"google.golang.org/grpc/keepalive"
 
-	"github.com/pantopic/ext-atomic/host-wazero"
-	"github.com/pantopic/ext-buffer/host-wazero"
-	"github.com/pantopic/ext-cluster/host-wazero"
-	"github.com/pantopic/ext-cluster/host-wazero/pb"
-	"github.com/pantopic/ext-global/host-wazero"
-	"github.com/pantopic/ext-grpc-server/host-wazero"
-	"github.com/pantopic/ext-mdb/host-wazero-lmdb"
-	"github.com/pantopic/ext-raft/host-wazero"
-	"github.com/pantopic/ext-range-watch/host-wazero"
-	"github.com/pantopic/ext-shard-client/host-wazero"
-	"github.com/pantopic/ext-small-cache/host-wazero"
-	"github.com/pantopic/wazero-pool"
+	"github.com/pantopic/cluster"
+	"github.com/pantopic/cluster/pb"
 
-	"github.com/pantopic/turbokube"
 	"github.com/pantopic/turbokube/embed"
 )
 
-type extension interface {
-	Register(context.Context, wazero.Runtime) error
-	InitContext(context.Context, api.Module) (context.Context, error)
-	ContextCopy(dst, src context.Context) context.Context
-}
-
 var (
-	wasmKv  = turbokube.StorageKvDevWasm
-	wasmSvc = turbokube.ServiceGrpcDevWasm
+	port = 19000
 )
 
 func main() {
@@ -56,204 +28,118 @@ func main() {
 		slog.Info("pprof server", "err", http.ListenAndServe(":6060", nil))
 	}()
 	zongzi.SetLogLevel(zongzi.LogLevelInfo)
-	var cfg = getConfig()
 	var ctx = context.Background()
-	var log = slog.Default()
-	var ctrl = pcb.NewController(ctx, log)
-	agent, err := zongzi.NewAgent(cfg.ClusterName, strings.Split(cfg.HostPeers, ","),
-		zongzi.WithDirRaft(cfg.Dir+"/raft"),
-		zongzi.WithDirWAL(cfg.Dir+"/wal"),
-		zongzi.WithHostTags(cfg.GetHostTags()...),
-		zongzi.WithAddrGossip(fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortGossip)),
-		zongzi.WithAddrRaft(fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortRaft)),
-		zongzi.WithAddrApi(fmt.Sprintf("%s:%d", cfg.HostName, cfg.PortZongzi)),
-		zongzi.WithHostMemoryLimit(zongzi.HostMemory256),
-		zongzi.WithRaftEventListener(ctrl))
-	if err != nil {
-		panic(err)
-	}
-	hostModGlobal := wazero_global.New()
-	runtimeStorageKv := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeStorageKv)
-	storageExtensions := []extension{
-		wazero_lmdb.New(wazero_lmdb.WithDirLocal(cfg.Dir + "/local")),
-		hostModGlobal,
-		wazero_atomic.New(),
-		wazero_range_watch.New(),
-		wazero_small_cache.New(),
-		wazero_raft.New(),
-	}
-	var ctxCopy []func(dst, src context.Context) context.Context
-	for _, m := range storageExtensions {
-		if err = m.Register(ctx, runtimeStorageKv); err != nil {
-			panic(err)
-		}
-		ctxCopy = append(ctxCopy, m.ContextCopy)
-	}
-	poolStorageKv, err := wazeropool.New(ctx, runtimeStorageKv, wasmKv,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
-		wazeropool.WithLimit(runtime.NumCPU()),
-		wazeropool.WithMemoryLimit(32<<20),
-		wazeropool.WithName(turbokube.StorageKv),
-		wazeropool.WithVersion(turbokube.Version))
-	if err != nil {
-		panic(err)
-	}
-	ctx = wazeropool.ContextSet(ctx, poolStorageKv)
-	poolStorageKv.Run(func(mod api.Module) {
-		for _, m := range storageExtensions {
-			if ctx, err = m.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-		}
-	})
-	logger := zongzi.GetLogger(`statemachine`)
-	poolProvider := func(shardID uint64) (wazeropool.Instance, context.Context) {
-		return poolStorageKv, ctx
-	}
-	fsmFactory := wazero_raft.FactoryPersistent(ctx, ctxCopy, logger, poolProvider)
-	agent.StateMachineRegister(turbokube.StorageKv, fsmFactory)
-	go func() {
-		for {
-			time.Sleep(5 * time.Second)
-			stats := poolStorageKv.Stats()
-			log.Info("poolStorageKv", "total", stats.Total,
-				"memAvg", (stats.MemSize/max(stats.Total, 1))>>20, "memMax", stats.MemMax>>20, "memMin", stats.MemMin>>20,
-				"active", stats.Active/max(stats.Total, 1), "actMax", stats.ActMax, "actMin", stats.ActMin,
-				"recycled", stats.Recycled, "limit", stats.Limit,
-			)
-		}
-	}()
-	if err = agent.Start(ctx); err != nil {
-		panic(err)
-	}
-	// TODO - Replace shard create with resource create
-	shard, _, err := agent.ShardCreate(ctx, turbokube.StorageKv,
-		zongzi.WithName("default.turbokube.default.kv"),
-		zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
-		zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
-	if err != nil {
-		panic(err)
-	}
-	if err = agent.ReplicaAwait(ctx, 30*time.Second, shard.ID); err != nil {
-		panic(err)
-	}
-	var ctrlOptions = []pcb.ControlOption{}
-	if cfg.LeaseAsync {
-		shardLease, _, err := agent.ShardCreate(ctx, turbokube.StorageLease,
-			zongzi.WithName("default.turbokube.default.lease"),
-			zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
-			zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
-		if err != nil {
-			panic(err)
-		}
-		if err = agent.ReplicaAwait(ctx, 30*time.Second, shardLease.ID); err != nil {
-			panic(err)
-		}
-		ctrlOptions = append(ctrlOptions, pcb.WithLeaseAsync(agent.Client(shardLease.ID), shardLease))
-	}
-	if err = ctrl.Start(agent.Client(shard.ID), shard, ctrlOptions...); err != nil {
-		panic(err)
-	}
-
-	// gRPC server
-	var opts = []grpc.ServerOption{
-		grpc.KeepaliveEnforcementPolicy(keepalive.EnforcementPolicy{
-			MinTime:             5 * time.Second,
-			PermitWithoutStream: false,
+	var cfg = cluster.EnvConfig(
+		cluster.WithEnvPrefix("PCB_"),
+		cluster.WithDefault(cluster.Config{
+			ClusterName: "pcb",
+			Dir:         "/var/lib/pantopic/turbokube",
+			HostName:    "pcb-0",
+			HostPeers:   "pcb-0:17001,pcb-1:17001,pcb-2:17001",
+			HostTags:    "cluster:host|cluster:member|host:class=storage",
+			LogLevel:    "info",
+			PortApi:     17000,
+			PortZongzi:  17001,
+			PortRaft:    17002,
+			PortGossip:  17003,
 		}),
-		grpc.KeepaliveParams(keepalive.ServerParameters{
-			Time:    2 * time.Hour,
-			Timeout: 20 * time.Second,
-		}),
-	}
-	if cfg.TlsCrt != "" && cfg.TlsKey != "" {
-		fc, err := credentials.NewServerTLSFromFile(cfg.TlsCrt, cfg.TlsKey)
-		if err != nil {
-			panic(err)
-		}
-		opts = append(opts, grpc.Creds(fc))
-	}
-	var grpcServer = grpc.NewServer(opts...)
-
-	// Create Runtime
-	runtimeServiceGrpc := wazero.NewRuntimeWithConfig(ctx, wazero.NewRuntimeConfig())
-	wasi_snapshot_preview1.MustInstantiate(ctx, runtimeServiceGrpc)
-	hostModGrpcServer := wazero_grpc_server.New()
-	serviceExtensions := []extension{
-		hostModGlobal,
-		hostModGrpcServer,
-		wazero_buffer.New(),
-		wazero_shard_client.New(agent),
-		wazero_cluster.New(agent),
-	}
-	var svcCtxCopy []func(dst, src context.Context) context.Context
-	for _, m := range serviceExtensions {
-		if err = m.Register(ctx, runtimeServiceGrpc); err != nil {
-			panic(err)
-		}
-		svcCtxCopy = append(svcCtxCopy, m.ContextCopy)
-	}
-	poolServiceGrpc, err := wazeropool.New(ctx, runtimeServiceGrpc, wasmSvc,
-		wazeropool.WithModuleConfig(wazero.NewModuleConfig().WithStdout(os.Stdout).WithStderr(os.Stderr)),
-		wazeropool.WithLimit(runtime.NumCPU()),
-		wazeropool.WithMemoryLimit(32<<20),
-		wazeropool.WithName(turbokube.ServiceGrpc),
-		wazeropool.WithVersion(turbokube.Version))
-	if err != nil {
+	)
+	os.MkdirAll(cfg.Dir, 01777)
+	host := cluster.New(ctx, cfg)
+	turbokube.RegisterDev(host)
+	if err := host.Start(); err != nil {
 		panic(err)
 	}
-	ctx = wazeropool.ContextSet(ctx, poolServiceGrpc)
-	poolServiceGrpc.Run(func(mod api.Module) {
-		for _, m := range serviceExtensions {
-			if ctx, err = m.InitContext(ctx, mod); err != nil {
-				panic(err)
-			}
-		}
+	defer host.Stop()
+	ctrlClient := host.ControlClient()
+	// 10 seconds for namespaces to be created
+	var err error
+	await(10, 100, func() bool {
+		resp, err := ctrlClient.NamespaceGet(ctx, &pb.NamespaceGetRequest{
+			Name: "default",
+		})
+		return err == nil && resp != nil && resp.Item != nil && resp.Item.Name == `default`
 	})
-	svcCtxCopy = append(svcCtxCopy, wazero_cluster.NewResolver(`default`, `turbokube`))
 	resource := &pb.Resource{
-		Namespace: `default`,
-		Name:      `turbokube`,
-		Tags:      map[string]string{},
+		Namespace: "default",
+		Name:      "turbokube-test",
+		Type:      "pantopic/turbokube",
 	}
-	if cfg.LeaseAsync {
-		resource.Tags["turbokube:lease"] = "async"
+	service := &pb.Service{
+		Namespace: resource.Namespace,
+		Resource:  resource.Name,
+		Cluster:   cfg.ClusterName,
+		Name:      "api",
+		Type:      "grpc",
+		Port:      uint64(port),
+		Status:    cluster.Status_Active,
+		Tags: map[string]string{
+			"placement:cover": "cluster:host",
+		},
 	}
-	ctx = wazero_cluster.ContextSetResource(ctx, resource)
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", cfg.PortApi))
-	if err != nil {
+	component := &pb.Component{
+		Namespace: resource.Namespace,
+		Resource:  resource.Name,
+		Cluster:   cfg.ClusterName,
+		Name:      "default",
+		Type:      "basic",
+		Tags: map[string]string{
+			"placement:member": "3;host:class=storage",
+			// "placement:vary":   "geo:zone",
+		},
+	}
+	if _, err = ctrlClient.ResourcePut(ctx, &pb.ResourcePutRequest{
+		Item: resource,
+	}); err != nil {
 		panic(err)
 	}
-	hostModGrpcServer.ServerStart(ctx, lis, cfg.TlsCrt, cfg.TlsKey, poolServiceGrpc, svcCtxCopy...)
-	go func() {
-		for {
-			time.Sleep(5 * time.Second)
-			stats := poolServiceGrpc.Stats()
-			log.Info("poolServiceGrpc", "total", stats.Total,
-				"memAvg", (stats.MemSize/max(stats.Total, 1))>>20, "memMax", stats.MemMax>>20, "memMin", stats.MemMin>>20,
-				"active", stats.Active/max(stats.Total, 1), "actMax", stats.ActMax, "actMin", stats.ActMin,
-				"recycled", stats.Recycled, "limit", stats.Limit,
-			)
+	if _, err = ctrlClient.ServicePut(ctx, &pb.ServicePutRequest{
+		Item: service,
+	}); err != nil {
+		panic(err)
+	}
+	if _, err = ctrlClient.ComponentPut(ctx, &pb.ComponentPutRequest{
+		Item: component,
+	}); err != nil {
+		panic(err)
+	}
+	await(10, 100, func() bool {
+		svcListReq := &pb.ServiceListRequest{
+			Namespace: resource.Namespace,
+			Resource:  resource.Name,
 		}
-	}()
+		var svcListResp *pb.ServiceListResponse
+		svcListResp, err = ctrlClient.ServiceList(ctx, svcListReq)
+		return err == nil &&
+			svcListResp.Code == cluster.ResultSuccess &&
+			len(svcListResp.Item) > 0 &&
+			svcListResp.Item[0].Status == cluster.Status_Active
+	})
+	await(10, 100, func() bool {
+		compListReq := &pb.ComponentListRequest{
+			Namespace: resource.Namespace,
+			Resource:  resource.Name,
+		}
+		var compListResp *pb.ComponentListResponse
+		compListResp, err = ctrlClient.ComponentList(ctx, compListReq)
+		return err == nil &&
+			compListResp.Code == cluster.ResultSuccess &&
+			len(compListResp.Item) > 0 &&
+			compListResp.Item[0].Status == cluster.Status_Active
+	})
 
-	// await stop
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 	signal.Notify(stop, syscall.SIGTERM)
 	<-stop
+}
 
-	if grpcServer != nil {
-		var ch = make(chan bool)
-		go func() {
-			hostModGrpcServer.Stop()
-			close(ch)
-		}()
-		select {
-		case <-ch:
-		case <-time.After(5 * time.Second):
+func await(d, n time.Duration, fn func() bool) bool {
+	for i := 0; i < int(n); i++ {
+		if fn() {
+			return true
 		}
+		time.Sleep(d * time.Second / n)
 	}
-	agent.Stop()
+	return false
 }
