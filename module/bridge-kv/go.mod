@@ -1,4 +1,4 @@
-module github.com/pantopic/turbokube/module/bridge-cron
+module github.com/pantopic/turbokube/module/bridge-kv
 
 go 1.27.3
 

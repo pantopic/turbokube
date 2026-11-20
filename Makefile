@@ -92,7 +92,7 @@ gen-lite-install:
 	go install github.com/aperturerobotics/protobuf-go-lite/cmd/protoc-gen-go-lite@latest
 
 WASM_MODULES := \
-	bridge-cron \
+	bridge-kv \
 	bridge-lease \
 	control-basic \
 	service-grpc \

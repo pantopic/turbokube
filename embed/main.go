@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	BridgeCron   = "pantopic/turbokube/bridge/cron"
+	BridgeKv     = "pantopic/turbokube/bridge/kv"
 	BridgeLease  = "pantopic/turbokube/bridge/lease"
 	ControlBasic = "pantopic/turbokube/control/basic"
 	ServiceGrpc  = "pantopic/turbokube/service/grpc"
@@ -17,7 +17,7 @@ const (
 )
 
 func register(c pantopic.ModuleRegistry, wasm ...[]byte) {
-	c.RegisterBridge(BridgeCron, wasm[0])
+	c.RegisterBridge(BridgeKv, wasm[0])
 	c.RegisterBridge(BridgeLease, wasm[1])
 	c.RegisterControl(ControlBasic, wasm[2])
 	c.RegisterService(ServiceGrpc, wasm[3])
@@ -27,7 +27,7 @@ func register(c pantopic.ModuleRegistry, wasm ...[]byte) {
 
 func Register(c pantopic.ModuleRegistry) {
 	register(c,
-		BridgeCronWasm,
+		BridgeKvWasm,
 		BridgeLeaseWasm,
 		ControlBasicWasm,
 		ServiceGrpcWasm,
@@ -38,7 +38,7 @@ func Register(c pantopic.ModuleRegistry) {
 
 func RegisterDev(c pantopic.ModuleRegistry) {
 	register(c,
-		BridgeCronDevWasm,
+		BridgeKvDevWasm,
 		BridgeLeaseDevWasm,
 		ControlBasicDevWasm,
 		ServiceGrpcDevWasm,
@@ -49,7 +49,7 @@ func RegisterDev(c pantopic.ModuleRegistry) {
 
 func RegisterZig(c pantopic.ModuleRegistry) {
 	register(c,
-		BridgeCronWasm,
+		BridgeKvWasm,
 		BridgeLeaseWasm,
 		ControlBasicWasm,
 		ServiceGrpcZigWasm,
@@ -60,7 +60,7 @@ func RegisterZig(c pantopic.ModuleRegistry) {
 
 func RegisterZigDev(c pantopic.ModuleRegistry) {
 	register(c,
-		BridgeCronDevWasm,
+		BridgeKvDevWasm,
 		BridgeLeaseDevWasm,
 		ControlBasicDevWasm,
 		ServiceGrpcZigDevWasm,
@@ -111,11 +111,11 @@ var BridgeLeaseWasm []byte
 //go:embed wasm/bridge-lease.dev.wasm
 var BridgeLeaseDevWasm []byte
 
-//go:embed wasm/bridge-cron.wasm
-var BridgeCronWasm []byte
+//go:embed wasm/bridge-kv.wasm
+var BridgeKvWasm []byte
 
-//go:embed wasm/bridge-cron.dev.wasm
-var BridgeCronDevWasm []byte
+//go:embed wasm/bridge-kv.dev.wasm
+var BridgeKvDevWasm []byte
 
 /*
 //go:embed wasm/bridge-lease.zig.wasm
@@ -124,9 +124,9 @@ var BridgeLeaseZigWasm []byte
 //go:embed wasm/bridge-lease.zig.dev.wasm
 var BridgeLeaseZigDevWasm []byte
 
-//go:embed wasm/bridge-cron.zig.wasm
-var BridgeCronZigWasm []byte
+//go:embed wasm/bridge-kv.zig.wasm
+var BridgeKvZigWasm []byte
 
-//go:embed wasm/bridge-cron.zig.dev.wasm
-var BridgeCronZigDevWasm []byte
+//go:embed wasm/bridge-kv.zig.dev.wasm
+var BridgeKvZigDevWasm []byte
 */
