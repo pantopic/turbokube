@@ -80,12 +80,10 @@ gen-host:
 gen-lite:
 	@protoc internal/*.proto \
 		--plugin protoc-gen-go-lite="${GOBIN}/protoc-gen-go-lite" \
-		--go-lite_out=module/service-grpc/internal  \
+		--go-lite_out=module/pkg/pb  \
 		--go-lite_opt=paths=source_relative \
 		--go-lite_opt=features=marshal+unmarshal+size \
 		-I internal
-	@cp module/service-grpc/internal/* module/storage-kv/internal
-	@cp module/service-grpc/internal/* module/storage-lease/internal
 
 gen-install:
 	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest

@@ -31,7 +31,7 @@ func reconcile(component *pb.Component) uint32 {
 	if shardKv == nil {
 		shardKv, err = cluster.ShardCreate(`kv`, `pantopic/turbokube/storage/kv`,
 			cluster.WithTags(component.Tags),
-			cluster.WithTag(`pantopic:bridge:cron`, "pantopic/turbokube/bridge/cron"),
+			cluster.WithTag(`pantopic:bridge:kv`, "pantopic/turbokube/bridge/kv"),
 			cluster.Persistent())
 		if err != nil {
 			println(`Failed to create shard kv`, err)

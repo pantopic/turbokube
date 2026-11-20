@@ -1,0 +1,10 @@
+package query
+
+const (
+	HEADER byte = iota
+	KV_RANGE
+	LEASE_EXISTS
+	LEASE_LEASES
+	LEASE_TIME_TO_LIVE
+	WATCH_PROGRESS
+)

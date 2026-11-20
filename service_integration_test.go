@@ -382,13 +382,9 @@ func setupCluster(t *testing.T) {
 		}), `%v`, hosts[0])
 		return
 	}
-	clk := clock.NewMock()
 	wait = func(t time.Duration) {
-		for t > 0 {
-			clk.Add(time.Second)
-			t -= time.Second
-			time.Sleep(10 * time.Millisecond)
-		}
+		// TODO - mock time in ext-cron
+		time.Sleep(t)
 	}
 	var members = []*cluster.Host{}
 	var nonvoting = []*cluster.Host{}
