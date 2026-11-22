@@ -65,8 +65,8 @@ func main() {
 	}
 	shard, _, err := agent.ShardCreate(ctx, pcb.Uri,
 		zongzi.WithName("default.turbokube.default.kv"),
-		zongzi.WithPlacementMembers(3, `pantopic:turbokube=member`),
-		zongzi.WithPlacementCover(`pantopic:turbokube=nonvoting`))
+		zongzi.WithPlacementMembers(3, `cluster:member`),
+		zongzi.WithPlacementCover(`cluster:host`))
 	if err != nil {
 		panic(err)
 	}

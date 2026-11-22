@@ -20,7 +20,7 @@ import (
 )
 
 var (
-	port = 19000
+	port uint16
 )
 
 func main() {
@@ -45,6 +45,8 @@ func main() {
 		}),
 	)
 	os.MkdirAll(cfg.Dir, 01777)
+	port = cfg.PortApi
+	cfg.PortApi = cluster.DefaultConfig.PortApi
 	host := cluster.New(ctx, cfg)
 	turbokube.RegisterDev(host)
 	if err := host.Start(); err != nil {
@@ -75,6 +77,8 @@ func main() {
 		Status:    cluster.Status_Active,
 		Tags: map[string]string{
 			"placement:cover": "cluster:host",
+			"tls:crt":         os.Getenv("PCB_TLS_CRT"),
+			"tls:key":         os.Getenv("PCB_TLS_KEY"),
 		},
 	}
 	component := &pb.Component{
@@ -88,9 +92,13 @@ func main() {
 			// "placement:vary":   "geo:zone",
 		},
 	}
-	if _, err = ctrlClient.ResourcePut(ctx, &pb.ResourcePutRequest{
-		Item: resource,
-	}); err != nil {
+	await(10, 100, func() bool {
+		_, err = ctrlClient.ResourcePut(ctx, &pb.ResourcePutRequest{
+			Item: resource,
+		})
+		return err == nil
+	})
+	if err != nil {
 		panic(err)
 	}
 	if _, err = ctrlClient.ServicePut(ctx, &pb.ServicePutRequest{

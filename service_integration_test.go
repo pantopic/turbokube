@@ -327,6 +327,7 @@ func setupPcb(t *testing.T) {
 
 // Run integration tests against bootstrapped cluster hosts
 func setupCluster(t *testing.T) {
+	zongzi.SetLogLevel(zongzi.LogLevelWarning)
 	hostname := "127.0.0.1"
 	var hostpeers = strings.Join([]string{
 		fmt.Sprintf("%s:%d", hostname, 18011),
@@ -364,9 +365,11 @@ func setupCluster(t *testing.T) {
 			} else {
 				turbokube.RegisterDev(host)
 			}
-			if err := host.Start(); err != nil {
-				panic(err)
-			}
+			go func() {
+				if err := host.Start(); err != nil {
+					panic(err)
+				}
+			}()
 			hosts = append(hosts, host)
 			n++
 		}

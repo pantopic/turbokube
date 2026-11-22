@@ -8,6 +8,7 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
@@ -20,10 +21,14 @@ import (
 )
 
 var (
-	port = 19000
+	port int = 19000
+
+	tlsCrt = os.Getenv("PCB_TLS_CRT")
+	tlsKey = os.Getenv("PCB_TLS_KEY")
 )
 
 func main() {
+	port, _ = strconv.Atoi(os.Getenv("PCB_PORT_TURBOKUBE"))
 	go func() {
 		slog.Info("pprof server", "err", http.ListenAndServe(":6060", nil))
 	}()
@@ -75,6 +80,8 @@ func main() {
 		Status:    cluster.Status_Active,
 		Tags: map[string]string{
 			"placement:cover": "cluster:host",
+			"tls:cert":        tlsCrt,
+			"tls:key":         tlsKey,
 		},
 	}
 	component := &pb.Component{

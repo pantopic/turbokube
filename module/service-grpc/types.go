@@ -1,9 +1,6 @@
 package main
 
 import (
-	"os"
-	"strconv"
-
 	"github.com/pantopic/ext-global/sdk-go"
 )
 
@@ -57,12 +54,3 @@ const (
 const (
 	WATCH_ID_ERROR uint64 = 1 << 63 // 0x8000000000000000
 )
-
-func envUint64(key string, def uint64) uint64 {
-	if s := os.Getenv(key); s != "" {
-		if v, err := strconv.ParseUint(s, 10, 64); err == nil {
-			return v
-		}
-	}
-	return def
-}
