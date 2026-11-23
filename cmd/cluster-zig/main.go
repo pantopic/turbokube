@@ -16,6 +16,7 @@ import (
 
 	"github.com/pantopic/cluster"
 	"github.com/pantopic/cluster/pb"
+	"github.com/pantopic/ext-global/host-wazero"
 
 	"github.com/pantopic/turbokube/embed"
 )
@@ -50,7 +51,8 @@ func main() {
 		}),
 	)
 	os.MkdirAll(cfg.Dir, 01777)
-	host := cluster.New(ctx, cfg)
+	host := cluster.New(ctx, cfg,
+		cluster.WithGlobalOverlay(wazero_global.EnvLookup("PCB_")))
 	turbokube.RegisterZigDev(host)
 	if err := host.Start(); err != nil {
 		panic(err)

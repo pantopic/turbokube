@@ -54,7 +54,7 @@ const (
 )
 
 const (
-	limitCompactionMaxKeys = 1 << 10
+	limitCompactionMaxKeys = 4 << 10
 )
 
 const (

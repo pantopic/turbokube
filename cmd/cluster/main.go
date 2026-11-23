@@ -15,6 +15,7 @@ import (
 
 	"github.com/pantopic/cluster"
 	"github.com/pantopic/cluster/pb"
+	"github.com/pantopic/ext-global/host-wazero"
 
 	"github.com/pantopic/turbokube/embed"
 )
@@ -42,12 +43,12 @@ func main() {
 			PortZongzi:  17001,
 			PortRaft:    17002,
 			PortGossip:  17003,
-		}),
-	)
+		}))
 	os.MkdirAll(cfg.Dir, 01777)
 	port = cfg.PortApi
 	cfg.PortApi = cluster.DefaultConfig.PortApi
-	host := cluster.New(ctx, cfg)
+	host := cluster.New(ctx, cfg,
+		cluster.WithGlobalOverlay(wazero_global.EnvLookup("PCB_")))
 	turbokube.RegisterDev(host)
 	if err := host.Start(); err != nil {
 		panic(err)
