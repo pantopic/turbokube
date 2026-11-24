@@ -48,6 +48,13 @@ func init() {
 func main() {}
 
 func open() (index uint64) {
+	if err := mdb.Open(
+		mdb.WithMaxDBs(256),
+		mdb.WithMaxReaders(256),
+		mdb.WithMapSize(256<<30),
+	); err != nil {
+		panic(`Unable to open env ` + err.Error())
+	}
 	if err := mdb.Update(func(txn mdb.Txn) (err error) {
 		index = dbMeta.init(txn)
 		dbStats.init(txn)

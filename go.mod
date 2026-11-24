@@ -1,6 +1,6 @@
 module github.com/pantopic/turbokube
 
-go 1.26.0
+go 1.27.3
 
 require (
 	github.com/PowerDNS/lmdb-go v1.9.4
@@ -10,20 +10,10 @@ require (
 	github.com/kevburnsjr/batchy v0.0.1
 	github.com/logbn/byteinterval v0.0.2
 	github.com/logbn/zongzi v0.0.23
-	github.com/pantopic/ext-atomic/host-wazero v0.0.4
-	github.com/pantopic/ext-buffer/host-wazero v0.0.4
-	github.com/pantopic/ext-cluster/host-wazero v0.0.2
+	github.com/pantopic/cluster v0.0.0-20261123175059-a968ef01cb02
 	github.com/pantopic/ext-global/host-wazero v0.0.4
-	github.com/pantopic/ext-grpc-server/host-wazero v0.0.17
-	github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.11
-	github.com/pantopic/ext-raft/host-wazero v0.0.5
-	github.com/pantopic/ext-range-watch/host-wazero v0.0.7
-	github.com/pantopic/ext-shard-client/host-wazero v0.0.5
-	github.com/pantopic/ext-small-cache/host-wazero v0.0.3
-	github.com/pantopic/wazero-pool v0.0.7
 	github.com/soheilhy/cmux v0.1.5
 	github.com/stretchr/testify v1.12.1
-	github.com/tetratelabs/wazero v1.12.0
 	github.com/tidwall/btree v1.8.2
 	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
@@ -61,12 +51,27 @@ require (
 	github.com/lni/goutils v1.4.0 // indirect
 	github.com/lni/vfs v0.2.1-0.20220616104132-8852fd867376 // indirect
 	github.com/miekg/dns v1.1.26 // indirect
+	github.com/pantopic/ext-atomic/host-wazero v0.0.4 // indirect
+	github.com/pantopic/ext-bridge/host-wazero v0.0.0-20261123021737-3421769388af // indirect
+	github.com/pantopic/ext-buffer/host-wazero v0.0.4 // indirect
+	github.com/pantopic/ext-cluster/host-wazero v0.0.2 // indirect
+	github.com/pantopic/ext-cron/host-wazero v0.0.0-20261123185017-dc97ccc2ce01 // indirect
+	github.com/pantopic/ext-grpc-server/host-wazero v0.0.17 // indirect
+	github.com/pantopic/ext-http-server/host-wazero v0.0.1 // indirect
+	github.com/pantopic/ext-mdb/host-wazero-lmdb v0.0.11 // indirect
+	github.com/pantopic/ext-raft/host-wazero v0.0.5 // indirect
+	github.com/pantopic/ext-range-watch/host-wazero v0.0.7 // indirect
+	github.com/pantopic/ext-shard-client/host-wazero v0.0.5 // indirect
+	github.com/pantopic/ext-small-cache/host-wazero v0.0.3 // indirect
+	github.com/pantopic/ext-util/host-wazero v0.0.0-20261120153033-ae77d6c0be05 // indirect
+	github.com/pantopic/wazero-pool v0.0.7 // indirect
 	github.com/pierrec/lz4/v4 v4.1.18 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/puzpuzpuz/xsync/v4 v4.4.0 // indirect
 	github.com/rdleal/intervalst v1.4.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/sean-/seed v0.0.0-20170313163322-e2103e2c3529 // indirect
+	github.com/tetratelabs/wazero v1.12.0 // indirect
 	github.com/valyala/fastrand v1.1.0 // indirect
 	github.com/valyala/histogram v1.2.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect

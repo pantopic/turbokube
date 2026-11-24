@@ -1,8 +1,14 @@
 github.com/aperturerobotics/protobuf-go-lite v0.19.0 h1:7Veh1XY7pkswacItBnTR+skvPyNIFdOPg0tb3X0Yd/E=
 github.com/aperturerobotics/protobuf-go-lite v0.19.0/go.mod h1:3Ay/E7iaw2KWLirK3+dDdNJZHK0hu8Y1/kKeYeUa+8s=
+github.com/pantopic/ext-atomic/sdk-go v0.0.4 h1:sJpF+FvLKpIty8uBKhdPk5CcMBcBUvvllFjlEgRaKGQ=
+github.com/pantopic/ext-atomic/sdk-go v0.0.4/go.mod h1:74gdfg5hX1vVnDCbE+Px+fua5KvalUgmNUPm3nG2XoI=
 github.com/pantopic/ext-bridge/sdk-go v0.0.0-20261117171614-92851483dab3 h1:rQAMH61np1Cq4ImybZ9DlDFFSldNrJhcm7RQLkmcohM=
 github.com/pantopic/ext-bridge/sdk-go v0.0.0-20261117171614-92851483dab3/go.mod h1:32wpkMFVOB2/3+xt+QKQMIk8AhO4M80hgdGyxzpBW/I=
 github.com/pantopic/ext-cluster/sdk-go v0.0.2 h1:mRnF103KsDseN1rT/FcomW1Z7/BF7PYt9dEUNAqF+Qo=
 github.com/pantopic/ext-cluster/sdk-go v0.0.2/go.mod h1:s+faiSKUcJJ5PehmoMS2CVPf0ZL1Vi8sk2OqgYk3CTg=
 github.com/pantopic/ext-cron/sdk-go v0.0.0-20261118000840-341ec3a02db6 h1:tMt2OUGS1yOQpCz3mpt/IX64Q4SCTLQIBPi/Y10rUJI=
 github.com/pantopic/ext-cron/sdk-go v0.0.0-20261118000840-341ec3a02db6/go.mod h1:Z8D7xfK+UogDqSDRN1u0K4GhruFgZ3C6W6Vlt8FCKBw=
+github.com/pantopic/ext-shard-client/sdk-go v0.0.5 h1:3WiLLE5YCAKfYecQm/n9FRkHu/0rNjnsk/nRs56j6Wo=
+github.com/pantopic/ext-shard-client/sdk-go v0.0.5/go.mod h1:c2Duo6U63dbZgWQckX3fu8NLd+CMjgX9vaOur8I4q3Q=
+github.com/pantopic/turbokube/module/pkg v0.0.0-20261123021622-fbd750cc9832 h1:pLv5159pQv+ZZU31AqnFIbfdpUOgGGsS1P1tq5ehpu0=
+github.com/pantopic/turbokube/module/pkg v0.0.0-20261123021622-fbd750cc9832/go.mod h1:GE50CZJbUY5cobB0FttY2UlnHdqZFUKFQBr4VAa7i2Q=
